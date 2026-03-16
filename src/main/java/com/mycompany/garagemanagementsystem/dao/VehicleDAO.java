@@ -13,23 +13,25 @@ import java.util.List;
 public class VehicleDAO {
 
     public void insert(Vehicle v) throws SQLException {
-        String sql = "INSERT INTO vehicle (client_id, no_polisi, merk, tipe, tahun, no_rangka, no_mesin) "
-                + "VALUES (?,?,?,?,?,?,?)";
+        String sql = "INSERT INTO vehicle (client_id, no_polisi, merk, tipe, cc, tipe_kendaraan, tahun, no_rangka, no_mesin) "
+                + "VALUES (?,?,?,?,?,?,?,?,?)";
         try (Connection conn = DBConnection.getConnection();
                 PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, v.getClientId());
             ps.setString(2, v.getNoPolisi());
             ps.setString(3, v.getMerk());
             ps.setString(4, v.getTipe());
-            ps.setInt(5, v.getTahun());
-            ps.setString(6, v.getNoRangka());
-            ps.setString(7, v.getNoMesin());
+            ps.setInt(5, v.getCc());
+            ps.setString(6, v.getTipeKendaraan());
+            ps.setInt(7, v.getTahun());
+            ps.setString(8, v.getNoRangka());
+            ps.setString(9, v.getNoMesin());
             ps.executeUpdate();
         }
     }
 
     public void update(Vehicle v) throws SQLException {
-        String sql = "UPDATE vehicle SET client_id=?, no_polisi=?, merk=?, tipe=?, tahun=?, "
+        String sql = "UPDATE vehicle SET client_id=?, no_polisi=?, merk=?, tipe=?, cc=?, tipe_kendaraan=?, tahun=?, "
                 + "no_rangka=?, no_mesin=? WHERE vehicle_id=?";
         try (Connection conn = DBConnection.getConnection();
                 PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -37,10 +39,12 @@ public class VehicleDAO {
             ps.setString(2, v.getNoPolisi());
             ps.setString(3, v.getMerk());
             ps.setString(4, v.getTipe());
-            ps.setInt(5, v.getTahun());
-            ps.setString(6, v.getNoRangka());
-            ps.setString(7, v.getNoMesin());
-            ps.setInt(8, v.getVehicleId());
+            ps.setInt(5, v.getCc());
+            ps.setString(6, v.getTipeKendaraan());
+            ps.setInt(7, v.getTahun());
+            ps.setString(8, v.getNoRangka());
+            ps.setString(9, v.getNoMesin());
+            ps.setInt(10, v.getVehicleId());
             ps.executeUpdate();
         }
     }
@@ -67,6 +71,8 @@ public class VehicleDAO {
                 v.setNoPolisi(rs.getString("no_polisi"));
                 v.setMerk(rs.getString("merk"));
                 v.setTipe(rs.getString("tipe"));
+                v.setCc(rs.getInt("cc"));
+                v.setTipeKendaraan(rs.getString("tipe_kendaraan"));
                 v.setTahun(rs.getInt("tahun"));
                 v.setNoRangka(rs.getString("no_rangka"));
                 v.setNoMesin(rs.getString("no_mesin"));

@@ -7,6 +7,8 @@ public class Vehicle {
     private String noPolisi;
     private String merk;
     private String tipe;
+    private int cc;
+    private String tipeKendaraan; // Roda 2 / Lebih dari Roda 2
     private int tahun;
     private String noRangka;
     private String noMesin;
@@ -49,6 +51,22 @@ public class Vehicle {
 
     public void setTipe(String tipe) {
         this.tipe = tipe;
+    }
+
+    public int getCc() {
+        return cc;
+    }
+
+    public void setCc(int cc) {
+        this.cc = cc;
+    }
+
+    public String getTipeKendaraan() {
+        return tipeKendaraan;
+    }
+
+    public void setTipeKendaraan(String tipeKendaraan) {
+        this.tipeKendaraan = tipeKendaraan;
     }
 
     public int getTahun() {

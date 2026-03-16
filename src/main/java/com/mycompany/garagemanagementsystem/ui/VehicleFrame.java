@@ -28,6 +28,8 @@ public class VehicleFrame extends JDialog {
     private final JTextField txtNoPolisi;
     private final JTextField txtMerk;
     private final JTextField txtTipe;
+    private final JTextField txtCc;
+    private final JComboBox<String> cbTipeKendaraan;
     private final JTextField txtTahun;
     private final JTextField txtNoRangka;
     private final JTextField txtNoMesin;
@@ -46,6 +48,8 @@ public class VehicleFrame extends JDialog {
         txtNoPolisi = new JTextField(10);
         txtMerk = new JTextField(10);
         txtTipe = new JTextField(10);
+        txtCc = new JTextField(5);
+        cbTipeKendaraan = new JComboBox<>(new String[]{"Roda 2", "Lebih dari Roda 2"});
         txtTahun = new JTextField(4);
         txtNoRangka = new JTextField(15);
         txtNoMesin = new JTextField(15);
@@ -62,7 +66,7 @@ public class VehicleFrame extends JDialog {
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getSelectionModel().addListSelectionListener(e -> tableSelectionChanged());
 
-        JPanel formPanel = new JPanel(new GridLayout(8, 2));
+        JPanel formPanel = new JPanel(new GridLayout(10, 2));
         formPanel.add(new JLabel("ID:"));
         formPanel.add(txtId);
         formPanel.add(new JLabel("Client:"));
@@ -73,11 +77,15 @@ public class VehicleFrame extends JDialog {
         formPanel.add(txtMerk);
         formPanel.add(new JLabel("Tipe:"));
         formPanel.add(txtTipe);
+        formPanel.add(new JLabel("CC:"));
+        formPanel.add(txtCc);
+        formPanel.add(new JLabel("Jenis:"));
+        formPanel.add(cbTipeKendaraan);
         formPanel.add(new JLabel("Tahun:"));
         formPanel.add(txtTahun);
-        formPanel.add(new JLabel("No Rangka:"));
+        formPanel.add(new JLabel("No Rangka (Opsional):"));
         formPanel.add(txtNoRangka);
-        formPanel.add(new JLabel("No Mesin:"));
+        formPanel.add(new JLabel("No Mesin (Opsional):"));
         formPanel.add(txtNoMesin);
 
         JPanel buttonPanel = new JPanel();
@@ -110,7 +118,7 @@ public class VehicleFrame extends JDialog {
         try {
             List<Vehicle> list = vehicleDAO.findAll();
             DefaultTableModel model = new DefaultTableModel(
-                    new Object[]{"ID", "Client ID", "No Polisi", "Merk", "Tipe", "Tahun", "No Rangka", "No Mesin"}, 0);
+                    new Object[]{"ID", "Client ID", "No Polisi", "Merk", "Tipe", "CC", "Jenis", "Tahun", "No Rangka", "No Mesin"}, 0);
             for (Vehicle v : list) {
                 model.addRow(new Object[]{
                     v.getVehicleId(),
@@ -118,6 +126,8 @@ public class VehicleFrame extends JDialog {
                     v.getNoPolisi(),
                     v.getMerk(),
                     v.getTipe(),
+                    v.getCc(),
+                    v.getTipeKendaraan(),
                     v.getTahun(),
                     v.getNoRangka(),
                     v.getNoMesin()
@@ -137,6 +147,8 @@ public class VehicleFrame extends JDialog {
         txtNoPolisi.setText("");
         txtMerk.setText("");
         txtTipe.setText("");
+        txtCc.setText("0");
+        cbTipeKendaraan.setSelectedIndex(0);
         txtTahun.setText("");
         txtNoRangka.setText("");
         txtNoMesin.setText("");
@@ -157,6 +169,14 @@ public class VehicleFrame extends JDialog {
             v.setNoPolisi(txtNoPolisi.getText());
             v.setMerk(txtMerk.getText());
             v.setTipe(txtTipe.getText());
+            
+            try {
+                v.setCc(Integer.parseInt(txtCc.getText()));
+            } catch(NumberFormatException e) {
+                v.setCc(0);
+            }
+            
+            v.setTipeKendaraan(cbTipeKendaraan.getSelectedItem().toString());
             v.setTahun(Integer.parseInt(txtTahun.getText()));
             v.setNoRangka(txtNoRangka.getText());
             v.setNoMesin(txtNoMesin.getText());
@@ -204,9 +224,21 @@ public class VehicleFrame extends JDialog {
             txtNoPolisi.setText(table.getValueAt(row, 2).toString());
             txtMerk.setText(table.getValueAt(row, 3).toString());
             txtTipe.setText(table.getValueAt(row, 4).toString());
-            txtTahun.setText(table.getValueAt(row, 5).toString());
-            txtNoRangka.setText(table.getValueAt(row, 6).toString());
-            txtNoMesin.setText(table.getValueAt(row, 7).toString());
+            
+            Object ccObj = table.getValueAt(row, 5);
+            txtCc.setText(ccObj != null ? ccObj.toString() : "0");
+            
+            Object jenisObj = table.getValueAt(row, 6);
+            if(jenisObj != null) cbTipeKendaraan.setSelectedItem(jenisObj.toString());
+            
+            Object tahunObj = table.getValueAt(row, 7);
+            txtTahun.setText(tahunObj != null ? tahunObj.toString() : "");
+            
+            Object noRangkaObj = table.getValueAt(row, 8);
+            txtNoRangka.setText(noRangkaObj != null ? noRangkaObj.toString() : "");
+            
+            Object noMesinObj = table.getValueAt(row, 9);
+            txtNoMesin.setText(noMesinObj != null ? noMesinObj.toString() : "");
         }
     }
 }
