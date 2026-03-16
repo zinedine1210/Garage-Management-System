@@ -4,14 +4,14 @@
 
 package com.mycompany.garagemanagementsystem;
 
-import com.mycompany.garagemanagementsystem.ui.MainMenuFrame;
+import com.mycompany.garagemanagementsystem.ui.LoginFrame;
 import javax.swing.SwingUtilities;
 
 public class GarageManagementSystem {
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
-            new MainMenuFrame().setVisible(true);
+            new LoginFrame().setVisible(true);
         });
     }
 }

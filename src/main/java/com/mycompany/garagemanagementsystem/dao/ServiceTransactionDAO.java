@@ -125,5 +125,100 @@ public class ServiceTransactionDAO {
             ps.executeUpdate();
         }
     }
+
+    public List<ServiceTransaction> findAll() throws SQLException {
+        List<ServiceTransaction> list = new java.util.ArrayList<>();
+        String sql = "SELECT t.*, c.nama as nama_client, v.no_polisi "
+                + "FROM service_transaction t "
+                + "LEFT JOIN client c ON t.client_id = c.client_id "
+                + "LEFT JOIN vehicle v ON t.vehicle_id = v.vehicle_id "
+                + "ORDER BY t.tanggal DESC";
+        try (Connection conn = DBConnection.getConnection();
+             Statement st = conn.createStatement();
+             ResultSet rs = st.executeQuery(sql)) {
+            while(rs.next()) {
+                ServiceTransaction t = new ServiceTransaction();
+                t.setTransId(rs.getInt("trans_id"));
+                t.setTanggal(rs.getTimestamp("tanggal"));
+                t.setClientId(rs.getInt("client_id"));
+                t.setVehicleId(rs.getInt("vehicle_id"));
+                t.setMekanikId(rs.getInt("mekanik_id"));
+                t.setKeluhan(rs.getString("keluhan"));
+                t.setStatusServis(rs.getString("status_servis"));
+                t.setTotalJasa(rs.getDouble("total_jasa"));
+                t.setTotalSparepart(rs.getDouble("total_sparepart"));
+                t.setGrandTotal(rs.getDouble("grand_total"));
+                t.setBayar(rs.getDouble("bayar"));
+                t.setKembali(rs.getDouble("kembali"));
+                t.setUserKasir(rs.getString("user_kasir"));
+                // Simpan nama temporary di variable yg ada atau pakai comment untuk render UI
+                list.add(t);
+            }
+        }
+        return list;
+    }
+
+    public void delete(int transId) throws SQLException {
+        String sql = "DELETE FROM service_transaction WHERE trans_id=?";
+        try (Connection conn = DBConnection.getConnection();
+                PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, transId);
+            ps.executeUpdate();
+        }
+    }
+
+    public List<com.mycompany.garagemanagementsystem.model.ServiceHistoryItem> findHistoryByNoPolisi(String noPolisi) throws SQLException {
+        List<com.mycompany.garagemanagementsystem.model.ServiceHistoryItem> list = new java.util.ArrayList<>();
+        String sql = "SELECT t.tanggal, t.keluhan, t.grand_total, m.nama as nama_mekanik, "
+                   + "GROUP_CONCAT(CONCAT(s.nama_sparepart, ' (', td.qty, ')') SEPARATOR ', ') as spareparts "
+                   + "FROM service_transaction t "
+                   + "JOIN vehicle v ON t.vehicle_id = v.vehicle_id "
+                   + "JOIN mekanik m ON t.mekanik_id = m.mekanik_id "
+                   + "LEFT JOIN transaction_detail td ON t.trans_id = td.trans_id "
+                   + "LEFT JOIN sparepart s ON td.sparepart_id = s.sparepart_id "
+                   + "WHERE v.no_polisi LIKE ? "
+                   + "GROUP BY t.trans_id "
+                   + "ORDER BY t.tanggal DESC";
+        
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, "%" + noPolisi + "%");
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    com.mycompany.garagemanagementsystem.model.ServiceHistoryItem item = new com.mycompany.garagemanagementsystem.model.ServiceHistoryItem();
+                    item.setTanggal(rs.getTimestamp("tanggal").toString());
+                    item.setKeluhan(rs.getString("keluhan"));
+                    item.setMekanik(rs.getString("nama_mekanik"));
+                    item.setSpareparts(rs.getString("spareparts") != null ? rs.getString("spareparts") : "-");
+                    item.setTotalBiaya(rs.getDouble("grand_total"));
+                    list.add(item);
+                }
+            }
+        }
+        return list;
+    }
+
+    public List<ServiceTransaction> getAntrian() throws SQLException {
+        List<ServiceTransaction> list = new java.util.ArrayList<>();
+        String sql = "SELECT t.trans_id, t.status_servis, v.no_polisi "
+                   + "FROM service_transaction t "
+                   + "JOIN vehicle v ON t.vehicle_id = v.vehicle_id "
+                   + "WHERE DATE(t.tanggal) = CURDATE() AND t.status_servis IN ('Menunggu', 'Dikerjakan') "
+                   + "ORDER BY t.tanggal ASC";
+        
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                ServiceTransaction t = new ServiceTransaction();
+                t.setTransId(rs.getInt("trans_id"));
+                t.setStatusServis(rs.getString("status_servis"));
+                // Pakai property keluhan sebagai penitipan sementara nopol
+                t.setKeluhan(rs.getString("no_polisi")); 
+                list.add(t);
+            }
+        }
+        return list;
+    }
 }
 

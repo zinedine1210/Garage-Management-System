@@ -35,6 +35,7 @@ public class ServiceTransactionFrame extends JDialog {
     private final JComboBox<Client> cbClient;
     private final JComboBox<Vehicle> cbVehicle;
     private final JComboBox<Mekanik> cbMekanik;
+    private final JComboBox<String> cbStatusServis;
     private final JTextArea txtKeluhan;
     private final JTextField txtTotalJasa;
     private final JTextField txtTotalSparepart;
@@ -61,6 +62,8 @@ public class ServiceTransactionFrame extends JDialog {
         cbMekanik = new JComboBox<>();
         txtKeluhan = new JTextArea(3, 30);
 
+        cbStatusServis = new JComboBox<>(new String[]{"Menunggu", "Dikerjakan", "Selesai Lunas"});
+
         txtTotalJasa = new JTextField("0", 10);
         txtTotalSparepart = new JTextField("0", 10);
         txtGrandTotal = new JTextField("0", 10);
@@ -80,6 +83,12 @@ public class ServiceTransactionFrame extends JDialog {
         JButton btnHitungTotal = new JButton("Hitung Total");
         JButton btnSimpanTrans = new JButton("Simpan Transaksi");
         JButton btnBayar = new JButton("Bayar");
+        
+        JButton btnAddClient = new JButton("+ New Client");
+        btnAddClient.addActionListener(e -> {
+            new ClientFrame((Frame) this.getParent()).setVisible(true);
+            loadComboBoxData(); // reload setelah form client ditutup
+        });
 
         btnTambahDetail.addActionListener(e -> addDetailRow());
         btnHapusDetail.addActionListener(e -> removeDetailRow());
@@ -87,15 +96,29 @@ public class ServiceTransactionFrame extends JDialog {
         btnSimpanTrans.addActionListener(e -> simpanTransaksi());
         btnBayar.addActionListener(e -> prosesBayar());
 
-        JPanel headerPanel = new JPanel(new GridLayout(4, 2));
+        cbClient.addActionListener(e -> filterVehicleByClient());
+        cbVehicle.addActionListener(e -> autofillClientByVehicle());
+
+        JPanel headerPanel = new JPanel(new GridLayout(4, 3, 5, 5));
         headerPanel.add(new JLabel("Client:"));
         headerPanel.add(cbClient);
+        headerPanel.add(btnAddClient);
+        
         headerPanel.add(new JLabel("Vehicle:"));
         headerPanel.add(cbVehicle);
+        headerPanel.add(new JLabel("")); // spacer
+        
         headerPanel.add(new JLabel("Mekanik:"));
         headerPanel.add(cbMekanik);
+        headerPanel.add(new JLabel("")); // spacer
+        
         headerPanel.add(new JLabel("Keluhan:"));
         headerPanel.add(new JScrollPane(txtKeluhan));
+        headerPanel.add(new JLabel("")); // spacer
+        
+        headerPanel.add(new JLabel("Status Antrian:"));
+        headerPanel.add(cbStatusServis);
+        headerPanel.add(new JLabel("")); // spacer
 
         JPanel totalPanel = new JPanel(new GridLayout(5, 2));
         totalPanel.add(new JLabel("Total Jasa:"));
@@ -144,6 +167,41 @@ public class ServiceTransactionFrame extends JDialog {
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(this, "Error load combobox data: " + ex.getMessage());
         }
+    }
+
+    private boolean isFiltering = false;
+
+    private void filterVehicleByClient() {
+        if (isFiltering) return;
+        Client selectedClient = (Client) cbClient.getSelectedItem();
+        if (selectedClient == null) return;
+        
+        isFiltering = true;
+        try {
+            cbVehicle.removeAllItems();
+            for (Vehicle v : vehicleDAO.findAll()) {
+                if (v.getClientId() == selectedClient.getClientId()) {
+                    cbVehicle.addItem(v);
+                }
+            }
+        } catch (SQLException ex) {
+        }
+        isFiltering = false;
+    }
+
+    private void autofillClientByVehicle() {
+        if (isFiltering) return;
+        Vehicle selectedVehicle = (Vehicle) cbVehicle.getSelectedItem();
+        if (selectedVehicle == null) return;
+        
+        isFiltering = true;
+        for (int i = 0; i < cbClient.getItemCount(); i++) {
+            if (cbClient.getItemAt(i).getClientId() == selectedVehicle.getClientId()) {
+                cbClient.setSelectedIndex(i);
+                break;
+            }
+        }
+        isFiltering = false;
     }
 
     private void addDetailRow() {
@@ -216,7 +274,7 @@ public class ServiceTransactionFrame extends JDialog {
             t.setMekanikId(mekanik != null ? mekanik.getMekanikId() : 0);
 
             t.setKeluhan(txtKeluhan.getText());
-            t.setStatusServis("Proses");
+            t.setStatusServis(cbStatusServis.getSelectedItem().toString());
             t.setTotalJasa(Double.parseDouble(txtTotalJasa.getText()));
             t.setTotalSparepart(Double.parseDouble(txtTotalSparepart.getText()));
             t.setGrandTotal(Double.parseDouble(txtGrandTotal.getText()));
