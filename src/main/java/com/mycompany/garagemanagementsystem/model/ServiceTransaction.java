@@ -131,5 +131,34 @@ public class ServiceTransaction {
     public void setDetails(List<TransactionDetail> details) {
         this.details = details;
     }
+
+    // --- Extra Fields for View/Table ---
+    private String clientNama;
+    private String noPolisi;
+    private String mekanikNama;
+
+    public String getClientNama() {
+        return clientNama;
+    }
+
+    public void setClientNama(String clientNama) {
+        this.clientNama = clientNama;
+    }
+
+    public String getNoPolisi() {
+        return noPolisi;
+    }
+
+    public void setNoPolisi(String noPolisi) {
+        this.noPolisi = noPolisi;
+    }
+
+    public String getMekanikNama() {
+        return mekanikNama;
+    }
+
+    public void setMekanikNama(String mekanikNama) {
+        this.mekanikNama = mekanikNama;
+    }
 }
 

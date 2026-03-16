@@ -48,32 +48,63 @@ public class TransactionListFrame extends JDialog {
         buttonPanel.add(btnRefresh);
 
         // --- FILTER PANEL ---
-        JPanel filterPanel = new JPanel(new BorderLayout());
-        filterPanel.add(new JLabel(" Cari: "), BorderLayout.WEST);
-        javax.swing.JTextField txtSearch = new javax.swing.JTextField();
-        filterPanel.add(txtSearch, BorderLayout.CENTER);
+        JPanel filterPanel = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 10, 5));
+        
+        filterPanel.add(new JLabel("Cari:"));
+        javax.swing.JTextField txtSearch = new javax.swing.JTextField(15);
+        filterPanel.add(txtSearch);
+        
+        filterPanel.add(new JLabel("Status:"));
+        String[] statuses = {"Semua", "Menunggu", "Dikerjakan", "Selesai Lunas", "Batal"};
+        javax.swing.JComboBox<String> cbStatus = new javax.swing.JComboBox<>(statuses);
+        filterPanel.add(cbStatus);
+        
+        filterPanel.add(new JLabel("Bulan:"));
+        String[] bulans = {"Semua", "01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"};
+        javax.swing.JComboBox<String> cbBulan = new javax.swing.JComboBox<>(bulans);
+        filterPanel.add(cbBulan);
+        
+        Runnable applyFilter = () -> {
+            if (table.getRowSorter() == null) {
+                javax.swing.table.TableRowSorter<DefaultTableModel> sorter = new javax.swing.table.TableRowSorter<>((DefaultTableModel) table.getModel());
+                table.setRowSorter(sorter);
+            }
+            javax.swing.table.TableRowSorter<DefaultTableModel> sorter = (javax.swing.table.TableRowSorter<DefaultTableModel>) table.getRowSorter();
+            
+            java.util.List<javax.swing.RowFilter<Object,Object>> filters = new java.util.ArrayList<>();
+            
+            // Text Filter (search across all columns)
+            String text = txtSearch.getText().trim();
+            if (text.length() > 0) {
+                filters.add(javax.swing.RowFilter.regexFilter("(?i)" + text));
+            }
+            
+            // Status Filter (Column index 8 for Status)
+            String status = cbStatus.getSelectedItem().toString();
+            if (!status.equals("Semua")) {
+                filters.add(javax.swing.RowFilter.regexFilter("(?i)^" + status + "$", 8));
+            }
+            
+            // Month Filter (Column index 1 for Tanggal, format YYYY-MM-DD...)
+            String bulan = cbBulan.getSelectedItem().toString();
+            if (!bulan.equals("Semua")) {
+                filters.add(javax.swing.RowFilter.regexFilter("-[0]*" + bulan + "-", 1));
+            }
+            
+            if (filters.isEmpty()) {
+                sorter.setRowFilter(null);
+            } else {
+                sorter.setRowFilter(javax.swing.RowFilter.andFilter(filters));
+            }
+        };
 
         txtSearch.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-            @Override
-            public void insertUpdate(javax.swing.event.DocumentEvent e) { filter(); }
-            @Override
-            public void removeUpdate(javax.swing.event.DocumentEvent e) { filter(); }
-            @Override
-            public void changedUpdate(javax.swing.event.DocumentEvent e) { filter(); }
-            private void filter() {
-                String text = txtSearch.getText();
-                if (table.getRowSorter() == null) {
-                    javax.swing.table.TableRowSorter<DefaultTableModel> sorter = new javax.swing.table.TableRowSorter<>((DefaultTableModel) table.getModel());
-                    table.setRowSorter(sorter);
-                }
-                javax.swing.table.TableRowSorter<DefaultTableModel> sorter = (javax.swing.table.TableRowSorter<DefaultTableModel>) table.getRowSorter();
-                if (text.trim().length() == 0) {
-                    sorter.setRowFilter(null);
-                } else {
-                    sorter.setRowFilter(javax.swing.RowFilter.regexFilter("(?i)" + text));
-                }
-            }
+            public void insertUpdate(javax.swing.event.DocumentEvent e) { applyFilter.run(); }
+            public void removeUpdate(javax.swing.event.DocumentEvent e) { applyFilter.run(); }
+            public void changedUpdate(javax.swing.event.DocumentEvent e) { applyFilter.run(); }
         });
+        cbStatus.addActionListener(e -> applyFilter.run());
+        cbBulan.addActionListener(e -> applyFilter.run());
 
         JPanel topPanel = new JPanel(new BorderLayout());
         topPanel.add(filterPanel, BorderLayout.CENTER);
@@ -89,13 +120,19 @@ public class TransactionListFrame extends JDialog {
     private void loadData() {
         try {
             List<ServiceTransaction> list = transDAO.findAll();
+            // Columns: ID (0), Tanggal (1), Pelanggan (2), No Polisi (3), Keluhan (4), Mekanik (5), Total Jasa (6), Total Sparepart (7), Status (8), Grand Total (9)
             DefaultTableModel model = new DefaultTableModel(
-                    new Object[]{"ID Transaksi", "Tanggal", "Keluhan", "Status", "Grand Total"}, 0);
+                    new Object[]{"ID Transaksi", "Tanggal", "Pelanggan", "No. Polisi", "Keluhan", "Mekanik", "Total Jasa", "Total Sparepart", "Status", "Grand Total"}, 0);
             for (ServiceTransaction t : list) {
                 model.addRow(new Object[]{
                     t.getTransId(),
                     t.getTanggal().toString(),
+                    t.getClientNama(),
+                    t.getNoPolisi(),
                     t.getKeluhan(),
+                    t.getMekanikNama(),
+                    t.getTotalJasa(),
+                    t.getTotalSparepart(),
                     t.getStatusServis(),
                     t.getGrandTotal()
                 });

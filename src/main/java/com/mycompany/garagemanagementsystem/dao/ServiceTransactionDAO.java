@@ -128,10 +128,11 @@ public class ServiceTransactionDAO {
 
     public List<ServiceTransaction> findAll() throws SQLException {
         List<ServiceTransaction> list = new java.util.ArrayList<>();
-        String sql = "SELECT t.*, c.nama as nama_client, v.no_polisi "
+        String sql = "SELECT t.*, c.nama as client_nama, v.no_polisi, m.nama as mekanik_nama "
                 + "FROM service_transaction t "
                 + "LEFT JOIN client c ON t.client_id = c.client_id "
                 + "LEFT JOIN vehicle v ON t.vehicle_id = v.vehicle_id "
+                + "LEFT JOIN mekanik m ON t.mekanik_id = m.mekanik_id "
                 + "ORDER BY t.tanggal DESC";
         try (Connection conn = DBConnection.getConnection();
              Statement st = conn.createStatement();
@@ -151,7 +152,12 @@ public class ServiceTransactionDAO {
                 t.setBayar(rs.getDouble("bayar"));
                 t.setKembali(rs.getDouble("kembali"));
                 t.setUserKasir(rs.getString("user_kasir"));
-                // Simpan nama temporary di variable yg ada atau pakai comment untuk render UI
+                
+                // Set extra view fields
+                t.setClientNama(rs.getString("client_nama"));
+                t.setNoPolisi(rs.getString("no_polisi"));
+                t.setMekanikNama(rs.getString("mekanik_nama"));
+                
                 list.add(t);
             }
         }
