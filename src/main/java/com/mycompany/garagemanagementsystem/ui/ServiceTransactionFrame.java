@@ -169,6 +169,61 @@ public class ServiceTransactionFrame extends JDialog {
         }
     }
 
+    public ServiceTransactionFrame(Frame owner, int transId) {
+        this(owner);
+        this.currentTransId = transId;
+        setTitle("Edit Transaksi Servis");
+        loadTransactionInfo();
+    }
+
+    private void loadTransactionInfo() {
+        try {
+            ServiceTransaction t = transDAO.findById(currentTransId);
+            if (t != null) {
+                // Nonaktifkan event filter saat isi awal
+                isFiltering = true;
+                for (int i = 0; i < cbClient.getItemCount(); i++) {
+                    if (cbClient.getItemAt(i).getClientId() == t.getClientId()) {
+                        cbClient.setSelectedIndex(i);
+                        break;
+                    }
+                }
+                for (int i = 0; i < cbVehicle.getItemCount(); i++) {
+                    if (cbVehicle.getItemAt(i).getVehicleId() == t.getVehicleId()) {
+                        cbVehicle.setSelectedIndex(i);
+                        break;
+                    }
+                }
+                for (int i = 0; i < cbMekanik.getItemCount(); i++) {
+                    if (cbMekanik.getItemAt(i).getMekanikId() == t.getMekanikId()) {
+                        cbMekanik.setSelectedIndex(i);
+                        break;
+                    }
+                }
+                isFiltering = false;
+                
+                txtKeluhan.setText(t.getKeluhan());
+                cbStatusServis.setSelectedItem(t.getStatusServis());
+                txtTotalJasa.setText(String.valueOf(t.getTotalJasa()));
+                txtTotalSparepart.setText(String.valueOf(t.getTotalSparepart()));
+                txtGrandTotal.setText(String.valueOf(t.getGrandTotal()));
+                txtBayar.setText(String.valueOf(t.getBayar()));
+                txtKembali.setText(String.valueOf(t.getKembali()));
+
+                detailModel.setRowCount(0);
+                if (t.getDetails() != null) {
+                    for (TransactionDetail d : t.getDetails()) {
+                        Sparepart s = sparepartDAO.findById(d.getSparepartId());
+                        String sName = (s != null) ? s.getNamaSparepart() : "Unknown";
+                        detailModel.addRow(new Object[]{d.getSparepartId(), sName, d.getQty(), d.getHarga(), d.getSubtotal()});
+                    }
+                }
+            }
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Error load transaksi: " + ex.getMessage());
+        }
+    }
+
     private boolean isFiltering = false;
 
     private void filterVehicleByClient() {
@@ -293,8 +348,14 @@ public class ServiceTransactionFrame extends JDialog {
             }
             t.setDetails(details);
 
-            currentTransId = transDAO.insertWithDetails(t);
-            JOptionPane.showMessageDialog(this, "Transaksi tersimpan. ID: " + currentTransId);
+            if (currentTransId == 0) {
+                currentTransId = transDAO.insertWithDetails(t);
+                JOptionPane.showMessageDialog(this, "Transaksi tersimpan. ID: " + currentTransId);
+            } else {
+                t.setTransId(currentTransId);
+                transDAO.updateWithDetails(t);
+                JOptionPane.showMessageDialog(this, "Transaksi berhasil diupdate.");
+            }
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Error simpan transaksi: " + ex.getMessage());
         }

@@ -28,10 +28,12 @@ public class TransactionListFrame extends JDialog {
         setLocationRelativeTo(owner);
 
         JButton btnBaru = new JButton("Transaksi Baru");
+        JButton btnEdit = new JButton("Edit Transaksi");
         JButton btnHapus = new JButton("Hapus Transaksi");
         JButton btnRefresh = new JButton("Refresh");
 
         btnBaru.addActionListener(e -> newTransaction());
+        btnEdit.addActionListener(e -> editTransaction());
         btnHapus.addActionListener(e -> deleteTransaction());
         btnRefresh.addActionListener(e -> loadData());
 
@@ -40,6 +42,7 @@ public class TransactionListFrame extends JDialog {
 
         JPanel buttonPanel = new JPanel();
         buttonPanel.add(btnBaru);
+        buttonPanel.add(btnEdit);
         buttonPanel.add(btnHapus);
         buttonPanel.add(btnRefresh);
 
@@ -73,6 +76,17 @@ public class TransactionListFrame extends JDialog {
     private void newTransaction() {
         new ServiceTransactionFrame(owner).setVisible(true);
         loadData(); // refresh setelah close form input
+    }
+
+    private void editTransaction() {
+        int row = table.getSelectedRow();
+        if (row < 0) {
+            JOptionPane.showMessageDialog(this, "Pilih transaksi yang akan diedit.");
+            return;
+        }
+        int transId = (int) table.getValueAt(row, 0);
+        new ServiceTransactionFrame(owner, transId).setVisible(true);
+        loadData();
     }
 
     private void deleteTransaction() {

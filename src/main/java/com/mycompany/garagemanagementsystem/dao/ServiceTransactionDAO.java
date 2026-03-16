@@ -220,5 +220,143 @@ public class ServiceTransactionDAO {
         }
         return list;
     }
+
+    public ServiceTransaction findById(int transId) throws SQLException {
+        ServiceTransaction t = null;
+        String sqlHeader = "SELECT * FROM service_transaction WHERE trans_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sqlHeader)) {
+            ps.setInt(1, transId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    t = new ServiceTransaction();
+                    t.setTransId(rs.getInt("trans_id"));
+                    t.setTanggal(rs.getTimestamp("tanggal"));
+                    t.setClientId(rs.getInt("client_id"));
+                    t.setVehicleId(rs.getInt("vehicle_id"));
+                    t.setMekanikId(rs.getInt("mekanik_id"));
+                    t.setKeluhan(rs.getString("keluhan"));
+                    t.setStatusServis(rs.getString("status_servis"));
+                    t.setTotalJasa(rs.getDouble("total_jasa"));
+                    t.setTotalSparepart(rs.getDouble("total_sparepart"));
+                    t.setGrandTotal(rs.getDouble("grand_total"));
+                    t.setBayar(rs.getDouble("bayar"));
+                    t.setKembali(rs.getDouble("kembali"));
+                    t.setUserKasir(rs.getString("user_kasir"));
+                }
+            }
+        }
+        if (t != null) {
+            String sqlDetail = "SELECT * FROM transaction_detail WHERE trans_id = ?";
+            try (Connection conn = DBConnection.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(sqlDetail)) {
+                ps.setInt(1, transId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    List<TransactionDetail> details = new java.util.ArrayList<>();
+                    while (rs.next()) {
+                        TransactionDetail d = new TransactionDetail();
+                        d.setDetailId(rs.getInt("detail_id"));
+                        d.setTransId(rs.getInt("trans_id"));
+                        d.setSparepartId(rs.getInt("sparepart_id"));
+                        d.setQty(rs.getInt("qty"));
+                        d.setHarga(rs.getDouble("harga"));
+                        d.setSubtotal(rs.getDouble("subtotal"));
+                        details.add(d);
+                    }
+                    t.setDetails(details);
+                }
+            }
+        }
+        return t;
+    }
+
+    public void updateWithDetails(ServiceTransaction t) throws SQLException {
+        String sqlSelectOldDetails = "SELECT sparepart_id, qty FROM transaction_detail WHERE trans_id=?";
+        String sqlDeleteDetails = "DELETE FROM transaction_detail WHERE trans_id=?";
+        String sqlUpdateHeader = "UPDATE service_transaction SET "
+                + "client_id=?, vehicle_id=?, mekanik_id=?, keluhan=?, status_servis=?, "
+                + "total_jasa=?, total_sparepart=?, grand_total=?, bayar=?, kembali=?, user_kasir=? "
+                + "WHERE trans_id=?";
+        String sqlInsertDetail = "INSERT INTO transaction_detail "
+                + "(trans_id, sparepart_id, qty, harga, subtotal) VALUES (?,?,?,?,?)";
+        String sqlRevertStok = "UPDATE sparepart SET stok = stok + ? WHERE sparepart_id = ?";
+        String sqlReduceStok = "UPDATE sparepart SET stok = stok - ? WHERE sparepart_id = ?";
+
+        Connection conn = null;
+        try {
+            conn = DBConnection.getConnection();
+            conn.setAutoCommit(false);
+            
+            // 1. Revert Old Stock
+            try (PreparedStatement psOld = conn.prepareStatement(sqlSelectOldDetails);
+                 PreparedStatement psRevert = conn.prepareStatement(sqlRevertStok)) {
+                psOld.setInt(1, t.getTransId());
+                try (ResultSet rs = psOld.executeQuery()) {
+                    while (rs.next()) {
+                        psRevert.setInt(1, rs.getInt("qty"));
+                        psRevert.setInt(2, rs.getInt("sparepart_id"));
+                        psRevert.addBatch();
+                    }
+                }
+                psRevert.executeBatch();
+            }
+
+            // 2. Delete Old Details
+            try (PreparedStatement psDel = conn.prepareStatement(sqlDeleteDetails)) {
+                psDel.setInt(1, t.getTransId());
+                psDel.executeUpdate();
+            }
+
+            // 3. Update Header
+            try (PreparedStatement psHeader = conn.prepareStatement(sqlUpdateHeader)) {
+                psHeader.setInt(1, t.getClientId());
+                psHeader.setInt(2, t.getVehicleId());
+                psHeader.setInt(3, t.getMekanikId());
+                psHeader.setString(4, t.getKeluhan());
+                psHeader.setString(5, t.getStatusServis());
+                psHeader.setDouble(6, t.getTotalJasa());
+                psHeader.setDouble(7, t.getTotalSparepart());
+                psHeader.setDouble(8, t.getGrandTotal());
+                psHeader.setDouble(9, t.getBayar());
+                psHeader.setDouble(10, t.getKembali());
+                psHeader.setString(11, t.getUserKasir());
+                psHeader.setInt(12, t.getTransId());
+                psHeader.executeUpdate();
+            }
+
+            // 4. Insert New Details & Reduce Stock
+            try (PreparedStatement psDetail = conn.prepareStatement(sqlInsertDetail);
+                 PreparedStatement psReduce = conn.prepareStatement(sqlReduceStok)) {
+                List<TransactionDetail> details = t.getDetails();
+                if (details != null) {
+                    for (TransactionDetail d : details) {
+                        psDetail.setInt(1, t.getTransId());
+                        psDetail.setInt(2, d.getSparepartId());
+                        psDetail.setInt(3, d.getQty());
+                        psDetail.setDouble(4, d.getHarga());
+                        psDetail.setDouble(5, d.getSubtotal());
+                        psDetail.addBatch();
+
+                        psReduce.setInt(1, d.getQty());
+                        psReduce.setInt(2, d.getSparepartId());
+                        psReduce.addBatch();
+                    }
+                    psDetail.executeBatch();
+                    psReduce.executeBatch();
+                }
+            }
+
+            conn.commit();
+        } catch (SQLException e) {
+            if (conn != null) {
+                conn.rollback();
+            }
+            throw e;
+        } finally {
+            if (conn != null) {
+                conn.setAutoCommit(true);
+            }
+        }
+    }
 }
 

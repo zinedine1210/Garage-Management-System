@@ -75,5 +75,28 @@ public class SparepartDAO {
         }
         return list;
     }
+
+    public Sparepart findById(int id) throws SQLException {
+        String sql = "SELECT * FROM sparepart WHERE sparepart_id=?";
+        try (Connection conn = DBConnection.getConnection();
+                PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Sparepart s = new Sparepart();
+                    s.setSparepartId(rs.getInt("sparepart_id"));
+                    s.setKodeSparepart(rs.getString("kode_sparepart"));
+                    s.setNamaSparepart(rs.getString("nama_sparepart"));
+                    s.setSatuan(rs.getString("satuan"));
+                    s.setStok(rs.getInt("stok"));
+                    s.setHargaBeli(rs.getDouble("harga_beli"));
+                    s.setHargaJual(rs.getDouble("harga_jual"));
+                    s.setSupplierId(rs.getInt("supplier_id"));
+                    return s;
+                }
+            }
+        }
+        return null;
+    }
 }
 
