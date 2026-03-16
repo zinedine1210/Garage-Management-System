@@ -8,6 +8,7 @@ import java.sql.SQLException;
 import java.util.List;
 import javax.swing.JButton;
 import javax.swing.JDialog;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -46,7 +47,39 @@ public class TransactionListFrame extends JDialog {
         buttonPanel.add(btnHapus);
         buttonPanel.add(btnRefresh);
 
+        // --- FILTER PANEL ---
+        JPanel filterPanel = new JPanel(new BorderLayout());
+        filterPanel.add(new JLabel(" Cari: "), BorderLayout.WEST);
+        javax.swing.JTextField txtSearch = new javax.swing.JTextField();
+        filterPanel.add(txtSearch, BorderLayout.CENTER);
+
+        txtSearch.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            @Override
+            public void insertUpdate(javax.swing.event.DocumentEvent e) { filter(); }
+            @Override
+            public void removeUpdate(javax.swing.event.DocumentEvent e) { filter(); }
+            @Override
+            public void changedUpdate(javax.swing.event.DocumentEvent e) { filter(); }
+            private void filter() {
+                String text = txtSearch.getText();
+                if (table.getRowSorter() == null) {
+                    javax.swing.table.TableRowSorter<DefaultTableModel> sorter = new javax.swing.table.TableRowSorter<>((DefaultTableModel) table.getModel());
+                    table.setRowSorter(sorter);
+                }
+                javax.swing.table.TableRowSorter<DefaultTableModel> sorter = (javax.swing.table.TableRowSorter<DefaultTableModel>) table.getRowSorter();
+                if (text.trim().length() == 0) {
+                    sorter.setRowFilter(null);
+                } else {
+                    sorter.setRowFilter(javax.swing.RowFilter.regexFilter("(?i)" + text));
+                }
+            }
+        });
+
+        JPanel topPanel = new JPanel(new BorderLayout());
+        topPanel.add(filterPanel, BorderLayout.CENTER);
+
         setLayout(new BorderLayout());
+        add(topPanel, BorderLayout.NORTH);
         add(new JScrollPane(table), BorderLayout.CENTER);
         add(buttonPanel, BorderLayout.SOUTH);
 
@@ -68,6 +101,10 @@ public class TransactionListFrame extends JDialog {
                 });
             }
             table.setModel(model);
+            
+            // Reapply sorter
+            javax.swing.table.TableRowSorter<DefaultTableModel> sorter = new javax.swing.table.TableRowSorter<>(model);
+            table.setRowSorter(sorter);
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(this, "Error load data: " + ex.getMessage());
         }

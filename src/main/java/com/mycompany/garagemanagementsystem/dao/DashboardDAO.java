@@ -125,4 +125,102 @@ public class DashboardDAO {
         }
         return list;
     }
+
+    public java.util.List<Object[]> getTop3StokKritis() throws SQLException {
+        java.util.List<Object[]> list = new java.util.ArrayList<>();
+        String sql = "SELECT nama_sparepart, stok FROM sparepart WHERE stok <= 5 ORDER BY stok ASC LIMIT 3";
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                list.add(new Object[]{rs.getString("nama_sparepart"), rs.getInt("stok") + " pcs"});
+            }
+        }
+        return list;
+    }
+
+    public java.util.List<Object[]> getKinerjaMekanik() throws SQLException {
+        java.util.List<Object[]> list = new java.util.ArrayList<>();
+        String sql = "SELECT m.nama, COUNT(t.trans_id) as total_servis FROM service_transaction t "
+                   + "JOIN mekanik m ON t.mekanik_id = m.mekanik_id "
+                   + "GROUP BY m.mekanik_id ORDER BY total_servis DESC";
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                list.add(new Object[]{rs.getString("nama"), rs.getInt("total_servis")});
+            }
+        }
+        return list;
+    }
+
+    public double getOmzetMingguan() throws SQLException {
+        String sql = "SELECT SUM(grand_total) FROM service_transaction WHERE YEARWEEK(tanggal, 1) = YEARWEEK(CURDATE(), 1)";
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) return rs.getDouble(1);
+        }
+        return 0;
+    }
+
+    public double getOmzetTahunan() throws SQLException {
+        String sql = "SELECT SUM(grand_total) FROM service_transaction WHERE YEAR(tanggal) = YEAR(CURDATE())";
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) return rs.getDouble(1);
+        }
+        return 0;
+    }
+
+    // List omzet per bulan dalam tahun ini (Januari - Desember)
+    public java.util.List<Object[]> getOmzetPerBulanTahunIni() throws SQLException {
+        java.util.List<Object[]> list = new java.util.ArrayList<>();
+        String sql = "SELECT MONTH(tanggal) as bulan, SUM(grand_total) as total "
+                   + "FROM service_transaction "
+                   + "WHERE YEAR(tanggal) = YEAR(CURDATE()) "
+                   + "GROUP BY MONTH(tanggal) ORDER BY bulan ASC";
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                list.add(new Object[]{rs.getInt("bulan"), rs.getDouble("total")});
+            }
+        }
+        return list;
+    }
+
+    // List omzet per tahun (Beberapa tahun terakhir)
+    public java.util.List<Object[]> getOmzetPerTahun() throws SQLException {
+        java.util.List<Object[]> list = new java.util.ArrayList<>();
+        String sql = "SELECT YEAR(tanggal) as tahun, SUM(grand_total) as total "
+                   + "FROM service_transaction "
+                   + "GROUP BY YEAR(tanggal) ORDER BY tahun ASC LIMIT 5";
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                list.add(new Object[]{rs.getString("tahun"), rs.getDouble("total")});
+            }
+        }
+        return list;
+    }
+
+    public java.util.List<Object[]> getPerbandinganTipeKendaraan() throws SQLException {
+        java.util.List<Object[]> list = new java.util.ArrayList<>();
+        String sql = "SELECT v.tipe_kendaraan, COUNT(t.trans_id) as total FROM service_transaction t "
+                   + "JOIN vehicle v ON t.vehicle_id = v.vehicle_id GROUP BY v.tipe_kendaraan";
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                list.add(new Object[]{rs.getString("tipe_kendaraan"), rs.getInt("total")});
+            }
+        }
+        return list;
+    }
+
+    public java.util.List<Object[]> getKategoriServis() throws SQLException {
+        java.util.List<Object[]> list = new java.util.ArrayList<>();
+        String sql = "SELECT "
+                   + "SUM(CASE WHEN total_jasa <= 50000 THEN 1 ELSE 0 END) as servis_kecil, "
+                   + "SUM(CASE WHEN total_jasa > 50000 AND total_jasa <= 80000 THEN 1 ELSE 0 END) as servis_sedang, "
+                   + "SUM(CASE WHEN total_jasa > 80000 THEN 1 ELSE 0 END) as servis_berat "
+                   + "FROM service_transaction";
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                list.add(new Object[]{"Servis Kecil", rs.getInt("servis_kecil")});
+                list.add(new Object[]{"Servis Sedang", rs.getInt("servis_sedang")});
+                list.add(new Object[]{"Servis Berat", rs.getInt("servis_berat")});
+            }
+        }
+        return list;
+    }
 }
