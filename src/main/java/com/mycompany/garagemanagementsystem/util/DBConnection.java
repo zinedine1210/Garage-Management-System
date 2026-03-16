@@ -5,10 +5,11 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class DBConnection {
-
-    private static final String URL = "jdbc:mysql://localhost:3306/bengkel_db";
+    private static final String DB_NAME = "garage_management";
+    private static final String PORT = "8889";
+    private static final String URL = "jdbc:mysql://localhost:" + PORT + "/" + DB_NAME;
     private static final String USER = "root";
-    private static final String PASS = ""; // ganti sesuai konfigurasi MySQL Anda
+    private static final String PASS = "root"; // ganti sesuai konfigurasi MySQL Anda
 
     private static Connection connection;
 

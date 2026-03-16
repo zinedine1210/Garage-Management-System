@@ -70,7 +70,7 @@ public class DashboardDAO {
         String sql = "SELECT m.nama, COUNT(t.trans_id) as total_servis FROM service_transaction t "
                    + "JOIN mekanik m ON t.mekanik_id = m.mekanik_id "
                    + "WHERE MONTH(t.tanggal) = MONTH(CURDATE()) AND YEAR(t.tanggal) = YEAR(CURDATE()) "
-                   + "GROUP BY m.mekanik_id ORDER BY total_servis DESC LIMIT 1";
+                   + "GROUP BY m.mekanik_id, m.nama ORDER BY total_servis DESC LIMIT 1";
         try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
             if (rs.next()) return rs.getString("nama") + " (" + rs.getInt("total_servis") + " unit)";
         }
@@ -99,7 +99,7 @@ public class DashboardDAO {
                    + "FROM service_transaction t "
                    + "JOIN vehicle v ON t.vehicle_id = v.vehicle_id "
                    + "JOIN client c ON t.client_id = c.client_id "
-                   + "GROUP BY v.vehicle_id "
+                   + "GROUP BY v.vehicle_id, c.nama, v.no_polisi "
                    + "HAVING days_ago >= 60 "
                    + "ORDER BY days_ago DESC LIMIT 5";
         try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
@@ -117,7 +117,7 @@ public class DashboardDAO {
                    + "JOIN sparepart s ON td.sparepart_id = s.sparepart_id "
                    + "JOIN service_transaction t ON td.trans_id = t.trans_id "
                    + "WHERE MONTH(t.tanggal) = MONTH(CURDATE()) AND YEAR(t.tanggal) = YEAR(CURDATE()) "
-                   + "GROUP BY s.sparepart_id ORDER BY total_qty DESC LIMIT 5";
+                   + "GROUP BY s.sparepart_id, s.nama_sparepart ORDER BY total_qty DESC LIMIT 5";
         try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 list.add(new Object[]{rs.getString("nama_sparepart"), rs.getInt("total_qty") + " pcs"});
@@ -141,7 +141,7 @@ public class DashboardDAO {
         java.util.List<Object[]> list = new java.util.ArrayList<>();
         String sql = "SELECT m.nama, COUNT(t.trans_id) as total_servis FROM service_transaction t "
                    + "JOIN mekanik m ON t.mekanik_id = m.mekanik_id "
-                   + "GROUP BY m.mekanik_id ORDER BY total_servis DESC";
+                   + "GROUP BY m.mekanik_id, m.nama ORDER BY total_servis DESC";
         try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 list.add(new Object[]{rs.getString("nama"), rs.getInt("total_servis")});

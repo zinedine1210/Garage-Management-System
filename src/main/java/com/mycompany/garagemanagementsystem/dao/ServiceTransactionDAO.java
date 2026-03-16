@@ -106,7 +106,7 @@ public class ServiceTransactionDAO {
 
     public void updateStatusPembayaran(int transId, double bayar, double kembali) throws SQLException {
         String sql = "UPDATE service_transaction "
-                + "SET bayar=?, kembali=?, status_servis='Lunas' WHERE trans_id=?";
+                + "SET bayar=?, kembali=?, status_servis='Selesai Lunas' WHERE trans_id=?";
         try (Connection conn = DBConnection.getConnection();
                 PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setDouble(1, bayar);
