@@ -11,7 +11,6 @@ import java.sql.SQLException;
 import java.util.List;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
-import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -21,7 +20,7 @@ import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.DefaultTableModel;
 
-public class VehicleFrame extends JDialog {
+public class VehiclePanel extends JPanel {
 
     private final JTextField txtId;
     private final JComboBox<Client> cbClient;
@@ -37,10 +36,7 @@ public class VehicleFrame extends JDialog {
     private final VehicleDAO vehicleDAO = new VehicleDAO();
     private final ClientDAO clientDAO = new ClientDAO();
 
-    public VehicleFrame(Frame owner) {
-        super(owner, "Master Vehicle", true);
-        setSize(800, 400);
-        setLocationRelativeTo(owner);
+    public VehiclePanel() {
 
         txtId = new JTextField(5);
         txtId.setEnabled(false);

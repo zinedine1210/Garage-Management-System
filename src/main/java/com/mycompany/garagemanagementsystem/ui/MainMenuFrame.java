@@ -4,7 +4,9 @@ import com.mycompany.garagemanagementsystem.dao.DashboardDAO;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Cursor;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Frame;
 import java.awt.GridLayout;
@@ -13,11 +15,14 @@ import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.SwingConstants;
 import javax.swing.border.LineBorder;
@@ -28,6 +33,7 @@ import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.category.DefaultCategoryDataset;
 import org.jfree.data.general.DefaultPieDataset;
+
 
 public class MainMenuFrame extends JFrame {
 
@@ -59,6 +65,8 @@ public class MainMenuFrame extends JFrame {
     private ChartPanel vehicleTypeChartPanel;
     private ChartPanel serviceCategoryChartPanel;
 
+    private JTabbedPane tabbedPane;
+
     public MainMenuFrame() {
         setTitle("Garage Management System - Executive Dashboard");
         setSize(1200, 800);
@@ -83,13 +91,13 @@ public class MainMenuFrame extends JFrame {
         JButton btnAntrian = createMenuButton("Layar Antrian (TV)");
         JButton btnRefresh = createMenuButton("Refresh Data");
 
-        btnClient.addActionListener(e -> new ClientFrame((Frame) this).setVisible(true));
-        btnVehicle.addActionListener(e -> new VehicleFrame((Frame) this).setVisible(true));
-        btnMekanik.addActionListener(e -> new MekanikFrame((Frame) this).setVisible(true));
-        btnSparepart.addActionListener(e -> new SparepartFrame((Frame) this).setVisible(true));
-        btnSupplier.addActionListener(e -> new SupplierFrame((Frame) this).setVisible(true));
-        btnTransaksi.addActionListener(e -> new TransactionListFrame((Frame) this).setVisible(true));
-        btnRiwayat.addActionListener(e -> new ServiceHistoryFrame((Frame) this).setVisible(true));
+        btnClient.addActionListener(e -> openTab("Data Client", new ClientPanel()));
+        btnVehicle.addActionListener(e -> openTab("Data Vehicle", new VehiclePanel()));
+        btnMekanik.addActionListener(e -> openTab("Data Mekanik", new MekanikPanel()));
+        btnSparepart.addActionListener(e -> openTab("Data Sparepart", new SparepartPanel()));
+        btnSupplier.addActionListener(e -> openTab("Data Supplier", new SupplierPanel()));
+        btnTransaksi.addActionListener(e -> openTab("Transaksi Servis", new TransactionListPanel((Frame) this)));
+        btnRiwayat.addActionListener(e -> openTab("Riwayat Servis", new ServiceHistoryPanel()));
         btnAntrian.addActionListener(e -> new QueueDashboardFrame().setVisible(true));
         btnRefresh.addActionListener(e -> loadDashboardData());
 
@@ -119,9 +127,13 @@ public class MainMenuFrame extends JFrame {
         bottomSidebar.add(btnRefresh, BorderLayout.CENTER);
         sidebarWrap.add(bottomSidebar, BorderLayout.SOUTH);
 
+        // --- MAIN WORKSPACE (JTabbedPane) ---
+        tabbedPane = new JTabbedPane();
+        tabbedPane.setBackground(new Color(240, 244, 248));
+        
         // --- DASHBOARD CONTENT ---
-        JPanel contentPanel = new JPanel(new BorderLayout());
-        contentPanel.setBackground(new Color(240, 244, 248));
+        JPanel dashboardPanel = new JPanel(new BorderLayout());
+        dashboardPanel.setBackground(new Color(240, 244, 248));
 
         JLabel titleLabel = new JLabel("Executive Dashboard Overview", SwingConstants.LEFT);
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 26));
@@ -238,14 +250,56 @@ public class MainMenuFrame extends JFrame {
         JScrollPane scrollPane = new JScrollPane(mainScrollPanel);
         scrollPane.setBorder(null);
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
-
-        contentPanel.add(titleLabel, BorderLayout.NORTH);
-        contentPanel.add(scrollPane, BorderLayout.CENTER);
-
+        
+        // Assemble Dashboard Panel
+        dashboardPanel.add(titleLabel, BorderLayout.NORTH);
+        dashboardPanel.add(scrollPane, BorderLayout.CENTER);
+        
+        // Set TabbedPane Configuration
+        tabbedPane.addTab("Dashboard", dashboardPanel);
         add(sidebarWrap, BorderLayout.WEST);
-        add(contentPanel, BorderLayout.CENTER);
-
+        add(tabbedPane, BorderLayout.CENTER);
+        
         loadDashboardData();
+    }
+    
+    private void openTab(String title, JPanel panel) {
+        // Cek apakah tab sudah terbuka
+        for (int i = 0; i < tabbedPane.getTabCount(); i++) {
+            if (tabbedPane.getTitleAt(i).equals(title)) {
+                tabbedPane.setSelectedIndex(i);
+                return;
+            }
+        }
+        
+        // Tambah tab baru
+        tabbedPane.addTab(title, panel);
+        int index = tabbedPane.getTabCount() - 1;
+        tabbedPane.setSelectedIndex(index);
+        
+        // Custom Tab Header
+        JPanel tabHeader = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        tabHeader.setOpaque(false);
+        JLabel lblTitle = new JLabel(title + "  ");
+        JButton btnClose = new JButton("x");
+        btnClose.setMargin(new java.awt.Insets(0, 2, 0, 2));
+        btnClose.setBorderPainted(false);
+        btnClose.setContentAreaFilled(false);
+        btnClose.setFocusPainted(false);
+        btnClose.setFont(new Font("Arial", Font.BOLD, 12));
+        btnClose.setForeground(Color.RED);
+        btnClose.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        
+        btnClose.addActionListener(e -> {
+            int closeIndex = tabbedPane.indexOfTabComponent(tabHeader);
+            if(closeIndex != -1) {
+                tabbedPane.remove(closeIndex);
+            }
+        });
+        
+        tabHeader.add(lblTitle);
+        tabHeader.add(btnClose);
+        tabbedPane.setTabComponentAt(index, tabHeader);
     }
     
     private JLabel createSectionHeader(String title) {

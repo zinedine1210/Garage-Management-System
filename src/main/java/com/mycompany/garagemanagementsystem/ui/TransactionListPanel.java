@@ -7,7 +7,6 @@ import java.awt.Frame;
 import java.sql.SQLException;
 import java.util.List;
 import javax.swing.JButton;
-import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -16,17 +15,14 @@ import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.DefaultTableModel;
 
-public class TransactionListFrame extends JDialog {
+public class TransactionListPanel extends JPanel {
 
     private final JTable table;
     private final ServiceTransactionDAO transDAO = new ServiceTransactionDAO();
     private final Frame owner;
 
-    public TransactionListFrame(Frame owner) {
-        super(owner, "Daftar Transaksi Servis", true);
+    public TransactionListPanel(Frame owner) {
         this.owner = owner;
-        setSize(800, 400);
-        setLocationRelativeTo(owner);
 
         JButton btnBaru = new JButton("Transaksi Baru");
         JButton btnEdit = new JButton("Edit Transaksi");

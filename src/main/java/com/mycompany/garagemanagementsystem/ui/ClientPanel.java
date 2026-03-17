@@ -1,14 +1,14 @@
 package com.mycompany.garagemanagementsystem.ui;
 
-import com.mycompany.garagemanagementsystem.dao.MekanikDAO;
-import com.mycompany.garagemanagementsystem.model.Mekanik;
+import com.mycompany.garagemanagementsystem.dao.ClientDAO;
+import com.mycompany.garagemanagementsystem.model.Client;
 import java.awt.BorderLayout;
 import java.awt.Frame;
 import java.awt.GridLayout;
 import java.sql.SQLException;
+import java.util.Date;
 import java.util.List;
 import javax.swing.JButton;
-import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -18,47 +18,48 @@ import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.DefaultTableModel;
 
-public class MekanikFrame extends JDialog {
+public class ClientPanel extends JPanel {
 
     private final JTextField txtId;
     private final JTextField txtNama;
+    private final JTextField txtAlamat;
     private final JTextField txtTelepon;
-    private final JTextField txtSpesialis;
+    private final JTextField txtEmail;
     private final JTable table;
-    private final MekanikDAO mekanikDAO = new MekanikDAO();
+    private final ClientDAO clientDAO = new ClientDAO();
 
-    public MekanikFrame(Frame owner) {
-        super(owner, "Master Mekanik", true);
-        setSize(600, 400);
-        setLocationRelativeTo(owner);
+    public ClientPanel() {
 
         txtId = new JTextField(5);
         txtId.setEnabled(false);
         txtNama = new JTextField(20);
+        txtAlamat = new JTextField(20);
         txtTelepon = new JTextField(15);
-        txtSpesialis = new JTextField(15);
+        txtEmail = new JTextField(20);
 
         JButton btnBaru = new JButton("Baru");
         JButton btnSimpan = new JButton("Simpan");
         JButton btnHapus = new JButton("Hapus");
 
         btnBaru.addActionListener(e -> clearForm());
-        btnSimpan.addActionListener(e -> saveMekanik());
-        btnHapus.addActionListener(e -> deleteMekanik());
+        btnSimpan.addActionListener(e -> saveClient());
+        btnHapus.addActionListener(e -> deleteClient());
 
         table = new JTable();
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getSelectionModel().addListSelectionListener(e -> tableSelectionChanged());
 
-        JPanel formPanel = new JPanel(new GridLayout(4, 2));
+        JPanel formPanel = new JPanel(new GridLayout(5, 2));
         formPanel.add(new JLabel("ID:"));
         formPanel.add(txtId);
         formPanel.add(new JLabel("Nama:"));
         formPanel.add(txtNama);
+        formPanel.add(new JLabel("Alamat:"));
+        formPanel.add(txtAlamat);
         formPanel.add(new JLabel("Telepon:"));
         formPanel.add(txtTelepon);
-        formPanel.add(new JLabel("Spesialis:"));
-        formPanel.add(txtSpesialis);
+        formPanel.add(new JLabel("Email:"));
+        formPanel.add(txtEmail);
 
         JPanel buttonPanel = new JPanel();
         buttonPanel.add(btnBaru);
@@ -107,15 +108,16 @@ public class MekanikFrame extends JDialog {
 
     private void loadData() {
         try {
-            List<Mekanik> list = mekanikDAO.findAll();
+            List<Client> list = clientDAO.findAll();
             DefaultTableModel model = new DefaultTableModel(
-                    new Object[]{"ID", "Nama", "Telepon", "Spesialis"}, 0);
-            for (Mekanik m : list) {
+                    new Object[]{"ID", "Nama", "Alamat", "Telepon", "Email"}, 0);
+            for (Client c : list) {
                 model.addRow(new Object[]{
-                    m.getMekanikId(),
-                    m.getNama(),
-                    m.getTelepon(),
-                    m.getSpesialis()
+                    c.getClientId(),
+                    c.getNama(),
+                    c.getAlamat(),
+                    c.getTelepon(),
+                    c.getEmail()
                 });
             }
             table.setModel(model);
@@ -131,24 +133,27 @@ public class MekanikFrame extends JDialog {
     private void clearForm() {
         txtId.setText("");
         txtNama.setText("");
+        txtAlamat.setText("");
         txtTelepon.setText("");
-        txtSpesialis.setText("");
+        txtEmail.setText("");
     }
 
-    private void saveMekanik() {
+    private void saveClient() {
         try {
-            Mekanik m = new Mekanik();
+            Client c = new Client();
             if (!txtId.getText().isEmpty()) {
-                m.setMekanikId(Integer.parseInt(txtId.getText()));
+                c.setClientId(Integer.parseInt(txtId.getText()));
             }
-            m.setNama(txtNama.getText());
-            m.setTelepon(txtTelepon.getText());
-            m.setSpesialis(txtSpesialis.getText());
+            c.setNama(txtNama.getText());
+            c.setAlamat(txtAlamat.getText());
+            c.setTelepon(txtTelepon.getText());
+            c.setEmail(txtEmail.getText());
+            c.setTanggalDaftar(new Date());
 
-            if (m.getMekanikId() == 0) {
-                mekanikDAO.insert(m);
+            if (c.getClientId() == 0) {
+                clientDAO.insert(c);
             } else {
-                mekanikDAO.update(m);
+                clientDAO.update(c);
             }
             loadData();
             clearForm();
@@ -157,15 +162,15 @@ public class MekanikFrame extends JDialog {
         }
     }
 
-    private void deleteMekanik() {
+    private void deleteClient() {
         if (txtId.getText().isEmpty()) {
             return;
         }
-        int confirm = JOptionPane.showConfirmDialog(this, "Hapus mekanik ini?", "Konfirmasi",
+        int confirm = JOptionPane.showConfirmDialog(this, "Hapus client ini?", "Konfirmasi",
                 JOptionPane.YES_NO_OPTION);
         if (confirm == JOptionPane.YES_OPTION) {
             try {
-                mekanikDAO.delete(Integer.parseInt(txtId.getText()));
+                clientDAO.delete(Integer.parseInt(txtId.getText()));
                 loadData();
                 clearForm();
             } catch (SQLException ex) {
@@ -179,8 +184,9 @@ public class MekanikFrame extends JDialog {
         if (row >= 0) {
             txtId.setText(table.getValueAt(row, 0).toString());
             txtNama.setText(table.getValueAt(row, 1).toString());
-            txtTelepon.setText(table.getValueAt(row, 2).toString());
-            txtSpesialis.setText(table.getValueAt(row, 3).toString());
+            txtAlamat.setText(table.getValueAt(row, 2).toString());
+            txtTelepon.setText(table.getValueAt(row, 3).toString());
+            txtEmail.setText(table.getValueAt(row, 4).toString());
         }
     }
 }

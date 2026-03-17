@@ -1,15 +1,13 @@
 package com.mycompany.garagemanagementsystem.ui;
 
-import com.mycompany.garagemanagementsystem.dao.ClientDAO;
-import com.mycompany.garagemanagementsystem.model.Client;
+import com.mycompany.garagemanagementsystem.dao.SupplierDAO;
+import com.mycompany.garagemanagementsystem.model.Supplier;
 import java.awt.BorderLayout;
 import java.awt.Frame;
 import java.awt.GridLayout;
 import java.sql.SQLException;
-import java.util.Date;
 import java.util.List;
 import javax.swing.JButton;
-import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -19,7 +17,7 @@ import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.DefaultTableModel;
 
-public class ClientFrame extends JDialog {
+public class SupplierPanel extends JPanel {
 
     private final JTextField txtId;
     private final JTextField txtNama;
@@ -27,12 +25,9 @@ public class ClientFrame extends JDialog {
     private final JTextField txtTelepon;
     private final JTextField txtEmail;
     private final JTable table;
-    private final ClientDAO clientDAO = new ClientDAO();
+    private final SupplierDAO supplierDAO = new SupplierDAO();
 
-    public ClientFrame(Frame owner) {
-        super(owner, "Master Client", true);
-        setSize(600, 400);
-        setLocationRelativeTo(owner);
+    public SupplierPanel() {
 
         txtId = new JTextField(5);
         txtId.setEnabled(false);
@@ -46,8 +41,8 @@ public class ClientFrame extends JDialog {
         JButton btnHapus = new JButton("Hapus");
 
         btnBaru.addActionListener(e -> clearForm());
-        btnSimpan.addActionListener(e -> saveClient());
-        btnHapus.addActionListener(e -> deleteClient());
+        btnSimpan.addActionListener(e -> saveSupplier());
+        btnHapus.addActionListener(e -> deleteSupplier());
 
         table = new JTable();
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -112,16 +107,16 @@ public class ClientFrame extends JDialog {
 
     private void loadData() {
         try {
-            List<Client> list = clientDAO.findAll();
+            List<Supplier> list = supplierDAO.findAll();
             DefaultTableModel model = new DefaultTableModel(
                     new Object[]{"ID", "Nama", "Alamat", "Telepon", "Email"}, 0);
-            for (Client c : list) {
+            for (Supplier s : list) {
                 model.addRow(new Object[]{
-                    c.getClientId(),
-                    c.getNama(),
-                    c.getAlamat(),
-                    c.getTelepon(),
-                    c.getEmail()
+                    s.getSupplierId(),
+                    s.getNama(),
+                    s.getAlamat(),
+                    s.getTelepon(),
+                    s.getEmail()
                 });
             }
             table.setModel(model);
@@ -142,22 +137,21 @@ public class ClientFrame extends JDialog {
         txtEmail.setText("");
     }
 
-    private void saveClient() {
+    private void saveSupplier() {
         try {
-            Client c = new Client();
+            Supplier s = new Supplier();
             if (!txtId.getText().isEmpty()) {
-                c.setClientId(Integer.parseInt(txtId.getText()));
+                s.setSupplierId(Integer.parseInt(txtId.getText()));
             }
-            c.setNama(txtNama.getText());
-            c.setAlamat(txtAlamat.getText());
-            c.setTelepon(txtTelepon.getText());
-            c.setEmail(txtEmail.getText());
-            c.setTanggalDaftar(new Date());
+            s.setNama(txtNama.getText());
+            s.setAlamat(txtAlamat.getText());
+            s.setTelepon(txtTelepon.getText());
+            s.setEmail(txtEmail.getText());
 
-            if (c.getClientId() == 0) {
-                clientDAO.insert(c);
+            if (s.getSupplierId() == 0) {
+                supplierDAO.insert(s);
             } else {
-                clientDAO.update(c);
+                supplierDAO.update(s);
             }
             loadData();
             clearForm();
@@ -166,15 +160,15 @@ public class ClientFrame extends JDialog {
         }
     }
 
-    private void deleteClient() {
+    private void deleteSupplier() {
         if (txtId.getText().isEmpty()) {
             return;
         }
-        int confirm = JOptionPane.showConfirmDialog(this, "Hapus client ini?", "Konfirmasi",
+        int confirm = JOptionPane.showConfirmDialog(this, "Hapus supplier ini?", "Konfirmasi",
                 JOptionPane.YES_NO_OPTION);
         if (confirm == JOptionPane.YES_OPTION) {
             try {
-                clientDAO.delete(Integer.parseInt(txtId.getText()));
+                supplierDAO.delete(Integer.parseInt(txtId.getText()));
                 loadData();
                 clearForm();
             } catch (SQLException ex) {

@@ -11,7 +11,6 @@ import java.sql.SQLException;
 import java.util.List;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
-import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -21,7 +20,7 @@ import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.DefaultTableModel;
 
-public class SparepartFrame extends JDialog {
+public class SparepartPanel extends JPanel {
 
     private final JTextField txtId;
     private final JTextField txtKode;
@@ -35,10 +34,7 @@ public class SparepartFrame extends JDialog {
     private final SparepartDAO sparepartDAO = new SparepartDAO();
     private final SupplierDAO supplierDAO = new SupplierDAO();
 
-    public SparepartFrame(Frame owner) {
-        super(owner, "Master Sparepart", true);
-        setSize(800, 450);
-        setLocationRelativeTo(owner);
+    public SparepartPanel() {
 
         txtId = new JTextField(5);
         txtId.setEnabled(false);

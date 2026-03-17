@@ -86,7 +86,7 @@ public class ServiceTransactionFrame extends JDialog {
         
         JButton btnAddClient = new JButton("+ New Client");
         btnAddClient.addActionListener(e -> {
-            new ClientFrame((Frame) this.getParent()).setVisible(true);
+            new ClientPanel().setVisible(true);
             loadComboBoxData(); // reload setelah form client ditutup
         });
 

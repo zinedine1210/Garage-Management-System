@@ -8,7 +8,6 @@ import java.awt.GridLayout;
 import java.sql.SQLException;
 import java.util.List;
 import javax.swing.JButton;
-import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -17,16 +16,13 @@ import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.table.DefaultTableModel;
 
-public class ServiceHistoryFrame extends JDialog {
+public class ServiceHistoryPanel extends JPanel {
 
     private final JTextField txtNoPolisi;
     private final JTable table;
     private final ServiceTransactionDAO transDAO = new ServiceTransactionDAO();
 
-    public ServiceHistoryFrame(Frame owner) {
-        super(owner, "Pencarian Riwayat Servis Digital", true);
-        setSize(850, 450);
-        setLocationRelativeTo(owner);
+    public ServiceHistoryPanel() {
         setLayout(new BorderLayout());
 
         txtNoPolisi = new JTextField(15);
