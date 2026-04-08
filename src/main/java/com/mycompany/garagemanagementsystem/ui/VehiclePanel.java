@@ -9,15 +9,10 @@ import java.util.List;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
 
-/**
- * VehiclePanel = Panel CRUD untuk data kendaraan.
- * Mirip ClientPanel, tapi ada JComboBox cbClient untuk memilih pemilik kendaraan
- * dan cbTipeKendaraan untuk memilih jenis ("Roda 2" / "Lebih dari Roda 2").
- */
 public class VehiclePanel extends javax.swing.JPanel {
 
     private final VehicleDAO vehicleDAO = new VehicleDAO();
-    private final ClientDAO clientDAO = new ClientDAO();  // Untuk mengisi ComboBox client
+    private final ClientDAO clientDAO = new ClientDAO();
 
     public VehiclePanel() {
         initComponents();
@@ -42,8 +37,8 @@ public class VehiclePanel extends javax.swing.JPanel {
                 else sorter.setRowFilter(javax.swing.RowFilter.regexFilter("(?i)" + teks));
             }
         });
-        loadClients();  // Isi ComboBox client
-        loadData();     // Isi tabel kendaraan
+        loadClients();
+        loadData();
     }
 
     @SuppressWarnings("unchecked")
@@ -150,21 +145,17 @@ public class VehiclePanel extends javax.swing.JPanel {
         deleteVehicle();
     }//GEN-LAST:event_btnHapusActionPerformed
 
-    // ===== LOGIC =====
-
-    /** Isi ComboBox cbClient dengan semua client dari database. */
     private void loadClients() {
         try {
             cbClient.removeAllItems();
             for (Client c : clientDAO.findAll()) {
-                cbClient.addItem(c); // Client.toString() menampilkan nama
+                cbClient.addItem(c);
             }
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(this, "Error load clients: " + ex.getMessage());
         }
     }
 
-    /** Muat semua kendaraan dari database ke tabel. */
     private void loadData() {
         try {
             List<Vehicle> list = vehicleDAO.findAll();
@@ -205,7 +196,6 @@ public class VehiclePanel extends javax.swing.JPanel {
                 v.setVehicleId(Integer.parseInt(txtId.getText()));
             }
 
-            // Ambil client yang dipilih di ComboBox
             Client selectedClient = (Client) cbClient.getSelectedItem();
             v.setClientId(selectedClient != null ? selectedClient.getClientId() : 0);
 
@@ -248,7 +238,6 @@ public class VehiclePanel extends javax.swing.JPanel {
         if (row >= 0) {
             txtId.setText(table.getValueAt(row, 0).toString());
 
-            // Cari dan pilih client yang sesuai di ComboBox
             int clientId = Integer.parseInt(table.getValueAt(row, 1).toString());
             for (int i = 0; i < cbClient.getItemCount(); i++) {
                 if (((Client) cbClient.getItemAt(i)).getClientId() == clientId) {

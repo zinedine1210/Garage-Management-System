@@ -1,12 +1,5 @@
 package com.mycompany.garagemanagementsystem.model;
 
-/**
- * Model User = representasi data user/pengguna aplikasi (untuk login).
- * 
- * Field sesuai kolom tabel 'users' di database.
- * passwordHash = password yang disimpan (idealnya ter-enkripsi).
- * role = peran user (contoh: "admin").
- */
 public class User {
     private int userId;
     private String username;

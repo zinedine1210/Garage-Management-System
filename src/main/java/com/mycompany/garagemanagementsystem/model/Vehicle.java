@@ -1,13 +1,5 @@
 package com.mycompany.garagemanagementsystem.model;
 
-/**
- * Model Vehicle = representasi data kendaraan milik client.
- * 
- * Setiap field sesuai kolom tabel 'vehicle' di database.
- * clientId = ID pemilik kendaraan (relasi ke tabel client).
- * tipeKendaraan = "Roda 2" atau "Lebih dari Roda 2".
- * toString() menampilkan "B 1234 XYZ - Honda" di JComboBox.
- */
 public class Vehicle {
 
     private int vehicleId;
@@ -16,7 +8,7 @@ public class Vehicle {
     private String merk;
     private String tipe;
     private int cc;
-    private String tipeKendaraan; // Roda 2 / Lebih dari Roda 2
+    private String tipeKendaraan;
     private int tahun;
     private String noRangka;
     private String noMesin;
@@ -106,4 +98,3 @@ public class Vehicle {
         return this.noPolisi + " - " + this.merk;
     }
 }
-

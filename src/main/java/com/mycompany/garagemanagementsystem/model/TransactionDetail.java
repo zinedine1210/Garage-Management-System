@@ -1,15 +1,5 @@
 package com.mycompany.garagemanagementsystem.model;
 
-/**
- * Model TransactionDetail = 1 baris detail sparepart di dalam transaksi servis.
- * 
- * Contoh: Transaksi #5 pakai Oli Mesin 2 botol @ Rp50.000 = subtotal Rp100.000
- * - transId     = ID transaksi induknya (relasi ke service_transaction)
- * - sparepartId = ID sparepart yang dipakai (relasi ke tabel sparepart)
- * - qty         = jumlah unit yang dipakai
- * - harga       = harga satuan sparepart
- * - subtotal    = qty x harga
- */
 public class TransactionDetail {
 
     private int detailId;
@@ -67,4 +57,3 @@ public class TransactionDetail {
         this.subtotal = subtotal;
     }
 }
-

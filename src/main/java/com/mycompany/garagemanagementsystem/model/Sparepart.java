@@ -1,13 +1,5 @@
 package com.mycompany.garagemanagementsystem.model;
 
-/**
- * Model Sparepart = representasi data suku cadang.
- * 
- * Field sesuai kolom tabel 'sparepart' di database.
- * supplierId = ID supplier yang memasok sparepart ini (relasi ke tabel supplier).
- * hargaBeli = harga beli dari supplier, hargaJual = harga jual ke pelanggan.
- * toString() menampilkan nama sparepart di JComboBox.
- */
 public class Sparepart {
 
     private int sparepartId;
@@ -88,4 +80,3 @@ public class Sparepart {
         return this.namaSparepart;
     }
 }
-

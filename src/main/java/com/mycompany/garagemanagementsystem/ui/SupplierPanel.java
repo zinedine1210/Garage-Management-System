@@ -7,10 +7,6 @@ import java.util.List;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
 
-/**
- * SupplierPanel = Panel CRUD untuk data supplier/pemasok sparepart.
- * Pola SAMA PERSIS seperti ClientPanel (field: Nama, Alamat, Telepon, Email).
- */
 public class SupplierPanel extends javax.swing.JPanel {
 
     private final SupplierDAO supplierDAO = new SupplierDAO();
@@ -20,7 +16,6 @@ public class SupplierPanel extends javax.swing.JPanel {
         myInit();
     }
 
-    // Setup: klik tabel → isi form, fitur cari, load data
     private void myInit() {
         table.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
         table.getSelectionModel().addListSelectionListener(e -> isiFormDariTabel());
@@ -127,7 +122,6 @@ public class SupplierPanel extends javax.swing.JPanel {
         deleteSupplier();
     }//GEN-LAST:event_btnHapusActionPerformed
 
-    // ===== LOGIC =====
     private void loadData() {
         try {
             List<Supplier> list = supplierDAO.findAll();

@@ -1,11 +1,5 @@
 package com.mycompany.garagemanagementsystem.model;
 
-/**
- * Model Mekanik = representasi data mekanik/teknisi bengkel.
- * 
- * Field sesuai kolom tabel 'mekanik' di database.
- * toString() menampilkan nama mekanik di JComboBox.
- */
 public class Mekanik {
 
     private int mekanikId;
@@ -50,4 +44,3 @@ public class Mekanik {
         return this.nama;
     }
 }
-

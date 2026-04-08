@@ -2,13 +2,6 @@ package com.mycompany.garagemanagementsystem.model;
 
 import java.util.Date;
 
-/**
- * Model Client = representasi data pelanggan bengkel.
- * 
- * Setiap field di bawah ini sesuai dengan kolom di tabel 'client' di database.
- * Getter = untuk mengambil nilai, Setter = untuk mengisi nilai.
- * toString() dipakai supaya JComboBox menampilkan nama client, bukan kode object.
- */
 public class Client {
 
     private int clientId;
@@ -71,4 +64,3 @@ public class Client {
         return this.nama;
     }
 }
-

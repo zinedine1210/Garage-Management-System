@@ -8,34 +8,22 @@ import java.util.List;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
 
-/**
- * TransactionListPanel = Panel daftar semua transaksi servis.
- *
- * Fitur:
- * - Tampilkan semua transaksi dalam tabel
- * - Filter berdasarkan teks pencarian, status, dan bulan
- * - Tombol: Transaksi Baru, Edit, Hapus, Refresh
- *
- * Ketika klik "Transaksi Baru" atau "Edit", akan membuka ServiceTransactionFrame (dialog).
- */
 public class TransactionListPanel extends javax.swing.JPanel {
 
     private final ServiceTransactionDAO transDAO = new ServiceTransactionDAO();
-    private Frame owner; // Window induk, dibutuhkan untuk membuka dialog
+    private Frame owner;
 
     public TransactionListPanel() {
         initComponents();
         myInit();
     }
 
-    // Constructor dengan parameter owner (dipanggil dari MainMenuFrame)
     public TransactionListPanel(Frame owner) {
         this();
         this.owner = owner;
     }
 
     private void myInit() {
-        // Filter otomatis saat user mengetik atau memilih status/bulan
         txtSearch.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
             public void insertUpdate(javax.swing.event.DocumentEvent e) { applyFilter(); }
             public void removeUpdate(javax.swing.event.DocumentEvent e) { applyFilter(); }
@@ -46,10 +34,6 @@ public class TransactionListPanel extends javax.swing.JPanel {
         loadData();
     }
 
-    /**
-     * Filter tabel berdasarkan 3 kriteria sekaligus: teks, status, bulan.
-     * Menggunakan RowFilter.andFilter() untuk menggabungkan beberapa filter.
-     */
     private void applyFilter() {
         if (table.getRowSorter() == null) {
             table.setRowSorter(new javax.swing.table.TableRowSorter<>((DefaultTableModel) table.getModel()));
@@ -59,25 +43,21 @@ public class TransactionListPanel extends javax.swing.JPanel {
 
         java.util.List<javax.swing.RowFilter<Object, Object>> filters = new java.util.ArrayList<>();
 
-        // Filter berdasarkan teks pencarian (semua kolom)
         String text = txtSearch.getText().trim();
         if (text.length() > 0) {
             filters.add(javax.swing.RowFilter.regexFilter("(?i)" + text));
         }
 
-        // Filter berdasarkan status (kolom ke-8)
         String status = cbStatus.getSelectedItem().toString();
         if (!status.equals("Semua")) {
             filters.add(javax.swing.RowFilter.regexFilter("(?i)^" + status + "$", 8));
         }
 
-        // Filter berdasarkan bulan (dari kolom tanggal, kolom ke-1)
         String bulan = cbBulan.getSelectedItem().toString();
         if (!bulan.equals("Semua")) {
             filters.add(javax.swing.RowFilter.regexFilter("-[0]*" + bulan + "-", 1));
         }
 
-        // Gabungkan semua filter (AND = semua harus cocok)
         if (filters.isEmpty()) sorter.setRowFilter(null);
         else sorter.setRowFilter(javax.swing.RowFilter.andFilter(filters));
     }

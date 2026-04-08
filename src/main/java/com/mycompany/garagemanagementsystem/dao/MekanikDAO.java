@@ -10,10 +10,6 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * DAO untuk tabel 'mekanik' - CRUD data mekanik/teknisi.
- * Pola sama seperti ClientDAO: insert, findAll, update, delete.
- */
 public class MekanikDAO {
 
     public void insert(Mekanik m) throws SQLException {
@@ -66,4 +62,3 @@ public class MekanikDAO {
         return list;
     }
 }
-

@@ -8,52 +8,20 @@ import java.util.List;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
 
-/**
- * ClientPanel = Panel CRUD untuk data pelanggan (client).
- *
- * Tampilan:
- * ┌─────────────────────────────────┐
- * │  Form Input (ID, Nama, dll)     │  ← NORTH (atas)
- * │  [Cari: _______________]        │
- * ├─────────────────────────────────┤
- * │  Tabel data client              │  ← CENTER (tengah)
- * ├─────────────────────────────────┤
- * │  [Baru] [Simpan] [Hapus]       │  ← SOUTH (bawah)
- * └─────────────────────────────────┘
- *
- * Alur kerja CRUD:
- * - BARU:   Klik "Baru" → form dikosongkan → isi data → klik "Simpan" → INSERT ke DB
- * - EDIT:   Klik baris di tabel → data muncul di form → ubah → klik "Simpan" → UPDATE
- * - HAPUS:  Klik baris di tabel → klik "Hapus" → konfirmasi → DELETE dari DB
- * - CARI:   Ketik di kolom Cari → tabel otomatis terfilter (tanpa query ulang ke DB)
- *
- * Pola ini SAMA PERSIS untuk semua panel CRUD:
- * MekanikPanel, SupplierPanel, VehiclePanel, SparepartPanel
- */
 public class ClientPanel extends javax.swing.JPanel {
 
-    // DAO untuk akses tabel client di database
     private final ClientDAO clientDAO = new ClientDAO();
 
     public ClientPanel() {
-        initComponents();  // Buat komponen UI (di-generate NetBeans)
-        myInit();          // Setup tambahan: event listener, fitur cari, load data
+        initComponents();
+        myInit();
     }
 
-    /**
-     * Setup tambahan yang tidak bisa dilakukan di Design tab:
-     * 1. Saat klik baris tabel → isi form dengan data baris tersebut
-     * 2. Saat ketik di kolom Cari → filter tabel secara realtime
-     * 3. Load data dari database ke tabel
-     */
     private void myInit() {
-        // Tabel hanya boleh pilih 1 baris
         table.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
 
-        // Ketika user klik baris di tabel, isi form dengan data dari baris tsb
         table.getSelectionModel().addListSelectionListener(e -> isiFormDariTabel());
 
-        // Fitur pencarian realtime: ketika user mengetik, tabel langsung terfilter
         txtSearch.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
             public void insertUpdate(javax.swing.event.DocumentEvent e) { filterTabel(); }
             public void removeUpdate(javax.swing.event.DocumentEvent e) { filterTabel(); }
@@ -61,7 +29,6 @@ public class ClientPanel extends javax.swing.JPanel {
 
             private void filterTabel() {
                 String teks = txtSearch.getText();
-                // Buat sorter jika belum ada
                 if (table.getRowSorter() == null) {
                     javax.swing.table.TableRowSorter<DefaultTableModel> sorter =
                             new javax.swing.table.TableRowSorter<>((DefaultTableModel) table.getModel());
@@ -71,15 +38,13 @@ public class ClientPanel extends javax.swing.JPanel {
                         (javax.swing.table.TableRowSorter<DefaultTableModel>) table.getRowSorter();
 
                 if (teks.trim().length() == 0) {
-                    sorter.setRowFilter(null);  // Tampilkan semua data
+                    sorter.setRowFilter(null);
                 } else {
-                    // Filter case-insensitive (huruf besar/kecil sama)
                     sorter.setRowFilter(javax.swing.RowFilter.regexFilter("(?i)" + teks));
                 }
             }
         });
 
-        // Muat semua data client dari database ke tabel
         loadData();
     }
 
@@ -202,23 +167,13 @@ public class ClientPanel extends javax.swing.JPanel {
         deleteClient();
     }//GEN-LAST:event_btnHapusActionPerformed
 
-    // ================================================================
-    // BAGIAN LOGIC (boleh diedit manual, ini yang perlu kamu pahami)
-    // ================================================================
-
-    /**
-     * Muat semua data client dari database dan tampilkan di tabel.
-     */
     private void loadData() {
         try {
-            // Ambil semua client dari database via DAO
             List<Client> list = clientDAO.findAll();
 
-            // Buat model tabel baru dengan kolom yang ditentukan
             DefaultTableModel model = new DefaultTableModel(
                     new Object[]{"ID", "Nama", "Alamat", "Telepon", "Email"}, 0);
 
-            // Masukkan setiap client ke baris tabel
             for (Client c : list) {
                 model.addRow(new Object[]{
                     c.getClientId(), c.getNama(), c.getAlamat(),
@@ -226,7 +181,6 @@ public class ClientPanel extends javax.swing.JPanel {
                 });
             }
 
-            // Pasang model ke tabel dan aktifkan sorter
             table.setModel(model);
             table.setRowSorter(new javax.swing.table.TableRowSorter<>(model));
         } catch (SQLException ex) {
@@ -234,9 +188,6 @@ public class ClientPanel extends javax.swing.JPanel {
         }
     }
 
-    /**
-     * Kosongkan semua field form (untuk input data baru).
-     */
     private void clearForm() {
         txtId.setText("");
         txtNama.setText("");
@@ -245,14 +196,8 @@ public class ClientPanel extends javax.swing.JPanel {
         txtEmail.setText("");
     }
 
-    /**
-     * Simpan data client ke database.
-     * Jika ID kosong → INSERT (data baru).
-     * Jika ID ada → UPDATE (edit data yang sudah ada).
-     */
     private void saveClient() {
         try {
-            // Buat object Client dan isi dari form
             Client c = new Client();
             if (!txtId.getText().isEmpty()) {
                 c.setClientId(Integer.parseInt(txtId.getText()));
@@ -261,29 +206,24 @@ public class ClientPanel extends javax.swing.JPanel {
             c.setAlamat(txtAlamat.getText());
             c.setTelepon(txtTelepon.getText());
             c.setEmail(txtEmail.getText());
-            c.setTanggalDaftar(new Date()); // Tanggal hari ini
+            c.setTanggalDaftar(new Date());
 
-            // Cek: jika ID = 0 berarti data baru, jika tidak berarti edit
             if (c.getClientId() == 0) {
-                clientDAO.insert(c);  // INSERT ke database
+                clientDAO.insert(c);
             } else {
-                clientDAO.update(c);  // UPDATE di database
+                clientDAO.update(c);
             }
 
-            loadData();   // Refresh tabel
-            clearForm();  // Kosongkan form
+            loadData();
+            clearForm();
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Error simpan: " + ex.getMessage());
         }
     }
 
-    /**
-     * Hapus client yang dipilih dari database.
-     */
     private void deleteClient() {
-        if (txtId.getText().isEmpty()) return; // Tidak ada yang dipilih
+        if (txtId.getText().isEmpty()) return;
 
-        // Tampilkan dialog konfirmasi
         int confirm = JOptionPane.showConfirmDialog(this, "Hapus client ini?",
                 "Konfirmasi", JOptionPane.YES_NO_OPTION);
 
@@ -298,10 +238,6 @@ public class ClientPanel extends javax.swing.JPanel {
         }
     }
 
-    /**
-     * Ketika user klik baris di tabel, isi form dengan data dari baris tersebut.
-     * Ini memungkinkan user untuk edit atau hapus data yang dipilih.
-     */
     private void isiFormDariTabel() {
         int row = table.getSelectedRow();
         if (row >= 0) {

@@ -9,11 +9,6 @@ import java.util.List;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
 
-/**
- * SparepartPanel = Panel CRUD untuk data sparepart/suku cadang.
- * Mirip ClientPanel, tapi ada JComboBox cbSupplier untuk memilih supplier
- * dan field harga beli/harga jual.
- */
 public class SparepartPanel extends javax.swing.JPanel {
 
     private final SparepartDAO sparepartDAO = new SparepartDAO();
@@ -130,8 +125,6 @@ public class SparepartPanel extends javax.swing.JPanel {
     private void btnHapusActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnHapusActionPerformed
         deleteSparepart();
     }//GEN-LAST:event_btnHapusActionPerformed
-
-    // ===== LOGIC =====
 
     private void loadSuppliers() {
         try {

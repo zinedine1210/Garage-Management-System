@@ -1,11 +1,5 @@
 package com.mycompany.garagemanagementsystem.model;
 
-/**
- * Model Supplier = representasi data pemasok/supplier sparepart.
- * 
- * Field sesuai kolom tabel 'supplier' di database.
- * toString() menampilkan nama supplier di JComboBox.
- */
 public class Supplier {
 
     private int supplierId;
@@ -59,4 +53,3 @@ public class Supplier {
         return this.nama;
     }
 }
-

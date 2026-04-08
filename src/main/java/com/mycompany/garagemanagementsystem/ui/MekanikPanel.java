@@ -7,11 +7,6 @@ import java.util.List;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
 
-/**
- * MekanikPanel = Panel CRUD untuk data mekanik/teknisi bengkel.
- * Pola SAMA PERSIS seperti ClientPanel (lihat komentar di ClientPanel untuk penjelasan lengkap).
- * Perbedaan hanya di: field form (Nama, Telepon, Spesialis) dan DAO yang dipakai.
- */
 public class MekanikPanel extends javax.swing.JPanel {
 
     private final MekanikDAO mekanikDAO = new MekanikDAO();
@@ -21,7 +16,6 @@ public class MekanikPanel extends javax.swing.JPanel {
         myInit();
     }
 
-    // Setup: klik tabel → isi form, fitur cari realtime, load data awal
     private void myInit() {
         table.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
         table.getSelectionModel().addListSelectionListener(e -> isiFormDariTabel());
@@ -128,7 +122,6 @@ public class MekanikPanel extends javax.swing.JPanel {
         deleteMekanik();
     }//GEN-LAST:event_btnHapusActionPerformed
 
-    // ===== LOGIC: Muat data dari DB ke tabel =====
     private void loadData() {
         try {
             List<Mekanik> list = mekanikDAO.findAll();
@@ -144,7 +137,6 @@ public class MekanikPanel extends javax.swing.JPanel {
         }
     }
 
-    // Kosongkan form
     private void clearForm() {
         txtId.setText("");
         txtNama.setText("");
@@ -152,7 +144,6 @@ public class MekanikPanel extends javax.swing.JPanel {
         txtSpesialis.setText("");
     }
 
-    // Simpan ke DB (INSERT jika baru, UPDATE jika edit)
     private void saveMekanik() {
         try {
             Mekanik m = new Mekanik();
@@ -175,7 +166,6 @@ public class MekanikPanel extends javax.swing.JPanel {
         }
     }
 
-    // Hapus dari DB
     private void deleteMekanik() {
         if (txtId.getText().isEmpty()) return;
         int confirm = JOptionPane.showConfirmDialog(this, "Hapus mekanik ini?",
@@ -191,7 +181,6 @@ public class MekanikPanel extends javax.swing.JPanel {
         }
     }
 
-    // Klik baris tabel → isi form
     private void isiFormDariTabel() {
         int row = table.getSelectedRow();
         if (row >= 0) {

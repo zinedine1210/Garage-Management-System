@@ -7,14 +7,6 @@ import java.util.List;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
 
-/**
- * ServiceHistoryPanel = Panel untuk pencarian riwayat servis kendaraan.
- *
- * Cara pakai:
- * 1. Input No Polisi (misal: B 1234 XYZ)
- * 2. Klik "Cari Riwayat"
- * 3. Tabel menampilkan semua riwayat servis kendaraan tersebut
- */
 public class ServiceHistoryPanel extends javax.swing.JPanel {
 
     private final ServiceTransactionDAO transDAO = new ServiceTransactionDAO();
@@ -58,9 +50,6 @@ public class ServiceHistoryPanel extends javax.swing.JPanel {
         cariRiwayat();
     }//GEN-LAST:event_btnCariActionPerformed
 
-    /**
-     * Cari riwayat servis berdasarkan No Polisi yang diinput user.
-     */
     private void cariRiwayat() {
         String nopol = txtNoPolisi.getText().trim();
         if (nopol.isEmpty()) {
@@ -69,7 +58,6 @@ public class ServiceHistoryPanel extends javax.swing.JPanel {
         }
 
         try {
-            // Cari riwayat dari database
             List<ServiceHistoryItem> history = transDAO.findHistoryByNoPolisi(nopol);
 
             if (history.isEmpty()) {
@@ -78,7 +66,6 @@ public class ServiceHistoryPanel extends javax.swing.JPanel {
                 return;
             }
 
-            // Tampilkan hasil ke tabel
             DefaultTableModel model = new DefaultTableModel(
                     new Object[]{"Tanggal", "Mekanik", "Keluhan/Pekerjaan", "Sparepart Diganti", "Total Biaya"}, 0);
             for (ServiceHistoryItem item : history) {

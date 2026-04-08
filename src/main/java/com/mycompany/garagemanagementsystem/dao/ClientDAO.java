@@ -11,18 +11,6 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * DAO untuk tabel 'client' - operasi CRUD (Create, Read, Update, Delete).
- * 
- * Pola yang sama dipakai di semua DAO CRUD:
- * - insert()  = tambah data baru ke database (CREATE)
- * - findAll() = ambil semua data dari database (READ)
- * - update()  = ubah data yang sudah ada (UPDATE)
- * - delete()  = hapus data berdasarkan ID (DELETE)
- * 
- * PreparedStatement dipakai supaya aman dari SQL Injection.
- * try-with-resources memastikan koneksi otomatis ditutup.
- */
 public class ClientDAO {
 
     public void insert(Client c) throws SQLException {
@@ -81,4 +69,3 @@ public class ClientDAO {
         return list;
     }
 }
-

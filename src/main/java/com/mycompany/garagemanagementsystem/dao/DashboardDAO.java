@@ -6,18 +6,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-/**
- * DAO untuk halaman Dashboard - mengambil data statistik dan laporan.
- *
- * Method di sini HANYA melakukan SELECT (membaca data), tidak ada INSERT/UPDATE/DELETE.
- * Semua method mengembalikan angka atau list untuk ditampilkan di dashboard.
- *
- * Kategori method:
- * 1. STATISTIK UTAMA: getTransaksiHariIni, getOmzetHariIni, getTotalAntrean, dll.
- * 2. KEUANGAN: getOmzetBulanIni, getOmzetMingguan, getOmzetTahunan
- * 3. CHART/GRAFIK: getPerbandinganTipeKendaraan, getKategoriServis, getOmzetPerBulanTahunIni
- * 4. TABEL: getTabelAntrean, getSparepartTerlaris, getKinerjaMekanik, getReminderServis
- */
 public class DashboardDAO {
 
     public int getTransaksiHariIni() throws SQLException {
@@ -36,7 +24,6 @@ public class DashboardDAO {
         return 0;
     }
 
-    // 1. STATISTIK UTAMA
     public int getTotalAntrean() throws SQLException {
         String sql = "SELECT COUNT(*) FROM service_transaction WHERE DATE(tanggal) = CURDATE() AND status_servis = 'Menunggu'";
         try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
@@ -62,14 +49,13 @@ public class DashboardDAO {
     }
 
     public int getStokKritis() throws SQLException {
-        String sql = "SELECT COUNT(*) FROM sparepart WHERE stok <= 5"; // Threshold stok kritis: 5
+        String sql = "SELECT COUNT(*) FROM sparepart WHERE stok <= 5";
         try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
             if (rs.next()) return rs.getInt(1);
         }
         return 0;
     }
 
-    // 2. KEUANGAN & PERFORMA
     public double getOmzetBulanIni() throws SQLException {
         String sql = "SELECT SUM(grand_total) FROM service_transaction WHERE MONTH(tanggal) = MONTH(CURDATE()) AND YEAR(tanggal) = YEAR(CURDATE())";
         try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
@@ -89,7 +75,6 @@ public class DashboardDAO {
         return "Belum ada data";
     }
 
-    // 3. MONITORING & NOTIFIKASI
     public java.util.List<Object[]> getTabelAntrean() throws SQLException {
         java.util.List<Object[]> list = new java.util.ArrayList<>();
         String sql = "SELECT v.no_polisi, t.status_servis "
@@ -106,7 +91,6 @@ public class DashboardDAO {
 
     public java.util.List<Object[]> getReminderServis() throws SQLException {
         java.util.List<Object[]> list = new java.util.ArrayList<>();
-        // Ambil kendaraan yang servis terakhirnya > 60 hari yang lalu
         String sql = "SELECT c.nama, v.no_polisi, DATEDIFF(CURDATE(), MAX(t.tanggal)) as days_ago "
                    + "FROM service_transaction t "
                    + "JOIN vehicle v ON t.vehicle_id = v.vehicle_id "
@@ -178,7 +162,6 @@ public class DashboardDAO {
         return 0;
     }
 
-    // List omzet per bulan dalam tahun ini (Januari - Desember)
     public java.util.List<Object[]> getOmzetPerBulanTahunIni() throws SQLException {
         java.util.List<Object[]> list = new java.util.ArrayList<>();
         String sql = "SELECT MONTH(tanggal) as bulan, SUM(grand_total) as total "
@@ -193,7 +176,6 @@ public class DashboardDAO {
         return list;
     }
 
-    // List omzet per tahun (Beberapa tahun terakhir)
     public java.util.List<Object[]> getOmzetPerTahun() throws SQLException {
         java.util.List<Object[]> list = new java.util.ArrayList<>();
         String sql = "SELECT YEAR(tanggal) as tahun, SUM(grand_total) as total "
