@@ -7,6 +7,14 @@ import java.util.List;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
 
+/**
+ * ServiceHistoryPanel = Panel untuk pencarian riwayat servis kendaraan.
+ *
+ * Cara pakai:
+ * 1. Input No Polisi (misal: B 1234 XYZ)
+ * 2. Klik "Cari Riwayat"
+ * 3. Tabel menampilkan semua riwayat servis kendaraan tersebut
+ */
 public class ServiceHistoryPanel extends javax.swing.JPanel {
 
     private final ServiceTransactionDAO transDAO = new ServiceTransactionDAO();
@@ -25,7 +33,6 @@ public class ServiceHistoryPanel extends javax.swing.JPanel {
         btnCari = new javax.swing.JButton();
         lblSpacer = new javax.swing.JLabel();
         jScrollPane1 = new javax.swing.JScrollPane();
-        table = new javax.swing.JTable();
 
         setLayout(new java.awt.BorderLayout());
 
@@ -39,21 +46,11 @@ public class ServiceHistoryPanel extends javax.swing.JPanel {
         searchPanel.add(txtNoPolisi);
 
         btnCari.setText("Cari Riwayat");
-        btnCari.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnCariActionPerformed(evt);
-            }
-        });
+        btnCari.addActionListener(this::btnCariActionPerformed);
         searchPanel.add(btnCari);
-
-        lblSpacer.setText("");
         searchPanel.add(lblSpacer);
 
         add(searchPanel, java.awt.BorderLayout.NORTH);
-
-        table.setFillsViewportHeight(true);
-        jScrollPane1.setViewportView(table);
-
         add(jScrollPane1, java.awt.BorderLayout.CENTER);
     }// </editor-fold>//GEN-END:initComponents
 
@@ -61,19 +58,40 @@ public class ServiceHistoryPanel extends javax.swing.JPanel {
         cariRiwayat();
     }//GEN-LAST:event_btnCariActionPerformed
 
+    /**
+     * Cari riwayat servis berdasarkan No Polisi yang diinput user.
+     */
     private void cariRiwayat() {
         String nopol = txtNoPolisi.getText().trim();
-        if (nopol.isEmpty()) { JOptionPane.showMessageDialog(this, "Masukkan No Polisi terlebih dahulu."); return; }
+        if (nopol.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Masukkan No Polisi terlebih dahulu.");
+            return;
+        }
+
         try {
+            // Cari riwayat dari database
             List<ServiceHistoryItem> history = transDAO.findHistoryByNoPolisi(nopol);
-            if (history.isEmpty()) { JOptionPane.showMessageDialog(this, "Tidak ada riwayat servis untuk No Polisi tersebut."); table.setModel(new DefaultTableModel()); return; }
-            DefaultTableModel model = new DefaultTableModel(new Object[]{"Tanggal", "Mekanik", "Keluhan/Pekerjaan", "Sparepart Diganti", "Total Biaya"}, 0);
+
+            if (history.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Tidak ada riwayat servis untuk No Polisi tersebut.");
+                table.setModel(new DefaultTableModel());
+                return;
+            }
+
+            // Tampilkan hasil ke tabel
+            DefaultTableModel model = new DefaultTableModel(
+                    new Object[]{"Tanggal", "Mekanik", "Keluhan/Pekerjaan", "Sparepart Diganti", "Total Biaya"}, 0);
             for (ServiceHistoryItem item : history) {
-                model.addRow(new Object[]{item.getTanggal(), item.getMekanik(), item.getKeluhan(), item.getSpareparts(), String.format("Rp %,.0f", item.getTotalBiaya())});
+                model.addRow(new Object[]{
+                    item.getTanggal(), item.getMekanik(), item.getKeluhan(),
+                    item.getSpareparts(), String.format("Rp %,.0f", item.getTotalBiaya())
+                });
             }
             table.setModel(model);
             table.getColumnModel().getColumn(3).setPreferredWidth(250);
-        } catch (SQLException ex) { JOptionPane.showMessageDialog(this, "Error pencarian data: " + ex.getMessage()); }
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Error pencarian data: " + ex.getMessage());
+        }
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

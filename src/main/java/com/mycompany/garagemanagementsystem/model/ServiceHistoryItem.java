@@ -2,6 +2,12 @@ package com.mycompany.garagemanagementsystem.model;
 
 import java.util.Date;
 
+/**
+ * Model ServiceHistoryItem = 1 baris riwayat servis kendaraan.
+ * 
+ * Dipakai di halaman "Riwayat Servis" untuk menampilkan history per No Polisi.
+ * Semua field bertipe String/double karena langsung ditampilkan di tabel.
+ */
 public class ServiceHistoryItem {
     private String tanggal;
     private String keluhan;

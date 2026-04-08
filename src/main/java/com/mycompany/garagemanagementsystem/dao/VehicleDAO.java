@@ -10,6 +10,10 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * DAO untuk tabel 'vehicle' - CRUD data kendaraan.
+ * Pola sama seperti ClientDAO: insert, findAll, update, delete.
+ */
 public class VehicleDAO {
 
     public void insert(Vehicle v) throws SQLException {

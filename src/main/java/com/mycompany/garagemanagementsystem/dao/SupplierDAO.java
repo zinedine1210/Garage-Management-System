@@ -10,6 +10,10 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * DAO untuk tabel 'supplier' - CRUD data supplier/pemasok.
+ * Pola sama seperti ClientDAO: insert, findAll, update, delete.
+ */
 public class SupplierDAO {
 
     public void insert(Supplier s) throws SQLException {

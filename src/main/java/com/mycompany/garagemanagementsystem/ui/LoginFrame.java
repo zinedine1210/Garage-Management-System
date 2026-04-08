@@ -7,13 +7,29 @@ import java.sql.Connection;
 import java.sql.Statement;
 import javax.swing.JOptionPane;
 
+/**
+ * LoginFrame = Halaman login (tampilan pertama saat aplikasi dibuka).
+ *
+ * Alur kerja:
+ * 1. User memasukkan username & password
+ * 2. Klik tombol "Login" → prosesLogin() dipanggil
+ * 3. UserDAO.login() mengecek ke database
+ * 4. Jika cocok → buka MainMenuFrame, tutup LoginFrame
+ * 5. Jika tidak cocok → tampilkan pesan error
+ *
+ * Tombol "Display Antrian TV" langsung membuka layar antrian tanpa login.
+ *
+ * initDatabase() dipanggil saat halaman dibuka untuk memastikan tabel 'users'
+ * sudah ada di database dan ada minimal 1 admin (username: admin, password: admin123).
+ */
 public class LoginFrame extends javax.swing.JFrame {
 
+    // DAO untuk mengakses tabel users di database
     private final UserDAO userDAO = new UserDAO();
 
     public LoginFrame() {
-        initComponents();
-        initDatabase();
+        initComponents();  // Buat semua komponen UI (di-generate NetBeans)
+        initDatabase();    // Pastikan tabel users ada di database
     }
 
     @SuppressWarnings("unchecked")
@@ -77,6 +93,7 @@ public class LoginFrame extends javax.swing.JFrame {
     }//GEN-LAST:event_txtUsernameActionPerformed
 
     private void initDatabase() {
+        // SQL untuk membuat tabel users jika belum ada
         String createTableSQL = "CREATE TABLE IF NOT EXISTS users (" +
                 "user_id INT AUTO_INCREMENT PRIMARY KEY," +
                 "username VARCHAR(50) UNIQUE NOT NULL," +
@@ -84,6 +101,9 @@ public class LoginFrame extends javax.swing.JFrame {
                 "role VARCHAR(20) DEFAULT 'admin'," +
                 "nama_lengkap VARCHAR(100)" +
                 ")";
+
+        // SQL untuk menambah user admin default (jika belum ada)
+        // ON DUPLICATE KEY UPDATE = jika username sudah ada, tidak error
         String insertAdminSQL = "INSERT INTO users (username, password_hash, role, nama_lengkap) " +
                 "VALUES ('admin', 'admin123', 'admin', 'Administrator Utama') " +
                 "ON DUPLICATE KEY UPDATE username=username";
@@ -97,21 +117,31 @@ public class LoginFrame extends javax.swing.JFrame {
         }
     }
 
+    /**
+     * Proses login: ambil input user, cocokkan dengan database.
+     */
     private void prosesLogin() {
         try {
+            // Ambil input dari text field
             String uname = txtUsername.getText();
             String pwd = new String(txtPassword.getPassword());
 
+            // Cek ke database via UserDAO
             User u = userDAO.login(uname, pwd);
+
             if (u != null) {
+                // Login berhasil → buka menu utama, tutup halaman login
                 JOptionPane.showMessageDialog(this, "Selamat datang, " + u.getNamaLengkap());
                 new MainMenuFrame().setVisible(true);
-                this.dispose();
+                this.dispose(); // Tutup window login
             } else {
-                JOptionPane.showMessageDialog(this, "Username atau Password salah!", "Error", JOptionPane.ERROR_MESSAGE);
+                // Login gagal → tampilkan pesan error
+                JOptionPane.showMessageDialog(this, "Username atau Password salah!",
+                        "Error", JOptionPane.ERROR_MESSAGE);
             }
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Terjadi kesalahan: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Terjadi kesalahan: " + ex.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 

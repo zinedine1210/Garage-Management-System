@@ -6,6 +6,18 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+/**
+ * DAO untuk halaman Dashboard - mengambil data statistik dan laporan.
+ *
+ * Method di sini HANYA melakukan SELECT (membaca data), tidak ada INSERT/UPDATE/DELETE.
+ * Semua method mengembalikan angka atau list untuk ditampilkan di dashboard.
+ *
+ * Kategori method:
+ * 1. STATISTIK UTAMA: getTransaksiHariIni, getOmzetHariIni, getTotalAntrean, dll.
+ * 2. KEUANGAN: getOmzetBulanIni, getOmzetMingguan, getOmzetTahunan
+ * 3. CHART/GRAFIK: getPerbandinganTipeKendaraan, getKategoriServis, getOmzetPerBulanTahunIni
+ * 4. TABEL: getTabelAntrean, getSparepartTerlaris, getKinerjaMekanik, getReminderServis
+ */
 public class DashboardDAO {
 
     public int getTransaksiHariIni() throws SQLException {

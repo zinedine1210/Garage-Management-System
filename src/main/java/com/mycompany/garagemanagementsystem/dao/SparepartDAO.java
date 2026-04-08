@@ -10,6 +10,10 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * DAO untuk tabel 'sparepart' - CRUD data sparepart + findById.
+ * Pola sama seperti ClientDAO, ditambah findById() untuk cari 1 sparepart by ID.
+ */
 public class SparepartDAO {
 
     public void insert(Sparepart s) throws SQLException {

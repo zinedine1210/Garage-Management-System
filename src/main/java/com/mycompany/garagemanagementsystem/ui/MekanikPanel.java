@@ -7,6 +7,11 @@ import java.util.List;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
 
+/**
+ * MekanikPanel = Panel CRUD untuk data mekanik/teknisi bengkel.
+ * Pola SAMA PERSIS seperti ClientPanel (lihat komentar di ClientPanel untuk penjelasan lengkap).
+ * Perbedaan hanya di: field form (Nama, Telepon, Spesialis) dan DAO yang dipakai.
+ */
 public class MekanikPanel extends javax.swing.JPanel {
 
     private final MekanikDAO mekanikDAO = new MekanikDAO();
@@ -16,22 +21,23 @@ public class MekanikPanel extends javax.swing.JPanel {
         myInit();
     }
 
+    // Setup: klik tabel → isi form, fitur cari realtime, load data awal
     private void myInit() {
         table.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
-        table.getSelectionModel().addListSelectionListener(e -> tableSelectionChanged());
+        table.getSelectionModel().addListSelectionListener(e -> isiFormDariTabel());
         txtSearch.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-            public void insertUpdate(javax.swing.event.DocumentEvent e) { filter(); }
-            public void removeUpdate(javax.swing.event.DocumentEvent e) { filter(); }
-            public void changedUpdate(javax.swing.event.DocumentEvent e) { filter(); }
-            private void filter() {
-                String text = txtSearch.getText();
+            public void insertUpdate(javax.swing.event.DocumentEvent e) { filterTabel(); }
+            public void removeUpdate(javax.swing.event.DocumentEvent e) { filterTabel(); }
+            public void changedUpdate(javax.swing.event.DocumentEvent e) { filterTabel(); }
+            private void filterTabel() {
+                String teks = txtSearch.getText();
                 if (table.getRowSorter() == null) {
-                    javax.swing.table.TableRowSorter<DefaultTableModel> sorter = new javax.swing.table.TableRowSorter<>((DefaultTableModel) table.getModel());
-                    table.setRowSorter(sorter);
+                    table.setRowSorter(new javax.swing.table.TableRowSorter<>((DefaultTableModel) table.getModel()));
                 }
-                javax.swing.table.TableRowSorter<DefaultTableModel> sorter = (javax.swing.table.TableRowSorter<DefaultTableModel>) table.getRowSorter();
-                if (text.trim().length() == 0) { sorter.setRowFilter(null); }
-                else { sorter.setRowFilter(javax.swing.RowFilter.regexFilter("(?i)" + text)); }
+                javax.swing.table.TableRowSorter<DefaultTableModel> sorter =
+                        (javax.swing.table.TableRowSorter<DefaultTableModel>) table.getRowSorter();
+                if (teks.trim().isEmpty()) sorter.setRowFilter(null);
+                else sorter.setRowFilter(javax.swing.RowFilter.regexFilter("(?i)" + teks));
             }
         });
         loadData();
@@ -122,47 +128,71 @@ public class MekanikPanel extends javax.swing.JPanel {
         deleteMekanik();
     }//GEN-LAST:event_btnHapusActionPerformed
 
+    // ===== LOGIC: Muat data dari DB ke tabel =====
     private void loadData() {
         try {
             List<Mekanik> list = mekanikDAO.findAll();
-            DefaultTableModel model = new DefaultTableModel(new Object[]{"ID", "Nama", "Telepon", "Spesialis"}, 0);
+            DefaultTableModel model = new DefaultTableModel(
+                    new Object[]{"ID", "Nama", "Telepon", "Spesialis"}, 0);
             for (Mekanik m : list) {
                 model.addRow(new Object[]{m.getMekanikId(), m.getNama(), m.getTelepon(), m.getSpesialis()});
             }
             table.setModel(model);
-            javax.swing.table.TableRowSorter<DefaultTableModel> sorter = new javax.swing.table.TableRowSorter<>(model);
-            table.setRowSorter(sorter);
+            table.setRowSorter(new javax.swing.table.TableRowSorter<>(model));
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(this, "Error load data: " + ex.getMessage());
         }
     }
 
+    // Kosongkan form
     private void clearForm() {
-        txtId.setText(""); txtNama.setText(""); txtTelepon.setText(""); txtSpesialis.setText("");
+        txtId.setText("");
+        txtNama.setText("");
+        txtTelepon.setText("");
+        txtSpesialis.setText("");
     }
 
+    // Simpan ke DB (INSERT jika baru, UPDATE jika edit)
     private void saveMekanik() {
         try {
             Mekanik m = new Mekanik();
-            if (!txtId.getText().isEmpty()) m.setMekanikId(Integer.parseInt(txtId.getText()));
-            m.setNama(txtNama.getText()); m.setTelepon(txtTelepon.getText()); m.setSpesialis(txtSpesialis.getText());
-            if (m.getMekanikId() == 0) mekanikDAO.insert(m); else mekanikDAO.update(m);
-            loadData(); clearForm();
+            if (!txtId.getText().isEmpty()) {
+                m.setMekanikId(Integer.parseInt(txtId.getText()));
+            }
+            m.setNama(txtNama.getText());
+            m.setTelepon(txtTelepon.getText());
+            m.setSpesialis(txtSpesialis.getText());
+
+            if (m.getMekanikId() == 0) {
+                mekanikDAO.insert(m);
+            } else {
+                mekanikDAO.update(m);
+            }
+            loadData();
+            clearForm();
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Error simpan: " + ex.getMessage());
         }
     }
 
+    // Hapus dari DB
     private void deleteMekanik() {
         if (txtId.getText().isEmpty()) return;
-        int confirm = JOptionPane.showConfirmDialog(this, "Hapus mekanik ini?", "Konfirmasi", JOptionPane.YES_NO_OPTION);
+        int confirm = JOptionPane.showConfirmDialog(this, "Hapus mekanik ini?",
+                "Konfirmasi", JOptionPane.YES_NO_OPTION);
         if (confirm == JOptionPane.YES_OPTION) {
-            try { mekanikDAO.delete(Integer.parseInt(txtId.getText())); loadData(); clearForm(); }
-            catch (SQLException ex) { JOptionPane.showMessageDialog(this, "Error hapus: " + ex.getMessage()); }
+            try {
+                mekanikDAO.delete(Integer.parseInt(txtId.getText()));
+                loadData();
+                clearForm();
+            } catch (SQLException ex) {
+                JOptionPane.showMessageDialog(this, "Error hapus: " + ex.getMessage());
+            }
         }
     }
 
-    private void tableSelectionChanged() {
+    // Klik baris tabel → isi form
+    private void isiFormDariTabel() {
         int row = table.getSelectedRow();
         if (row >= 0) {
             txtId.setText(table.getValueAt(row, 0).toString());

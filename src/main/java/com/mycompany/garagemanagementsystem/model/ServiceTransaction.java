@@ -3,6 +3,27 @@ package com.mycompany.garagemanagementsystem.model;
 import java.util.Date;
 import java.util.List;
 
+/**
+ * Model ServiceTransaction = representasi 1 transaksi servis kendaraan.
+ * 
+ * Field utama (disimpan di tabel 'service_transaction'):
+ * - transId     = ID unik transaksi (auto increment)
+ * - tanggal     = tanggal transaksi dibuat
+ * - clientId    = ID pelanggan (relasi ke tabel client)
+ * - vehicleId   = ID kendaraan (relasi ke tabel vehicle)
+ * - mekanikId   = ID mekanik yang mengerjakan (relasi ke tabel mekanik)
+ * - keluhan     = keluhan/pekerjaan yang diminta pelanggan
+ * - statusServis = "Menunggu" / "Dikerjakan" / "Selesai Lunas"
+ * - totalJasa   = biaya jasa servis
+ * - totalSparepart = total harga sparepart yang dipakai
+ * - grandTotal  = totalJasa + totalSparepart
+ * - bayar       = uang yang dibayar pelanggan
+ * - kembali     = uang kembalian (bayar - grandTotal)
+ * - details     = daftar sparepart yang dipakai (relasi ke tabel transaction_detail)
+ * 
+ * Field tambahan (hanya untuk tampilan, tidak disimpan):
+ * - clientNama, noPolisi, mekanikNama = diambil dari JOIN query
+ */
 public class ServiceTransaction {
 
     private int transId;

@@ -7,6 +7,10 @@ import java.util.List;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
 
+/**
+ * SupplierPanel = Panel CRUD untuk data supplier/pemasok sparepart.
+ * Pola SAMA PERSIS seperti ClientPanel (field: Nama, Alamat, Telepon, Email).
+ */
 public class SupplierPanel extends javax.swing.JPanel {
 
     private final SupplierDAO supplierDAO = new SupplierDAO();
@@ -16,22 +20,23 @@ public class SupplierPanel extends javax.swing.JPanel {
         myInit();
     }
 
+    // Setup: klik tabel → isi form, fitur cari, load data
     private void myInit() {
         table.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
-        table.getSelectionModel().addListSelectionListener(e -> tableSelectionChanged());
+        table.getSelectionModel().addListSelectionListener(e -> isiFormDariTabel());
         txtSearch.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-            public void insertUpdate(javax.swing.event.DocumentEvent e) { filter(); }
-            public void removeUpdate(javax.swing.event.DocumentEvent e) { filter(); }
-            public void changedUpdate(javax.swing.event.DocumentEvent e) { filter(); }
-            private void filter() {
-                String text = txtSearch.getText();
+            public void insertUpdate(javax.swing.event.DocumentEvent e) { filterTabel(); }
+            public void removeUpdate(javax.swing.event.DocumentEvent e) { filterTabel(); }
+            public void changedUpdate(javax.swing.event.DocumentEvent e) { filterTabel(); }
+            private void filterTabel() {
+                String teks = txtSearch.getText();
                 if (table.getRowSorter() == null) {
-                    javax.swing.table.TableRowSorter<DefaultTableModel> sorter = new javax.swing.table.TableRowSorter<>((DefaultTableModel) table.getModel());
-                    table.setRowSorter(sorter);
+                    table.setRowSorter(new javax.swing.table.TableRowSorter<>((DefaultTableModel) table.getModel()));
                 }
-                javax.swing.table.TableRowSorter<DefaultTableModel> sorter = (javax.swing.table.TableRowSorter<DefaultTableModel>) table.getRowSorter();
-                if (text.trim().length() == 0) { sorter.setRowFilter(null); }
-                else { sorter.setRowFilter(javax.swing.RowFilter.regexFilter("(?i)" + text)); }
+                javax.swing.table.TableRowSorter<DefaultTableModel> sorter =
+                        (javax.swing.table.TableRowSorter<DefaultTableModel>) table.getRowSorter();
+                if (teks.trim().isEmpty()) sorter.setRowFilter(null);
+                else sorter.setRowFilter(javax.swing.RowFilter.regexFilter("(?i)" + teks));
             }
         });
         loadData();
@@ -122,45 +127,73 @@ public class SupplierPanel extends javax.swing.JPanel {
         deleteSupplier();
     }//GEN-LAST:event_btnHapusActionPerformed
 
+    // ===== LOGIC =====
     private void loadData() {
         try {
             List<Supplier> list = supplierDAO.findAll();
-            DefaultTableModel model = new DefaultTableModel(new Object[]{"ID", "Nama", "Alamat", "Telepon", "Email"}, 0);
+            DefaultTableModel model = new DefaultTableModel(
+                    new Object[]{"ID", "Nama", "Alamat", "Telepon", "Email"}, 0);
             for (Supplier s : list) {
-                model.addRow(new Object[]{s.getSupplierId(), s.getNama(), s.getAlamat(), s.getTelepon(), s.getEmail()});
+                model.addRow(new Object[]{s.getSupplierId(), s.getNama(), s.getAlamat(),
+                    s.getTelepon(), s.getEmail()});
             }
             table.setModel(model);
-            javax.swing.table.TableRowSorter<DefaultTableModel> sorter = new javax.swing.table.TableRowSorter<>(model);
-            table.setRowSorter(sorter);
-        } catch (SQLException ex) { JOptionPane.showMessageDialog(this, "Error load data: " + ex.getMessage()); }
+            table.setRowSorter(new javax.swing.table.TableRowSorter<>(model));
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Error load data: " + ex.getMessage());
+        }
     }
 
-    private void clearForm() { txtId.setText(""); txtNama.setText(""); txtAlamat.setText(""); txtTelepon.setText(""); txtEmail.setText(""); }
+    private void clearForm() {
+        txtId.setText("");
+        txtNama.setText("");
+        txtAlamat.setText("");
+        txtTelepon.setText("");
+        txtEmail.setText("");
+    }
 
     private void saveSupplier() {
         try {
             Supplier s = new Supplier();
-            if (!txtId.getText().isEmpty()) s.setSupplierId(Integer.parseInt(txtId.getText()));
-            s.setNama(txtNama.getText()); s.setAlamat(txtAlamat.getText()); s.setTelepon(txtTelepon.getText()); s.setEmail(txtEmail.getText());
-            if (s.getSupplierId() == 0) supplierDAO.insert(s); else supplierDAO.update(s);
-            loadData(); clearForm();
-        } catch (Exception ex) { JOptionPane.showMessageDialog(this, "Error simpan: " + ex.getMessage()); }
+            if (!txtId.getText().isEmpty()) {
+                s.setSupplierId(Integer.parseInt(txtId.getText()));
+            }
+            s.setNama(txtNama.getText());
+            s.setAlamat(txtAlamat.getText());
+            s.setTelepon(txtTelepon.getText());
+            s.setEmail(txtEmail.getText());
+
+            if (s.getSupplierId() == 0) supplierDAO.insert(s);
+            else supplierDAO.update(s);
+            loadData();
+            clearForm();
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Error simpan: " + ex.getMessage());
+        }
     }
 
     private void deleteSupplier() {
         if (txtId.getText().isEmpty()) return;
-        int confirm = JOptionPane.showConfirmDialog(this, "Hapus supplier ini?", "Konfirmasi", JOptionPane.YES_NO_OPTION);
+        int confirm = JOptionPane.showConfirmDialog(this, "Hapus supplier ini?",
+                "Konfirmasi", JOptionPane.YES_NO_OPTION);
         if (confirm == JOptionPane.YES_OPTION) {
-            try { supplierDAO.delete(Integer.parseInt(txtId.getText())); loadData(); clearForm(); }
-            catch (SQLException ex) { JOptionPane.showMessageDialog(this, "Error hapus: " + ex.getMessage()); }
+            try {
+                supplierDAO.delete(Integer.parseInt(txtId.getText()));
+                loadData();
+                clearForm();
+            } catch (SQLException ex) {
+                JOptionPane.showMessageDialog(this, "Error hapus: " + ex.getMessage());
+            }
         }
     }
 
-    private void tableSelectionChanged() {
+    private void isiFormDariTabel() {
         int row = table.getSelectedRow();
         if (row >= 0) {
-            txtId.setText(table.getValueAt(row, 0).toString()); txtNama.setText(table.getValueAt(row, 1).toString());
-            txtAlamat.setText(table.getValueAt(row, 2).toString()); txtTelepon.setText(table.getValueAt(row, 3).toString());
+            txtId.setText(table.getValueAt(row, 0).toString());
+            txtNama.setText(table.getValueAt(row, 1).toString());
+            txtAlamat.setText(table.getValueAt(row, 2).toString());
+            txtTelepon.setText(table.getValueAt(row, 3).toString());
             txtEmail.setText(table.getValueAt(row, 4).toString());
         }
     }

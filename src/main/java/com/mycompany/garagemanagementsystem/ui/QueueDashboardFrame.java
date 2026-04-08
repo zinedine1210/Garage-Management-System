@@ -11,6 +11,22 @@ import javax.swing.JLabel;
 import javax.swing.SwingConstants;
 import javax.swing.Timer;
 
+/**
+ * QueueDashboardFrame = Layar antrian servis untuk ditampilkan di TV bengkel.
+ *
+ * Tampilan:
+ * ┌──────────────────────────────────────────────┐
+ * │         STATUS ANTRIAN SERVIS                 │
+ * ├───────────────────┬──────────────────────────┤
+ * │  MENUNGGU         │  SEDANG DIKERJAKAN        │
+ * │  B 1234 XYZ       │  D 5678 ABC               │
+ * │  B 9999 DEF       │                            │
+ * └───────────────────┴──────────────────────────┘
+ *
+ * Background hitam, auto-refresh setiap 5 detik via Timer.
+ * Data diambil dari ServiceTransactionDAO.getAntrian() yang mencari transaksi
+ * hari ini dengan status "Menunggu" atau "Dikerjakan".
+ */
 public class QueueDashboardFrame extends javax.swing.JFrame {
 
     private final ServiceTransactionDAO transDAO = new ServiceTransactionDAO();
@@ -20,7 +36,11 @@ public class QueueDashboardFrame extends javax.swing.JFrame {
         getContentPane().setBackground(Color.BLACK);
         lblTitle.setBorder(BorderFactory.createEmptyBorder(20, 10, 20, 10));
         mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        // Muat data pertama kali
         loadData();
+
+        // Auto-refresh setiap 5 detik (5000 milidetik)
         Timer timer = new Timer(5000, e -> loadData());
         timer.start();
     }
@@ -81,20 +101,36 @@ public class QueueDashboardFrame extends javax.swing.JFrame {
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 
+    /**
+     * Muat data antrian dari database dan tampilkan di panel.
+     * Dipanggil pertama kali + setiap 5 detik oleh Timer.
+     */
     private void loadData() {
         try {
             List<ServiceTransaction> antrian = transDAO.getAntrian();
+
+            // Kosongkan kedua panel terlebih dahulu
             pnlMenunggu.removeAll();
             pnlDikerjakan.removeAll();
+
+            // Isi panel sesuai status masing-masing transaksi
             for (ServiceTransaction t : antrian) {
                 JLabel lblPlat = new JLabel(t.getKeluhan(), SwingConstants.CENTER);
                 lblPlat.setFont(new Font("Arial", Font.BOLD, 30));
                 lblPlat.setForeground(Color.WHITE);
-                if ("Menunggu".equals(t.getStatusServis())) pnlMenunggu.add(lblPlat);
-                else if ("Dikerjakan".equals(t.getStatusServis())) pnlDikerjakan.add(lblPlat);
+
+                if ("Menunggu".equals(t.getStatusServis())) {
+                    pnlMenunggu.add(lblPlat);
+                } else if ("Dikerjakan".equals(t.getStatusServis())) {
+                    pnlDikerjakan.add(lblPlat);
+                }
             }
-            pnlMenunggu.revalidate(); pnlMenunggu.repaint();
-            pnlDikerjakan.revalidate(); pnlDikerjakan.repaint();
+
+            // Refresh tampilan panel
+            pnlMenunggu.revalidate();
+            pnlMenunggu.repaint();
+            pnlDikerjakan.revalidate();
+            pnlDikerjakan.repaint();
         } catch (SQLException ex) {
             System.err.println("Gagal memuat antrian: " + ex.getMessage());
         }

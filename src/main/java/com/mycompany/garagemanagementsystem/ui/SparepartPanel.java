@@ -9,28 +9,41 @@ import java.util.List;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
 
+/**
+ * SparepartPanel = Panel CRUD untuk data sparepart/suku cadang.
+ * Mirip ClientPanel, tapi ada JComboBox cbSupplier untuk memilih supplier
+ * dan field harga beli/harga jual.
+ */
 public class SparepartPanel extends javax.swing.JPanel {
 
     private final SparepartDAO sparepartDAO = new SparepartDAO();
     private final SupplierDAO supplierDAO = new SupplierDAO();
 
-    public SparepartPanel() { initComponents(); myInit(); }
+    public SparepartPanel() {
+        initComponents();
+        myInit();
+    }
 
     private void myInit() {
         table.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
-        table.getSelectionModel().addListSelectionListener(e -> tableSelectionChanged());
+        table.getSelectionModel().addListSelectionListener(e -> isiFormDariTabel());
         txtSearch.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-            public void insertUpdate(javax.swing.event.DocumentEvent e) { filter(); }
-            public void removeUpdate(javax.swing.event.DocumentEvent e) { filter(); }
-            public void changedUpdate(javax.swing.event.DocumentEvent e) { filter(); }
-            private void filter() {
-                String text = txtSearch.getText();
-                if (table.getRowSorter() == null) { javax.swing.table.TableRowSorter<DefaultTableModel> sorter = new javax.swing.table.TableRowSorter<>((DefaultTableModel) table.getModel()); table.setRowSorter(sorter); }
-                javax.swing.table.TableRowSorter<DefaultTableModel> sorter = (javax.swing.table.TableRowSorter<DefaultTableModel>) table.getRowSorter();
-                if (text.trim().length() == 0) { sorter.setRowFilter(null); } else { sorter.setRowFilter(javax.swing.RowFilter.regexFilter("(?i)" + text)); }
+            public void insertUpdate(javax.swing.event.DocumentEvent e) { filterTabel(); }
+            public void removeUpdate(javax.swing.event.DocumentEvent e) { filterTabel(); }
+            public void changedUpdate(javax.swing.event.DocumentEvent e) { filterTabel(); }
+            private void filterTabel() {
+                String teks = txtSearch.getText();
+                if (table.getRowSorter() == null) {
+                    table.setRowSorter(new javax.swing.table.TableRowSorter<>((DefaultTableModel) table.getModel()));
+                }
+                javax.swing.table.TableRowSorter<DefaultTableModel> sorter =
+                        (javax.swing.table.TableRowSorter<DefaultTableModel>) table.getRowSorter();
+                if (teks.trim().isEmpty()) sorter.setRowFilter(null);
+                else sorter.setRowFilter(javax.swing.RowFilter.regexFilter("(?i)" + teks));
             }
         });
-        loadSuppliers(); loadData();
+        loadSuppliers();
+        loadData();
     }
 
     @SuppressWarnings("unchecked")
@@ -118,52 +131,106 @@ public class SparepartPanel extends javax.swing.JPanel {
         deleteSparepart();
     }//GEN-LAST:event_btnHapusActionPerformed
 
+    // ===== LOGIC =====
+
     private void loadSuppliers() {
-        try { cbSupplier.removeAllItems(); for (Supplier s : supplierDAO.findAll()) cbSupplier.addItem(s); }
-        catch (SQLException ex) { JOptionPane.showMessageDialog(this, "Error load suppliers: " + ex.getMessage()); }
+        try {
+            cbSupplier.removeAllItems();
+            for (Supplier s : supplierDAO.findAll()) {
+                cbSupplier.addItem(s);
+            }
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Error load suppliers: " + ex.getMessage());
+        }
     }
 
     private void loadData() {
         try {
             List<Sparepart> list = sparepartDAO.findAll();
-            DefaultTableModel model = new DefaultTableModel(new Object[]{"ID", "Kode", "Nama", "Satuan", "Stok", "Harga Beli", "Harga Jual", "Supplier ID"}, 0);
-            for (Sparepart s : list) { model.addRow(new Object[]{s.getSparepartId(), s.getKodeSparepart(), s.getNamaSparepart(), s.getSatuan(), s.getStok(), s.getHargaBeli(), s.getHargaJual(), s.getSupplierId()}); }
+            DefaultTableModel model = new DefaultTableModel(
+                    new Object[]{"ID", "Kode", "Nama", "Satuan", "Stok", "Harga Beli", "Harga Jual", "Supplier ID"}, 0);
+            for (Sparepart s : list) {
+                model.addRow(new Object[]{
+                    s.getSparepartId(), s.getKodeSparepart(), s.getNamaSparepart(),
+                    s.getSatuan(), s.getStok(), s.getHargaBeli(), s.getHargaJual(), s.getSupplierId()
+                });
+            }
             table.setModel(model);
-            javax.swing.table.TableRowSorter<DefaultTableModel> sorter = new javax.swing.table.TableRowSorter<>(model); table.setRowSorter(sorter);
-        } catch (SQLException ex) { JOptionPane.showMessageDialog(this, "Error load data: " + ex.getMessage()); }
+            table.setRowSorter(new javax.swing.table.TableRowSorter<>(model));
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Error load data: " + ex.getMessage());
+        }
     }
 
-    private void clearForm() { txtId.setText(""); txtKode.setText(""); txtNama.setText(""); txtSatuan.setText(""); txtStok.setText(""); txtHargaBeli.setText(""); txtHargaJual.setText(""); if (cbSupplier.getItemCount() > 0) cbSupplier.setSelectedIndex(0); }
+    private void clearForm() {
+        txtId.setText("");
+        txtKode.setText("");
+        txtNama.setText("");
+        txtSatuan.setText("");
+        txtStok.setText("");
+        txtHargaBeli.setText("");
+        txtHargaJual.setText("");
+        if (cbSupplier.getItemCount() > 0) cbSupplier.setSelectedIndex(0);
+    }
 
     private void saveSparepart() {
         try {
             Sparepart s = new Sparepart();
-            if (!txtId.getText().isEmpty()) s.setSparepartId(Integer.parseInt(txtId.getText()));
-            s.setKodeSparepart(txtKode.getText()); s.setNamaSparepart(txtNama.getText()); s.setSatuan(txtSatuan.getText());
-            s.setStok(Integer.parseInt(txtStok.getText())); s.setHargaBeli(Double.parseDouble(txtHargaBeli.getText())); s.setHargaJual(Double.parseDouble(txtHargaJual.getText()));
-            Supplier sel = (Supplier) cbSupplier.getSelectedItem(); s.setSupplierId(sel != null ? sel.getSupplierId() : 0);
-            if (s.getSparepartId() == 0) sparepartDAO.insert(s); else sparepartDAO.update(s);
-            loadData(); clearForm();
-        } catch (Exception ex) { JOptionPane.showMessageDialog(this, "Error simpan: " + ex.getMessage()); }
+            if (!txtId.getText().isEmpty()) {
+                s.setSparepartId(Integer.parseInt(txtId.getText()));
+            }
+            s.setKodeSparepart(txtKode.getText());
+            s.setNamaSparepart(txtNama.getText());
+            s.setSatuan(txtSatuan.getText());
+            s.setStok(Integer.parseInt(txtStok.getText()));
+            s.setHargaBeli(Double.parseDouble(txtHargaBeli.getText()));
+            s.setHargaJual(Double.parseDouble(txtHargaJual.getText()));
+
+            Supplier sel = (Supplier) cbSupplier.getSelectedItem();
+            s.setSupplierId(sel != null ? sel.getSupplierId() : 0);
+
+            if (s.getSparepartId() == 0) sparepartDAO.insert(s);
+            else sparepartDAO.update(s);
+            loadData();
+            clearForm();
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Error simpan: " + ex.getMessage());
+        }
     }
 
     private void deleteSparepart() {
         if (txtId.getText().isEmpty()) return;
-        int confirm = JOptionPane.showConfirmDialog(this, "Hapus sparepart ini?", "Konfirmasi", JOptionPane.YES_NO_OPTION);
+        int confirm = JOptionPane.showConfirmDialog(this, "Hapus sparepart ini?",
+                "Konfirmasi", JOptionPane.YES_NO_OPTION);
         if (confirm == JOptionPane.YES_OPTION) {
-            try { sparepartDAO.delete(Integer.parseInt(txtId.getText())); loadData(); clearForm(); }
-            catch (SQLException ex) { JOptionPane.showMessageDialog(this, "Error hapus: " + ex.getMessage()); }
+            try {
+                sparepartDAO.delete(Integer.parseInt(txtId.getText()));
+                loadData();
+                clearForm();
+            } catch (SQLException ex) {
+                JOptionPane.showMessageDialog(this, "Error hapus: " + ex.getMessage());
+            }
         }
     }
 
-    private void tableSelectionChanged() {
+    private void isiFormDariTabel() {
         int row = table.getSelectedRow();
         if (row >= 0) {
-            txtId.setText(table.getValueAt(row, 0).toString()); txtKode.setText(table.getValueAt(row, 1).toString()); txtNama.setText(table.getValueAt(row, 2).toString());
-            txtSatuan.setText(table.getValueAt(row, 3).toString()); txtStok.setText(table.getValueAt(row, 4).toString());
-            txtHargaBeli.setText(table.getValueAt(row, 5).toString()); txtHargaJual.setText(table.getValueAt(row, 6).toString());
+            txtId.setText(table.getValueAt(row, 0).toString());
+            txtKode.setText(table.getValueAt(row, 1).toString());
+            txtNama.setText(table.getValueAt(row, 2).toString());
+            txtSatuan.setText(table.getValueAt(row, 3).toString());
+            txtStok.setText(table.getValueAt(row, 4).toString());
+            txtHargaBeli.setText(table.getValueAt(row, 5).toString());
+            txtHargaJual.setText(table.getValueAt(row, 6).toString());
+
             int supplierId = Integer.parseInt(table.getValueAt(row, 7).toString());
-            for (int i = 0; i < cbSupplier.getItemCount(); i++) { if (((Supplier)cbSupplier.getItemAt(i)).getSupplierId() == supplierId) { cbSupplier.setSelectedIndex(i); break; } }
+            for (int i = 0; i < cbSupplier.getItemCount(); i++) {
+                if (((Supplier) cbSupplier.getItemAt(i)).getSupplierId() == supplierId) {
+                    cbSupplier.setSelectedIndex(i);
+                    break;
+                }
+            }
         }
     }
 

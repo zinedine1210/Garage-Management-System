@@ -11,6 +11,26 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.List;
 
+/**
+ * DAO untuk tabel 'service_transaction' + 'transaction_detail'.
+ *
+ * DAO ini lebih kompleks karena menangani transaksi servis yang punya:
+ * - Header transaksi (service_transaction) = info utama: client, vehicle, mekanik, total
+ * - Detail transaksi (transaction_detail) = daftar sparepart yang dipakai
+ *
+ * Method utama:
+ * - insertWithDetails()       = simpan transaksi baru beserta detail sparepartnya
+ * - updateWithDetails()       = update transaksi + detail (revert stok lama, kurangi stok baru)
+ * - updateStatusPembayaran()  = proses pembayaran (ubah status jadi "Selesai Lunas")
+ * - findAll()                 = ambil semua transaksi untuk ditampilkan di tabel
+ * - findById()                = ambil 1 transaksi + detailnya untuk di-edit
+ * - delete()                  = hapus transaksi
+ * - getAntrian()              = ambil antrian servis hari ini untuk layar TV
+ * - findHistoryByNoPolisi()   = cari riwayat servis berdasarkan No Polisi
+ *
+ * PENTING: insertWithDetails menggunakan database transaction (conn.setAutoCommit(false))
+ * supaya jika ada error, semua perubahan di-rollback (dibatalkan).
+ */
 public class ServiceTransactionDAO {
 
     public int insertWithDetails(ServiceTransaction t) throws SQLException {

@@ -9,10 +9,15 @@ import java.util.List;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
 
+/**
+ * VehiclePanel = Panel CRUD untuk data kendaraan.
+ * Mirip ClientPanel, tapi ada JComboBox cbClient untuk memilih pemilik kendaraan
+ * dan cbTipeKendaraan untuk memilih jenis ("Roda 2" / "Lebih dari Roda 2").
+ */
 public class VehiclePanel extends javax.swing.JPanel {
 
     private final VehicleDAO vehicleDAO = new VehicleDAO();
-    private final ClientDAO clientDAO = new ClientDAO();
+    private final ClientDAO clientDAO = new ClientDAO();  // Untuk mengisi ComboBox client
 
     public VehiclePanel() {
         initComponents();
@@ -21,24 +26,24 @@ public class VehiclePanel extends javax.swing.JPanel {
 
     private void myInit() {
         table.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
-        table.getSelectionModel().addListSelectionListener(e -> tableSelectionChanged());
+        table.getSelectionModel().addListSelectionListener(e -> isiFormDariTabel());
         txtSearch.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-            public void insertUpdate(javax.swing.event.DocumentEvent e) { filter(); }
-            public void removeUpdate(javax.swing.event.DocumentEvent e) { filter(); }
-            public void changedUpdate(javax.swing.event.DocumentEvent e) { filter(); }
-            private void filter() {
-                String text = txtSearch.getText();
+            public void insertUpdate(javax.swing.event.DocumentEvent e) { filterTabel(); }
+            public void removeUpdate(javax.swing.event.DocumentEvent e) { filterTabel(); }
+            public void changedUpdate(javax.swing.event.DocumentEvent e) { filterTabel(); }
+            private void filterTabel() {
+                String teks = txtSearch.getText();
                 if (table.getRowSorter() == null) {
-                    javax.swing.table.TableRowSorter<DefaultTableModel> sorter = new javax.swing.table.TableRowSorter<>((DefaultTableModel) table.getModel());
-                    table.setRowSorter(sorter);
+                    table.setRowSorter(new javax.swing.table.TableRowSorter<>((DefaultTableModel) table.getModel()));
                 }
-                javax.swing.table.TableRowSorter<DefaultTableModel> sorter = (javax.swing.table.TableRowSorter<DefaultTableModel>) table.getRowSorter();
-                if (text.trim().length() == 0) { sorter.setRowFilter(null); }
-                else { sorter.setRowFilter(javax.swing.RowFilter.regexFilter("(?i)" + text)); }
+                javax.swing.table.TableRowSorter<DefaultTableModel> sorter =
+                        (javax.swing.table.TableRowSorter<DefaultTableModel>) table.getRowSorter();
+                if (teks.trim().isEmpty()) sorter.setRowFilter(null);
+                else sorter.setRowFilter(javax.swing.RowFilter.regexFilter("(?i)" + teks));
             }
         });
-        loadClients();
-        loadData();
+        loadClients();  // Isi ComboBox client
+        loadData();     // Isi tabel kendaraan
     }
 
     @SuppressWarnings("unchecked")
@@ -145,73 +150,126 @@ public class VehiclePanel extends javax.swing.JPanel {
         deleteVehicle();
     }//GEN-LAST:event_btnHapusActionPerformed
 
+    // ===== LOGIC =====
+
+    /** Isi ComboBox cbClient dengan semua client dari database. */
     private void loadClients() {
-        try { cbClient.removeAllItems(); for (Client c : clientDAO.findAll()) cbClient.addItem(c); }
-        catch (SQLException ex) { JOptionPane.showMessageDialog(this, "Error load clients: " + ex.getMessage()); }
+        try {
+            cbClient.removeAllItems();
+            for (Client c : clientDAO.findAll()) {
+                cbClient.addItem(c); // Client.toString() menampilkan nama
+            }
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Error load clients: " + ex.getMessage());
+        }
     }
 
+    /** Muat semua kendaraan dari database ke tabel. */
     private void loadData() {
         try {
             List<Vehicle> list = vehicleDAO.findAll();
             DefaultTableModel model = new DefaultTableModel(
-                    new Object[]{"ID", "Client ID", "No Polisi", "Merk", "Tipe", "CC", "Jenis", "Tahun", "No Rangka", "No Mesin"}, 0);
+                    new Object[]{"ID", "Client ID", "No Polisi", "Merk", "Tipe", "CC",
+                        "Jenis", "Tahun", "No Rangka", "No Mesin"}, 0);
             for (Vehicle v : list) {
-                model.addRow(new Object[]{v.getVehicleId(), v.getClientId(), v.getNoPolisi(), v.getMerk(),
-                    v.getTipe(), v.getCc(), v.getTipeKendaraan(), v.getTahun(), v.getNoRangka(), v.getNoMesin()});
+                model.addRow(new Object[]{
+                    v.getVehicleId(), v.getClientId(), v.getNoPolisi(), v.getMerk(),
+                    v.getTipe(), v.getCc(), v.getTipeKendaraan(), v.getTahun(),
+                    v.getNoRangka(), v.getNoMesin()
+                });
             }
             table.setModel(model);
-            javax.swing.table.TableRowSorter<DefaultTableModel> sorter = new javax.swing.table.TableRowSorter<>(model);
-            table.setRowSorter(sorter);
-        } catch (SQLException ex) { JOptionPane.showMessageDialog(this, "Error load data: " + ex.getMessage()); }
+            table.setRowSorter(new javax.swing.table.TableRowSorter<>(model));
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Error load data: " + ex.getMessage());
+        }
     }
 
     private void clearForm() {
-        txtId.setText(""); if (cbClient.getItemCount() > 0) cbClient.setSelectedIndex(0);
-        txtNoPolisi.setText(""); txtMerk.setText(""); txtTipe.setText(""); txtCc.setText("0");
-        cbTipeKendaraan.setSelectedIndex(0); txtTahun.setText(""); txtNoRangka.setText(""); txtNoMesin.setText("");
+        txtId.setText("");
+        if (cbClient.getItemCount() > 0) cbClient.setSelectedIndex(0);
+        txtNoPolisi.setText("");
+        txtMerk.setText("");
+        txtTipe.setText("");
+        txtCc.setText("0");
+        cbTipeKendaraan.setSelectedIndex(0);
+        txtTahun.setText("");
+        txtNoRangka.setText("");
+        txtNoMesin.setText("");
     }
 
     private void saveVehicle() {
         try {
             Vehicle v = new Vehicle();
-            if (!txtId.getText().isEmpty()) v.setVehicleId(Integer.parseInt(txtId.getText()));
+            if (!txtId.getText().isEmpty()) {
+                v.setVehicleId(Integer.parseInt(txtId.getText()));
+            }
+
+            // Ambil client yang dipilih di ComboBox
             Client selectedClient = (Client) cbClient.getSelectedItem();
             v.setClientId(selectedClient != null ? selectedClient.getClientId() : 0);
-            v.setNoPolisi(txtNoPolisi.getText()); v.setMerk(txtMerk.getText()); v.setTipe(txtTipe.getText());
-            try { v.setCc(Integer.parseInt(txtCc.getText())); } catch(NumberFormatException e) { v.setCc(0); }
+
+            v.setNoPolisi(txtNoPolisi.getText());
+            v.setMerk(txtMerk.getText());
+            v.setTipe(txtTipe.getText());
+            try { v.setCc(Integer.parseInt(txtCc.getText())); }
+            catch (NumberFormatException e) { v.setCc(0); }
             v.setTipeKendaraan(cbTipeKendaraan.getSelectedItem().toString());
             v.setTahun(Integer.parseInt(txtTahun.getText()));
-            v.setNoRangka(txtNoRangka.getText()); v.setNoMesin(txtNoMesin.getText());
-            if (v.getVehicleId() == 0) vehicleDAO.insert(v); else vehicleDAO.update(v);
-            loadData(); clearForm();
-        } catch (Exception ex) { JOptionPane.showMessageDialog(this, "Error simpan: " + ex.getMessage()); }
+            v.setNoRangka(txtNoRangka.getText());
+            v.setNoMesin(txtNoMesin.getText());
+
+            if (v.getVehicleId() == 0) vehicleDAO.insert(v);
+            else vehicleDAO.update(v);
+            loadData();
+            clearForm();
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Error simpan: " + ex.getMessage());
+        }
     }
 
     private void deleteVehicle() {
         if (txtId.getText().isEmpty()) return;
-        int confirm = JOptionPane.showConfirmDialog(this, "Hapus vehicle ini?", "Konfirmasi", JOptionPane.YES_NO_OPTION);
+        int confirm = JOptionPane.showConfirmDialog(this, "Hapus vehicle ini?",
+                "Konfirmasi", JOptionPane.YES_NO_OPTION);
         if (confirm == JOptionPane.YES_OPTION) {
-            try { vehicleDAO.delete(Integer.parseInt(txtId.getText())); loadData(); clearForm(); }
-            catch (SQLException ex) { JOptionPane.showMessageDialog(this, "Error hapus: " + ex.getMessage()); }
+            try {
+                vehicleDAO.delete(Integer.parseInt(txtId.getText()));
+                loadData();
+                clearForm();
+            } catch (SQLException ex) {
+                JOptionPane.showMessageDialog(this, "Error hapus: " + ex.getMessage());
+            }
         }
     }
 
-    private void tableSelectionChanged() {
+    private void isiFormDariTabel() {
         int row = table.getSelectedRow();
         if (row >= 0) {
             txtId.setText(table.getValueAt(row, 0).toString());
+
+            // Cari dan pilih client yang sesuai di ComboBox
             int clientId = Integer.parseInt(table.getValueAt(row, 1).toString());
             for (int i = 0; i < cbClient.getItemCount(); i++) {
-                if (((Client)cbClient.getItemAt(i)).getClientId() == clientId) { cbClient.setSelectedIndex(i); break; }
+                if (((Client) cbClient.getItemAt(i)).getClientId() == clientId) {
+                    cbClient.setSelectedIndex(i);
+                    break;
+                }
             }
+
             txtNoPolisi.setText(table.getValueAt(row, 2).toString());
             txtMerk.setText(table.getValueAt(row, 3).toString());
             txtTipe.setText(table.getValueAt(row, 4).toString());
-            Object ccObj = table.getValueAt(row, 5); txtCc.setText(ccObj != null ? ccObj.toString() : "0");
-            Object jenisObj = table.getValueAt(row, 6); if(jenisObj != null) cbTipeKendaraan.setSelectedItem(jenisObj.toString());
-            Object tahunObj = table.getValueAt(row, 7); txtTahun.setText(tahunObj != null ? tahunObj.toString() : "");
-            Object noRangkaObj = table.getValueAt(row, 8); txtNoRangka.setText(noRangkaObj != null ? noRangkaObj.toString() : "");
-            Object noMesinObj = table.getValueAt(row, 9); txtNoMesin.setText(noMesinObj != null ? noMesinObj.toString() : "");
+            Object ccObj = table.getValueAt(row, 5);
+            txtCc.setText(ccObj != null ? ccObj.toString() : "0");
+            Object jenisObj = table.getValueAt(row, 6);
+            if (jenisObj != null) cbTipeKendaraan.setSelectedItem(jenisObj.toString());
+            Object tahunObj = table.getValueAt(row, 7);
+            txtTahun.setText(tahunObj != null ? tahunObj.toString() : "");
+            Object noRangkaObj = table.getValueAt(row, 8);
+            txtNoRangka.setText(noRangkaObj != null ? noRangkaObj.toString() : "");
+            Object noMesinObj = table.getValueAt(row, 9);
+            txtNoMesin.setText(noMesinObj != null ? noMesinObj.toString() : "");
         }
     }
 
