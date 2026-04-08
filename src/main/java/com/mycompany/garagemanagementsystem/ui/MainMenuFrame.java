@@ -4,28 +4,23 @@ import com.mycompany.garagemanagementsystem.dao.DashboardDAO;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
-import java.awt.Frame;
 import java.awt.GridLayout;
+import java.sql.SQLException;
+import java.text.NumberFormat;
 import java.util.List;
+import java.util.Locale;
 import javax.swing.BorderFactory;
-import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
-import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.SwingConstants;
-import javax.swing.border.LineBorder;
 import javax.swing.table.DefaultTableModel;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
@@ -34,463 +29,373 @@ import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.category.DefaultCategoryDataset;
 import org.jfree.data.general.DefaultPieDataset;
 
+public class MainMenuFrame extends javax.swing.JFrame {
 
-public class MainMenuFrame extends JFrame {
+    private final DashboardDAO dashDAO = new DashboardDAO();
 
-    private final DashboardDAO dashboardDAO = new DashboardDAO();
-    
-    // Row 1: Statistik Utama
-    private final JLabel lblAntrean = new JLabel("0");
-    private final JLabel lblPengerjaan = new JLabel("0");
-    private final JLabel lblSelesai = new JLabel("0");
-    private final JLabel lblStokKritis = new JLabel("0");
+    // Dashboard cards
+    private JLabel lblTransHariIni, lblOmzetHariIni, lblAntrian, lblDalamPengerjaan, lblSelesai, lblStokKritis;
+    private JLabel lblOmzetBulan, lblOmzetMinggu, lblOmzetTahun, lblMekanikTerajin;
 
-    // Row 2: Keuangan & Performa
-    private final JLabel lblOmzet = new JLabel("Rp 0");
-    private final JProgressBar progressTarget = new JProgressBar(0, 100);
-    private final JLabel lblTargetTeks = new JLabel("0% dari Rp50 Jt");
-    private final JLabel lblMekanik = new JLabel("-");
+    // Charts
+    private ChartPanel chartPanelTipe, chartPanelKategori, chartPanelOmzetBulanan;
 
-    // Row 3: Monitoring & Notifikasi (Tabel)
-    private final DefaultTableModel modelAntrean = new DefaultTableModel(new Object[]{"Nopol", "Status"}, 0);
-    private final DefaultTableModel modelReminder = new DefaultTableModel(new Object[]{"Pelanggan", "Nopol", "Info"}, 0);
-    private final DefaultTableModel modelSparepart = new DefaultTableModel(new Object[]{"Item", "Terjual"}, 0);
-
-    // New Table Model for Top 3 Critical Stock
-    private final DefaultTableModel modelTopKritis = new DefaultTableModel(new Object[]{"Sparepart", "Stok"}, 0);
-    
-    // Chart Panels
-    private ChartPanel mechanicChartPanel;
-    private ChartPanel revenueChartPanel;
-    private ChartPanel vehicleTypeChartPanel;
-    private ChartPanel serviceCategoryChartPanel;
-
-    private JTabbedPane tabbedPane;
+    // Progress bars & tables
+    private JPanel pnlKinerja;
+    private DefaultTableModel tblAntrianModel, tblReminderModel, tblSparepartModel, tblStokKritisModel;
 
     public MainMenuFrame() {
-        setTitle("Garage Management System - Executive Dashboard");
-        setSize(1200, 800);
-        setLocationRelativeTo(null);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-        setLayout(new BorderLayout());
-
-        // --- SIDEBAR MENU ---
-        JPanel sidebarPanel = new JPanel(new GridLayout(8, 1, 5, 5));
-        sidebarPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        sidebarPanel.setBackground(new Color(43, 45, 66));
-        sidebarPanel.setPreferredSize(new Dimension(220, 0));
-
-        JButton btnClient = createMenuButton("Data Client");
-        JButton btnVehicle = createMenuButton("Data Vehicle");
-        JButton btnMekanik = createMenuButton("Data Mekanik");
-        JButton btnSparepart = createMenuButton("Data Sparepart");
-        JButton btnSupplier = createMenuButton("Data Supplier");
-        JButton btnTransaksi = createMenuButton("Transaksi Servis");
-        JButton btnRiwayat = createMenuButton("Riwayat Servis");
-        JButton btnAntrian = createMenuButton("Layar Antrian (TV)");
-        JButton btnRefresh = createMenuButton("Refresh Data");
-
-        btnClient.addActionListener(e -> openTab("Data Client", new ClientPanel()));
-        btnVehicle.addActionListener(e -> openTab("Data Vehicle", new VehiclePanel()));
-        btnMekanik.addActionListener(e -> openTab("Data Mekanik", new MekanikPanel()));
-        btnSparepart.addActionListener(e -> openTab("Data Sparepart", new SparepartPanel()));
-        btnSupplier.addActionListener(e -> openTab("Data Supplier", new SupplierPanel()));
-        btnTransaksi.addActionListener(e -> openTab("Transaksi Servis", new TransactionListPanel((Frame) this)));
-        btnRiwayat.addActionListener(e -> openTab("Riwayat Servis", new ServiceHistoryPanel()));
-        btnAntrian.addActionListener(e -> new QueueDashboardFrame().setVisible(true));
-        btnRefresh.addActionListener(e -> loadDashboardData());
-
-        sidebarPanel.add(btnClient);
-        sidebarPanel.add(btnVehicle);
-        sidebarPanel.add(btnMekanik);
-        sidebarPanel.add(btnSparepart);
-        sidebarPanel.add(btnSupplier);
-        sidebarPanel.add(btnTransaksi);
-        sidebarPanel.add(btnRiwayat); 
-        sidebarPanel.add(btnAntrian); 
-        
-        JPanel sidebarWrap = new JPanel(new BorderLayout());
-        sidebarWrap.setBackground(new Color(43, 45, 66));
-        
-        JLabel lblApp = new JLabel("BengkelPro", SwingConstants.CENTER);
-        lblApp.setFont(new Font("Segoe UI", Font.BOLD, 22));
-        lblApp.setForeground(Color.WHITE);
-        lblApp.setBorder(BorderFactory.createEmptyBorder(20, 0, 20, 0));
-        
-        sidebarWrap.add(lblApp, BorderLayout.NORTH);
-        sidebarWrap.add(sidebarPanel, BorderLayout.CENTER);
-        
-        JPanel bottomSidebar = new JPanel(new BorderLayout());
-        bottomSidebar.setBackground(new Color(43, 45, 66));
-        bottomSidebar.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        bottomSidebar.add(btnRefresh, BorderLayout.CENTER);
-        sidebarWrap.add(bottomSidebar, BorderLayout.SOUTH);
-
-        // --- MAIN WORKSPACE (JTabbedPane) ---
-        tabbedPane = new JTabbedPane();
-        tabbedPane.setBackground(new Color(240, 244, 248));
-        
-        // --- DASHBOARD CONTENT ---
-        JPanel dashboardPanel = new JPanel(new BorderLayout());
-        dashboardPanel.setBackground(new Color(240, 244, 248));
-
-        JLabel titleLabel = new JLabel("Executive Dashboard Overview", SwingConstants.LEFT);
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 26));
-        titleLabel.setForeground(new Color(33, 37, 41));
-        titleLabel.setBorder(BorderFactory.createEmptyBorder(20, 20, 10, 20));
-
-        JPanel mainScrollPanel = new JPanel();
-        mainScrollPanel.setLayout(new BoxLayout(mainScrollPanel, BoxLayout.Y_AXIS));
-        mainScrollPanel.setBackground(new Color(240, 244, 248));
-        mainScrollPanel.setBorder(BorderFactory.createEmptyBorder(0, 20, 20, 20));
-
-        // ROW 1: STATISTIK UTAMA (4 Cards)
-        JPanel row1 = new JPanel(new GridLayout(1, 4, 15, 15));
-        row1.setBackground(new Color(240, 244, 248));
-        row1.add(createModernCard("Total Antrean", lblAntrean, new Color(255, 235, 205), new Color(210, 105, 30)));
-        row1.add(createModernCard("Dalam Pengerjaan", lblPengerjaan, new Color(224, 255, 255), new Color(0, 139, 139)));
-        row1.add(createModernCard("Servis Selesai", lblSelesai, new Color(240, 255, 240), new Color(34, 139, 34)));
-        
-        // Stok kritis Panel custom text label on top, table below
-        JPanel stokKritisContainer = new JPanel(new BorderLayout());
-        stokKritisContainer.setOpaque(false);
-        stokKritisContainer.add(lblStokKritis, BorderLayout.NORTH);
-        
-        JTable tableTopKritis = new JTable(modelTopKritis);
-        tableTopKritis.setRowHeight(20);
-        tableTopKritis.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 10));
-        tableTopKritis.setFont(new Font("Segoe UI", Font.PLAIN, 10));
-        tableTopKritis.setEnabled(false);
-        JScrollPane spTopKritis = new JScrollPane(tableTopKritis);
-        spTopKritis.setPreferredSize(new Dimension(0, 60));
-        stokKritisContainer.add(spTopKritis, BorderLayout.CENTER);
-        
-        row1.add(createModernCard("Stok Kritis", stokKritisContainer, new Color(255, 228, 225), new Color(178, 34, 34)));
-
-        // CHARTS ROW (New Row 1.5)
-        JPanel chartRow = new JPanel(new GridLayout(1, 4, 15, 15));
-        chartRow.setBackground(new Color(240, 244, 248));
-        
-        mechanicChartPanel = new ChartPanel(null);
-        mechanicChartPanel.setPreferredSize(new Dimension(300, 250));
-        
-        // Revenue Chart with Filter
-        JPanel revenueContainer = new JPanel(new BorderLayout());
-        revenueContainer.setBackground(new Color(240, 244, 248));
-        
-        String[] revenueFilters = {"Pilih Filter", "Bulanan (Tahun Ini)", "Tahunan"};
-        javax.swing.JComboBox<String> cbRevenueFilter = new javax.swing.JComboBox<>(revenueFilters);
-        cbRevenueFilter.addActionListener(e -> {
-            try {
-                updateRevenueChart(cbRevenueFilter.getSelectedItem().toString());
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
-        });
-        
-        revenueChartPanel = new ChartPanel(null);
-        revenueChartPanel.setPreferredSize(new Dimension(300, 220));
-        
-        revenueContainer.add(cbRevenueFilter, BorderLayout.NORTH);
-        revenueContainer.add(revenueChartPanel, BorderLayout.CENTER);
-        
-        vehicleTypeChartPanel = new ChartPanel(null);
-        vehicleTypeChartPanel.setPreferredSize(new Dimension(300, 250));
-        
-        serviceCategoryChartPanel = new ChartPanel(null);
-        serviceCategoryChartPanel.setPreferredSize(new Dimension(300, 250));
-
-        chartRow.add(mechanicChartPanel);
-        chartRow.add(revenueContainer);
-        chartRow.add(vehicleTypeChartPanel);
-        chartRow.add(serviceCategoryChartPanel);
-
-        // ROW 2: KEUANGAN & PERFORMA (3 Cards)
-        JPanel row2 = new JPanel(new GridLayout(1, 3, 15, 15));
-        row2.setBackground(new Color(240, 244, 248));
-        
-        // Setup Progress Target Panel
-        JPanel targetPanel = new JPanel(new BorderLayout(0, 10));
-        targetPanel.setOpaque(false);
-        progressTarget.setStringPainted(true);
-        progressTarget.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        progressTarget.setForeground(new Color(70, 130, 180));
-        lblTargetTeks.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        targetPanel.add(progressTarget, BorderLayout.CENTER);
-        targetPanel.add(lblTargetTeks, BorderLayout.SOUTH);
-
-        row2.add(createModernCard("Omzet Hari Ini", lblOmzet, Color.WHITE, new Color(46, 139, 87)));
-        row2.add(createModernCard("Pencapaian Target Bulanan", targetPanel, Color.WHITE, new Color(70, 130, 180)));
-        row2.add(createModernCard("Mekanik Terajin (Bulan Ini)", lblMekanik, Color.WHITE, new Color(148, 0, 211)));
-
-        // ROW 3: MONITORING & NOTIFIKASI TABEL (3 Panels)
-        JPanel row3 = new JPanel(new GridLayout(1, 3, 15, 15));
-        row3.setBackground(new Color(240, 244, 248));
-        row3.add(createTablePanel("Tabel Antrean Hari Ini", modelAntrean));
-        row3.add(createTablePanel("Reminder Servis Berkala", modelReminder));
-        row3.add(createTablePanel("Sparepart Terlaris (Bulanan)", modelSparepart));
-
-        // Add to Scroll Panel with styling
-        mainScrollPanel.add(createSectionHeader("1. STATISTIK OPERASIONAL HARI INI"));
-        mainScrollPanel.add(row1);
-        mainScrollPanel.add(Box.createVerticalStrut(20));
-        
-        mainScrollPanel.add(createSectionHeader("1.5. VISUALISASI DATA"));
-        mainScrollPanel.add(chartRow);
-        mainScrollPanel.add(Box.createVerticalStrut(20));
-        
-        mainScrollPanel.add(createSectionHeader("2. KEUANGAN & PERFORMA"));
-        mainScrollPanel.add(row2);
-        mainScrollPanel.add(Box.createVerticalStrut(20));
-        
-        mainScrollPanel.add(createSectionHeader("3. MONITORING & NOTIFIKASI"));
-        mainScrollPanel.add(row3);
-
-        JScrollPane scrollPane = new JScrollPane(mainScrollPanel);
-        scrollPane.setBorder(null);
-        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
-        
-        // Assemble Dashboard Panel
-        dashboardPanel.add(titleLabel, BorderLayout.NORTH);
-        dashboardPanel.add(scrollPane, BorderLayout.CENTER);
-        
-        // Set TabbedPane Configuration
-        tabbedPane.addTab("Dashboard", dashboardPanel);
-        add(sidebarWrap, BorderLayout.WEST);
-        add(tabbedPane, BorderLayout.CENTER);
-        
+        initComponents();
+        styleSidebarButtons();
+        buildDashboardTab();
         loadDashboardData();
+        setExtendedState(javax.swing.JFrame.MAXIMIZED_BOTH);
     }
-    
-    private void openTab(String title, JPanel panel) {
-        // Cek apakah tab sudah terbuka
-        for (int i = 0; i < tabbedPane.getTabCount(); i++) {
-            if (tabbedPane.getTitleAt(i).equals(title)) {
-                tabbedPane.setSelectedIndex(i);
-                return;
+
+    private void styleSidebarButtons() {
+        Color bg = new Color(43, 45, 66);
+        Color fg = Color.WHITE;
+        Font font = new Font("Segoe UI", Font.PLAIN, 14);
+        for (Component c : sidebarPanel.getComponents()) {
+            if (c instanceof JButton) {
+                JButton b = (JButton) c;
+                b.setBackground(bg); b.setForeground(fg); b.setFont(font);
+                b.setFocusPainted(false); b.setBorderPainted(false);
             }
         }
-        
-        // Tambah tab baru
+        btnRefresh.setBackground(new Color(60, 60, 90));
+        btnRefresh.setForeground(Color.WHITE);
+        btnRefresh.setFont(font);
+        btnRefresh.setFocusPainted(false);
+    }
+
+    @SuppressWarnings("unchecked")
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
+    private void initComponents() {
+
+        sidebarWrap = new javax.swing.JPanel();
+        lblApp = new javax.swing.JLabel();
+        sidebarPanel = new javax.swing.JPanel();
+        btnClient = new javax.swing.JButton();
+        btnVehicle = new javax.swing.JButton();
+        btnMekanik = new javax.swing.JButton();
+        btnSparepart = new javax.swing.JButton();
+        btnSupplier = new javax.swing.JButton();
+        btnTransaksi = new javax.swing.JButton();
+        btnRiwayat = new javax.swing.JButton();
+        btnAntrian = new javax.swing.JButton();
+        bottomSidebar = new javax.swing.JPanel();
+        btnRefresh = new javax.swing.JButton();
+        tabbedPane = new javax.swing.JTabbedPane();
+
+        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setTitle("Garage Management System - Executive Dashboard");
+
+        sidebarWrap.setBackground(new java.awt.Color(43, 45, 66));
+        sidebarWrap.setPreferredSize(new java.awt.Dimension(220, 0));
+        sidebarWrap.setLayout(new java.awt.BorderLayout());
+
+        lblApp.setFont(new java.awt.Font("Segoe UI", 1, 22)); // NOI18N
+        lblApp.setForeground(new java.awt.Color(255, 255, 255));
+        lblApp.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        lblApp.setText("Garage System");
+        sidebarWrap.add(lblApp, java.awt.BorderLayout.NORTH);
+
+        sidebarPanel.setBackground(new java.awt.Color(43, 45, 66));
+        sidebarPanel.setLayout(new java.awt.GridLayout(8, 1, 5, 5));
+
+        btnClient.setText("Data Client");
+        btnClient.addActionListener(this::btnClientActionPerformed);
+        sidebarPanel.add(btnClient);
+
+        btnVehicle.setText("Data Vehicle");
+        btnVehicle.addActionListener(this::btnVehicleActionPerformed);
+        sidebarPanel.add(btnVehicle);
+
+        btnMekanik.setText("Data Mekanik");
+        btnMekanik.addActionListener(this::btnMekanikActionPerformed);
+        sidebarPanel.add(btnMekanik);
+
+        btnSparepart.setText("Data Sparepart");
+        btnSparepart.addActionListener(this::btnSparepartActionPerformed);
+        sidebarPanel.add(btnSparepart);
+
+        btnSupplier.setText("Data Supplier");
+        btnSupplier.addActionListener(this::btnSupplierActionPerformed);
+        sidebarPanel.add(btnSupplier);
+
+        btnTransaksi.setText("Transaksi Servis");
+        btnTransaksi.addActionListener(this::btnTransaksiActionPerformed);
+        sidebarPanel.add(btnTransaksi);
+
+        btnRiwayat.setText("Riwayat Servis");
+        btnRiwayat.addActionListener(this::btnRiwayatActionPerformed);
+        sidebarPanel.add(btnRiwayat);
+
+        btnAntrian.setText("Layar Antrian (TV)");
+        btnAntrian.addActionListener(this::btnAntrianActionPerformed);
+        sidebarPanel.add(btnAntrian);
+
+        sidebarWrap.add(sidebarPanel, java.awt.BorderLayout.CENTER);
+
+        bottomSidebar.setBackground(new java.awt.Color(43, 45, 66));
+        bottomSidebar.setLayout(new java.awt.BorderLayout());
+
+        btnRefresh.setText("Refresh Data");
+        btnRefresh.addActionListener(this::btnRefreshActionPerformed);
+        bottomSidebar.add(btnRefresh, java.awt.BorderLayout.CENTER);
+
+        sidebarWrap.add(bottomSidebar, java.awt.BorderLayout.SOUTH);
+
+        getContentPane().add(sidebarWrap, java.awt.BorderLayout.WEST);
+
+        tabbedPane.setBackground(new java.awt.Color(240, 244, 248));
+        getContentPane().add(tabbedPane, java.awt.BorderLayout.CENTER);
+
+        pack();
+        setLocationRelativeTo(null);
+    }// </editor-fold>//GEN-END:initComponents
+
+    private void btnClientActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnClientActionPerformed
+        openTab("Data Client", new ClientPanel());
+    }//GEN-LAST:event_btnClientActionPerformed
+
+    private void btnVehicleActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnVehicleActionPerformed
+        openTab("Data Vehicle", new VehiclePanel());
+    }//GEN-LAST:event_btnVehicleActionPerformed
+
+    private void btnMekanikActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnMekanikActionPerformed
+        openTab("Data Mekanik", new MekanikPanel());
+    }//GEN-LAST:event_btnMekanikActionPerformed
+
+    private void btnSparepartActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSparepartActionPerformed
+        openTab("Data Sparepart", new SparepartPanel());
+    }//GEN-LAST:event_btnSparepartActionPerformed
+
+    private void btnSupplierActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSupplierActionPerformed
+        openTab("Data Supplier", new SupplierPanel());
+    }//GEN-LAST:event_btnSupplierActionPerformed
+
+    private void btnTransaksiActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnTransaksiActionPerformed
+        openTab("Transaksi Servis", new TransactionListPanel(this));
+    }//GEN-LAST:event_btnTransaksiActionPerformed
+
+    private void btnRiwayatActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRiwayatActionPerformed
+        openTab("Riwayat Servis", new ServiceHistoryPanel());
+    }//GEN-LAST:event_btnRiwayatActionPerformed
+
+    private void btnAntrianActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAntrianActionPerformed
+        new QueueDashboardFrame().setVisible(true);
+    }//GEN-LAST:event_btnAntrianActionPerformed
+
+    private void btnRefreshActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRefreshActionPerformed
+        loadDashboardData();
+    }//GEN-LAST:event_btnRefreshActionPerformed
+
+    private void openTab(String title, Component panel) {
+        for (int i = 0; i < tabbedPane.getTabCount(); i++) {
+            if (tabbedPane.getTitleAt(i).equals(title)) { tabbedPane.setSelectedIndex(i); return; }
+        }
         tabbedPane.addTab(title, panel);
-        int index = tabbedPane.getTabCount() - 1;
-        tabbedPane.setSelectedIndex(index);
-        
-        // Custom Tab Header
-        JPanel tabHeader = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        tabHeader.setOpaque(false);
-        JLabel lblTitle = new JLabel(title + "  ");
+        int idx = tabbedPane.indexOfTab(title);
+        JPanel tabTitle = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        tabTitle.setOpaque(false);
+        tabTitle.add(new JLabel(title + " "));
         JButton btnClose = new JButton("x");
-        btnClose.setMargin(new java.awt.Insets(0, 2, 0, 2));
+        btnClose.setMargin(new java.awt.Insets(0, 4, 0, 4));
+        btnClose.setFocusPainted(false);
         btnClose.setBorderPainted(false);
         btnClose.setContentAreaFilled(false);
-        btnClose.setFocusPainted(false);
-        btnClose.setFont(new Font("Arial", Font.BOLD, 12));
-        btnClose.setForeground(Color.RED);
-        btnClose.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        
         btnClose.addActionListener(e -> {
-            int closeIndex = tabbedPane.indexOfTabComponent(tabHeader);
-            if(closeIndex != -1) {
-                tabbedPane.remove(closeIndex);
-            }
+            int i = tabbedPane.indexOfTab(title);
+            if (i >= 0) tabbedPane.removeTabAt(i);
         });
-        
-        tabHeader.add(lblTitle);
-        tabHeader.add(btnClose);
-        tabbedPane.setTabComponentAt(index, tabHeader);
-    }
-    
-    private JLabel createSectionHeader(String title) {
-        JLabel lbl = new JLabel(title);
-        lbl.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        lbl.setForeground(new Color(105, 105, 105));
-        lbl.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
-        return lbl;
-    }
-    
-    private JButton createMenuButton(String text) {
-        JButton btn = new JButton(text);
-        btn.setForeground(Color.WHITE);
-        btn.setBackground(new Color(60, 63, 88));
-        btn.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        btn.setFocusPainted(false);
-        btn.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(43, 45, 66), 1),
-            BorderFactory.createEmptyBorder(10, 10, 10, 10)
-        ));
-        return btn;
+        tabTitle.add(btnClose);
+        tabbedPane.setTabComponentAt(idx, tabTitle);
+        tabbedPane.setSelectedIndex(idx);
     }
 
-    private JPanel createModernCard(String title, Component valueComp, Color bgColor, Color fgColor) {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(bgColor);
-        panel.setBorder(BorderFactory.createCompoundBorder(
-                new LineBorder(new Color(220, 224, 232), 1, true),
-                BorderFactory.createEmptyBorder(20, 20, 20, 20)
-        ));
+    // === DASHBOARD TAB (built in code because JFreeChart can't be in .form) ===
 
-        JLabel lblTitle = new JLabel(title, SwingConstants.LEFT);
-        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        lblTitle.setForeground(fgColor != null ? fgColor : Color.DARK_GRAY);
-        lblTitle.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
+    private void buildDashboardTab() {
+        JPanel dashPanel = new JPanel(new BorderLayout(10, 10));
+        dashPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+        dashPanel.setBackground(new Color(240, 244, 248));
 
-        if (valueComp instanceof JLabel) {
-            ((JLabel) valueComp).setFont(new Font("Segoe UI", Font.BOLD, 28));
-            ((JLabel) valueComp).setForeground(fgColor != null ? fgColor : Color.BLACK);
-            ((JLabel) valueComp).setHorizontalAlignment(SwingConstants.LEFT);
-        }
+        // Top stats cards
+        JPanel cardRow = new JPanel(new GridLayout(1, 6, 10, 10));
+        cardRow.setOpaque(false);
+        lblTransHariIni = new JLabel("0", SwingConstants.CENTER);
+        lblOmzetHariIni = new JLabel("Rp 0", SwingConstants.CENTER);
+        lblAntrian = new JLabel("0", SwingConstants.CENTER);
+        lblDalamPengerjaan = new JLabel("0", SwingConstants.CENTER);
+        lblSelesai = new JLabel("0", SwingConstants.CENTER);
+        lblStokKritis = new JLabel("0", SwingConstants.CENTER);
+        cardRow.add(createCard("Transaksi Hari Ini", lblTransHariIni, new Color(52, 152, 219)));
+        cardRow.add(createCard("Omzet Hari Ini", lblOmzetHariIni, new Color(46, 204, 113)));
+        cardRow.add(createCard("Antrian", lblAntrian, new Color(241, 196, 15)));
+        cardRow.add(createCard("Dalam Pengerjaan", lblDalamPengerjaan, new Color(230, 126, 34)));
+        cardRow.add(createCard("Selesai", lblSelesai, new Color(155, 89, 182)));
+        cardRow.add(createCard("Stok Kritis", lblStokKritis, new Color(231, 76, 60)));
+        dashPanel.add(cardRow, BorderLayout.NORTH);
 
-        panel.add(lblTitle, BorderLayout.NORTH);
-        panel.add(valueComp, BorderLayout.CENTER);
+        // Middle: charts
+        JPanel midPanel = new JPanel(new GridLayout(1, 3, 10, 10));
+        midPanel.setOpaque(false);
+        chartPanelTipe = new ChartPanel(null); chartPanelTipe.setPreferredSize(new Dimension(300, 250));
+        chartPanelKategori = new ChartPanel(null); chartPanelKategori.setPreferredSize(new Dimension(300, 250));
+        chartPanelOmzetBulanan = new ChartPanel(null); chartPanelOmzetBulanan.setPreferredSize(new Dimension(300, 250));
+        midPanel.add(chartPanelTipe);
+        midPanel.add(chartPanelKategori);
+        midPanel.add(chartPanelOmzetBulanan);
+        dashPanel.add(midPanel, BorderLayout.CENTER);
 
-        // Fixed height for cards
-        panel.setPreferredSize(new Dimension(0, 120));
-        panel.setMinimumSize(new Dimension(0, 120));
-        return panel;
+        // Bottom: Finance + tables
+        JPanel bottomPanel = new JPanel(new GridLayout(1, 4, 10, 10));
+        bottomPanel.setOpaque(false);
+
+        // Finance card
+        JPanel financePanel = new JPanel();
+        financePanel.setLayout(new BoxLayout(financePanel, BoxLayout.Y_AXIS));
+        financePanel.setBackground(Color.WHITE);
+        financePanel.setBorder(BorderFactory.createTitledBorder("Keuangan & Performa"));
+        lblOmzetMinggu = new JLabel("Omzet Minggu: Rp 0");
+        lblOmzetBulan = new JLabel("Omzet Bulan: Rp 0");
+        lblOmzetTahun = new JLabel("Omzet Tahun: Rp 0");
+        lblMekanikTerajin = new JLabel("Mekanik Terajin: -");
+        financePanel.add(lblOmzetMinggu); financePanel.add(lblOmzetBulan);
+        financePanel.add(lblOmzetTahun); financePanel.add(lblMekanikTerajin);
+
+        // Kinerja Mekanik
+        pnlKinerja = new JPanel();
+        pnlKinerja.setLayout(new BoxLayout(pnlKinerja, BoxLayout.Y_AXIS));
+        pnlKinerja.setBackground(Color.WHITE);
+        pnlKinerja.setBorder(BorderFactory.createTitledBorder("Kinerja Mekanik"));
+
+        // Antrian table
+        tblAntrianModel = new DefaultTableModel(new Object[]{"No Polisi", "Status"}, 0);
+        JTable tblAntrian = new JTable(tblAntrianModel);
+        JPanel antrianWrap = new JPanel(new BorderLayout());
+        antrianWrap.setBorder(BorderFactory.createTitledBorder("Antrian Hari Ini"));
+        antrianWrap.add(new JScrollPane(tblAntrian), BorderLayout.CENTER);
+
+        // Sparepart terlaris table
+        tblSparepartModel = new DefaultTableModel(new Object[]{"Sparepart", "Qty"}, 0);
+        JTable tblSparepart = new JTable(tblSparepartModel);
+        JPanel spWrap = new JPanel(new BorderLayout());
+        spWrap.setBorder(BorderFactory.createTitledBorder("Sparepart Terlaris"));
+        spWrap.add(new JScrollPane(tblSparepart), BorderLayout.CENTER);
+
+        bottomPanel.add(financePanel);
+        bottomPanel.add(pnlKinerja);
+        bottomPanel.add(antrianWrap);
+        bottomPanel.add(spWrap);
+        dashPanel.add(bottomPanel, BorderLayout.SOUTH);
+
+        tabbedPane.addTab("Dashboard", dashPanel);
     }
 
-    private JPanel createTablePanel(String title, DefaultTableModel model) {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(Color.WHITE);
-        panel.setBorder(BorderFactory.createCompoundBorder(
-                new LineBorder(new Color(220, 224, 232), 1, true),
-                BorderFactory.createEmptyBorder(10, 10, 10, 10)
-        ));
-        
-        JLabel lblTitle = new JLabel(title, SwingConstants.LEFT);
-        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        lblTitle.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
-
-        JTable table = new JTable(model);
-        table.setRowHeight(25);
-        table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
-        table.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        table.setEnabled(false); // Read only
-        table.setFillsViewportHeight(true);
-        
-        JScrollPane sp = new JScrollPane(table);
-        sp.setBorder(BorderFactory.createEmptyBorder());
-        sp.getViewport().setBackground(Color.WHITE);
-
-        panel.add(lblTitle, BorderLayout.NORTH);
-        panel.add(sp, BorderLayout.CENTER);
-        
-        // Fixed height for table panels
-        panel.setPreferredSize(new Dimension(0, 180));
-        panel.setMinimumSize(new Dimension(0, 180));
-        return panel;
+    private JPanel createCard(String title, JLabel valueLabel, Color color) {
+        JPanel card = new JPanel(new BorderLayout());
+        card.setBackground(color);
+        card.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        JLabel lblTitle = new JLabel(title, SwingConstants.CENTER);
+        lblTitle.setForeground(Color.WHITE);
+        lblTitle.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        valueLabel.setForeground(Color.WHITE);
+        valueLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        card.add(lblTitle, BorderLayout.NORTH);
+        card.add(valueLabel, BorderLayout.CENTER);
+        return card;
     }
 
     private void loadDashboardData() {
+        NumberFormat nf = NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
         try {
-            // Row 1
-            lblAntrean.setText(String.valueOf(dashboardDAO.getTotalAntrean()));
-            lblPengerjaan.setText(String.valueOf(dashboardDAO.getDalamPengerjaan()));
-            lblSelesai.setText(String.valueOf(dashboardDAO.getServisSelesai()));
-            lblStokKritis.setText(String.valueOf(dashboardDAO.getStokKritis()));
-            
-            modelTopKritis.setRowCount(0);
-            List<Object[]> topKritis = dashboardDAO.getTop3StokKritis();
-            for (Object[] row : topKritis) modelTopKritis.addRow(row);
+            lblTransHariIni.setText(String.valueOf(dashDAO.getTransaksiHariIni()));
+            lblOmzetHariIni.setText(nf.format(dashDAO.getOmzetHariIni()));
+            lblAntrian.setText(String.valueOf(dashDAO.getTotalAntrean()));
+            lblDalamPengerjaan.setText(String.valueOf(dashDAO.getDalamPengerjaan()));
+            lblSelesai.setText(String.valueOf(dashDAO.getServisSelesai()));
+            lblStokKritis.setText(String.valueOf(dashDAO.getStokKritis()));
 
-            // Row 2
-            lblOmzet.setText(String.format("Rp %,.0f", dashboardDAO.getOmzetHariIni()));
-            lblMekanik.setText(dashboardDAO.getMekanikTerajin());
-            
-            // Progress Target Bulanan (Target Semu = Rp 50 Juta)
-            double targetSum = 50000000.0;
-            double currentBulan = dashboardDAO.getOmzetBulanIni();
-            int persentase = (int) ((currentBulan / targetSum) * 100);
-            if (persentase > 100) persentase = 100;
-            progressTarget.setValue(persentase);
-            lblTargetTeks.setText(String.format("%d%% (Terkumpul Rp %,.0f dari Rp 50 Jt)", persentase, currentBulan));
+            lblOmzetMinggu.setText("Omzet Minggu: " + nf.format(dashDAO.getOmzetMingguan()));
+            lblOmzetBulan.setText("Omzet Bulan: " + nf.format(dashDAO.getOmzetBulanIni()));
+            lblOmzetTahun.setText("Omzet Tahun: " + nf.format(dashDAO.getOmzetTahunan()));
+            lblMekanikTerajin.setText("Mekanik Terajin: " + dashDAO.getMekanikTerajin());
 
-            // Row 3
-            modelAntrean.setRowCount(0);
-            List<Object[]> antrean = dashboardDAO.getTabelAntrean();
-            for (Object[] row : antrean) modelAntrean.addRow(row);
+            // Antrian table
+            tblAntrianModel.setRowCount(0);
+            for (Object[] row : dashDAO.getTabelAntrean()) tblAntrianModel.addRow(row);
 
-            modelReminder.setRowCount(0);
-            List<Object[]> reminders = dashboardDAO.getReminderServis();
-            for (Object[] row : reminders) modelReminder.addRow(row);
+            // Sparepart terlaris table
+            tblSparepartModel.setRowCount(0);
+            for (Object[] row : dashDAO.getSparepartTerlaris()) tblSparepartModel.addRow(row);
 
-            modelSparepart.setRowCount(0);
-            List<Object[]> terlaris = dashboardDAO.getSparepartTerlaris();
-            for (Object[] row : terlaris) modelSparepart.addRow(row);
+            // Kinerja Mekanik progress bars
+            pnlKinerja.removeAll();
+            List<Object[]> kinerja = dashDAO.getKinerjaMekanik();
+            int maxServis = 1;
+            for (Object[] k : kinerja) maxServis = Math.max(maxServis, (int) k[1]);
+            for (Object[] k : kinerja) {
+                JLabel lbl = new JLabel(k[0] + ": " + k[1] + " servis");
+                lbl.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+                pnlKinerja.add(lbl);
+                JProgressBar pb = new JProgressBar(0, maxServis);
+                pb.setValue((int) k[1]);
+                pb.setStringPainted(true);
+                pnlKinerja.add(pb);
+            }
+            pnlKinerja.revalidate(); pnlKinerja.repaint();
 
-            // Update Charts
             updateCharts();
-
-        } catch (Exception ex) {
-            System.err.println("Gagal meload dashboard: " + ex.getMessage());
+        } catch (SQLException ex) {
+            System.err.println("Dashboard error: " + ex.getMessage());
         }
     }
 
-    private void updateCharts() throws Exception {
-        // 1. Mechanic Chart (Bar)
-        DefaultCategoryDataset mechanicDataset = new DefaultCategoryDataset();
-        List<Object[]> mekanikData = dashboardDAO.getKinerjaMekanik();
-        for (Object[] row : mekanikData) {
-            mechanicDataset.addValue((Number) row[1], "Servis", (Comparable) row[0]);
-        }
-        JFreeChart mechanicChart = ChartFactory.createBarChart("Kinerja Mekanik", "Mekanik", "Jumlah Servis", mechanicDataset, PlotOrientation.VERTICAL, false, true, false);
-        mechanicChartPanel.setChart(mechanicChart);
+    private void updateCharts() throws SQLException {
+        // Pie: Tipe Kendaraan
+        DefaultPieDataset dsTipe = new DefaultPieDataset();
+        for (Object[] r : dashDAO.getPerbandinganTipeKendaraan()) dsTipe.setValue(r[0].toString(), (int) r[1]);
+        JFreeChart chartTipe = ChartFactory.createPieChart("Tipe Kendaraan", dsTipe, true, true, false);
+        chartPanelTipe.setChart(chartTipe);
 
-        // 2. Revenue Chart (Bar)
-        updateRevenueChart("Pilih Filter"); // Default view
+        // Pie: Kategori Servis
+        DefaultPieDataset dsKat = new DefaultPieDataset();
+        for (Object[] r : dashDAO.getKategoriServis()) dsKat.setValue(r[0].toString(), (int) r[1]);
+        JFreeChart chartKat = ChartFactory.createPieChart("Kategori Servis", dsKat, true, true, false);
+        chartPanelKategori.setChart(chartKat);
 
-        // 3. Vehicle Type Chart (Pie)
-        DefaultPieDataset vehicleDataset = new DefaultPieDataset();
-        List<Object[]> vehicleData = dashboardDAO.getPerbandinganTipeKendaraan();
-        for (Object[] row : vehicleData) {
-            vehicleDataset.setValue((Comparable) row[0], (Number) row[1]);
-        }
-        JFreeChart vehicleChart = ChartFactory.createPieChart("Tipe Kendaraan", vehicleDataset, true, true, false);
-        vehicleTypeChartPanel.setChart(vehicleChart);
-
-        // 4. Service Category Chart (Pie)
-        DefaultPieDataset categoryDataset = new DefaultPieDataset();
-        List<Object[]> categoryData = dashboardDAO.getKategoriServis();
-        for (Object[] row : categoryData) {
-            categoryDataset.setValue((Comparable) row[0], (Number) row[1]);
-        }
-        JFreeChart categoryChart = ChartFactory.createPieChart("Kategori Servis", categoryDataset, true, true, false);
-        serviceCategoryChartPanel.setChart(categoryChart);
+        // Bar: Omzet Bulanan
+        updateRevenueChart();
     }
-    
-    private void updateRevenueChart(String filter) throws java.sql.SQLException {
-        DefaultCategoryDataset revenueDataset = new DefaultCategoryDataset();
-        String title = "Perbandingan Tren Pendapatan";
-        String xAxis = "Periode";
-        
-        if ("Bulanan (Tahun Ini)".equals(filter)) {
-            title = "Pendapatan Tiap Bulan (Tahun Ini)";
-            xAxis = "Bulan";
-            List<Object[]> data = dashboardDAO.getOmzetPerBulanTahunIni();
-            String[] namaBulan = {"", "Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Ags", "Sep", "Okt", "Nov", "Des"};
-            for (Object[] row : data) {
-                int bulanVal = (Integer) row[0];
-                String bulanStr = (bulanVal >= 1 && bulanVal <= 12) ? namaBulan[bulanVal] : String.valueOf(bulanVal);
-                revenueDataset.addValue((Number) row[1], "Omzet", bulanStr);
-            }
-        } else if ("Tahunan".equals(filter)) {
-            title = "Pendapatan per Tahun";
-            xAxis = "Tahun";
-            List<Object[]> data = dashboardDAO.getOmzetPerTahun();
-            for (Object[] row : data) {
-                 revenueDataset.addValue((Number) row[1], "Omzet", (Comparable) row[0]);
-            }
-        } else {
-            // Default: Show current week, month, year as before
-            title = "Tren Pendapatan Terkini";
-            revenueDataset.addValue(dashboardDAO.getOmzetMingguan(), "Omzet", "Minggu Ini");
-            revenueDataset.addValue(dashboardDAO.getOmzetBulanIni(), "Omzet", "Bulan Ini");
-            revenueDataset.addValue(dashboardDAO.getOmzetTahunan(), "Omzet", "Tahun Ini");
+
+    private void updateRevenueChart() throws SQLException {
+        DefaultCategoryDataset ds = new DefaultCategoryDataset();
+        String[] bulanNama = {"", "Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Ags", "Sep", "Okt", "Nov", "Des"};
+        for (Object[] r : dashDAO.getOmzetPerBulanTahunIni()) {
+            int bulan = (int) r[0];
+            ds.addValue((double) r[1], "Omzet", bulanNama[bulan]);
         }
-        
-        JFreeChart revenueChart = ChartFactory.createBarChart(title, xAxis, "Rupiah", revenueDataset, PlotOrientation.VERTICAL, false, true, false);
-        revenueChartPanel.setChart(revenueChart);
+        JFreeChart chart = ChartFactory.createBarChart("Omzet Bulanan", "Bulan", "Rupiah", ds, PlotOrientation.VERTICAL, false, true, false);
+        chartPanelOmzetBulanan.setChart(chart);
     }
+
+    // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JPanel bottomSidebar;
+    private javax.swing.JButton btnAntrian;
+    private javax.swing.JButton btnClient;
+    private javax.swing.JButton btnMekanik;
+    private javax.swing.JButton btnRefresh;
+    private javax.swing.JButton btnRiwayat;
+    private javax.swing.JButton btnSparepart;
+    private javax.swing.JButton btnSupplier;
+    private javax.swing.JButton btnTransaksi;
+    private javax.swing.JButton btnVehicle;
+    private javax.swing.JLabel lblApp;
+    private javax.swing.JPanel sidebarPanel;
+    private javax.swing.JPanel sidebarWrap;
+    private javax.swing.JTabbedPane tabbedPane;
+    // End of variables declaration//GEN-END:variables
 }

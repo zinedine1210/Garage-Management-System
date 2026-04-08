@@ -2,82 +2,28 @@ package com.mycompany.garagemanagementsystem.ui;
 
 import com.mycompany.garagemanagementsystem.dao.ClientDAO;
 import com.mycompany.garagemanagementsystem.model.Client;
-import java.awt.BorderLayout;
-import java.awt.Frame;
-import java.awt.GridLayout;
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
-import javax.swing.JButton;
-import javax.swing.JLabel;
 import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTable;
-import javax.swing.JTextField;
-import javax.swing.ListSelectionModel;
 import javax.swing.table.DefaultTableModel;
 
-public class ClientPanel extends JPanel {
+public class ClientPanel extends javax.swing.JPanel {
 
-    private final JTextField txtId;
-    private final JTextField txtNama;
-    private final JTextField txtAlamat;
-    private final JTextField txtTelepon;
-    private final JTextField txtEmail;
-    private final JTable table;
     private final ClientDAO clientDAO = new ClientDAO();
 
     public ClientPanel() {
+        initComponents();
+        myInit();
+    }
 
-        txtId = new JTextField(5);
-        txtId.setEnabled(false);
-        txtNama = new JTextField(20);
-        txtAlamat = new JTextField(20);
-        txtTelepon = new JTextField(15);
-        txtEmail = new JTextField(20);
-
-        JButton btnBaru = new JButton("Baru");
-        JButton btnSimpan = new JButton("Simpan");
-        JButton btnHapus = new JButton("Hapus");
-
-        btnBaru.addActionListener(e -> clearForm());
-        btnSimpan.addActionListener(e -> saveClient());
-        btnHapus.addActionListener(e -> deleteClient());
-
-        table = new JTable();
-        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+    private void myInit() {
+        table.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
         table.getSelectionModel().addListSelectionListener(e -> tableSelectionChanged());
 
-        JPanel formPanel = new JPanel(new GridLayout(5, 2));
-        formPanel.add(new JLabel("ID:"));
-        formPanel.add(txtId);
-        formPanel.add(new JLabel("Nama:"));
-        formPanel.add(txtNama);
-        formPanel.add(new JLabel("Alamat:"));
-        formPanel.add(txtAlamat);
-        formPanel.add(new JLabel("Telepon:"));
-        formPanel.add(txtTelepon);
-        formPanel.add(new JLabel("Email:"));
-        formPanel.add(txtEmail);
-
-        JPanel buttonPanel = new JPanel();
-        buttonPanel.add(btnBaru);
-        buttonPanel.add(btnSimpan);
-        buttonPanel.add(btnHapus);
-
-        // --- FILTER PANEL ---
-        JPanel filterPanel = new JPanel(new BorderLayout());
-        filterPanel.add(new JLabel(" Cari: "), BorderLayout.WEST);
-        JTextField txtSearch = new JTextField();
-        filterPanel.add(txtSearch, BorderLayout.CENTER);
-
         txtSearch.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-            @Override
             public void insertUpdate(javax.swing.event.DocumentEvent e) { filter(); }
-            @Override
             public void removeUpdate(javax.swing.event.DocumentEvent e) { filter(); }
-            @Override
             public void changedUpdate(javax.swing.event.DocumentEvent e) { filter(); }
             private void filter() {
                 String text = txtSearch.getText();
@@ -94,17 +40,127 @@ public class ClientPanel extends JPanel {
             }
         });
 
-        JPanel topPanel = new JPanel(new BorderLayout());
-        topPanel.add(formPanel, BorderLayout.CENTER);
-        topPanel.add(filterPanel, BorderLayout.SOUTH);
-
-        setLayout(new BorderLayout());
-        add(topPanel, BorderLayout.NORTH);
-        add(new JScrollPane(table), BorderLayout.CENTER);
-        add(buttonPanel, BorderLayout.SOUTH);
-
         loadData();
     }
+
+    @SuppressWarnings("unchecked")
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
+    private void initComponents() {
+
+        topPanel = new javax.swing.JPanel();
+        formPanel = new javax.swing.JPanel();
+        lblId = new javax.swing.JLabel();
+        txtId = new javax.swing.JTextField();
+        lblNama = new javax.swing.JLabel();
+        txtNama = new javax.swing.JTextField();
+        lblAlamat = new javax.swing.JLabel();
+        txtAlamat = new javax.swing.JTextField();
+        lblTelepon = new javax.swing.JLabel();
+        txtTelepon = new javax.swing.JTextField();
+        lblEmail = new javax.swing.JLabel();
+        txtEmail = new javax.swing.JTextField();
+        filterPanel = new javax.swing.JPanel();
+        lblCari = new javax.swing.JLabel();
+        txtSearch = new javax.swing.JTextField();
+        jScrollPane1 = new javax.swing.JScrollPane();
+        table = new javax.swing.JTable();
+        buttonPanel = new javax.swing.JPanel();
+        btnBaru = new javax.swing.JButton();
+        btnSimpan = new javax.swing.JButton();
+        btnHapus = new javax.swing.JButton();
+
+        setLayout(new java.awt.BorderLayout());
+
+        topPanel.setLayout(new java.awt.BorderLayout());
+
+        formPanel.setLayout(new java.awt.GridLayout(5, 2));
+
+        lblId.setText("ID:");
+        formPanel.add(lblId);
+
+        txtId.setColumns(5);
+        txtId.setEnabled(false);
+        formPanel.add(txtId);
+
+        lblNama.setText("Nama:");
+        formPanel.add(lblNama);
+
+        txtNama.setColumns(20);
+        formPanel.add(txtNama);
+
+        lblAlamat.setText("Alamat:");
+        formPanel.add(lblAlamat);
+
+        txtAlamat.setColumns(20);
+        formPanel.add(txtAlamat);
+
+        lblTelepon.setText("Telepon:");
+        formPanel.add(lblTelepon);
+
+        txtTelepon.setColumns(15);
+        formPanel.add(txtTelepon);
+
+        lblEmail.setText("Email:");
+        formPanel.add(lblEmail);
+
+        txtEmail.setColumns(20);
+        formPanel.add(txtEmail);
+
+        topPanel.add(formPanel, java.awt.BorderLayout.CENTER);
+
+        filterPanel.setLayout(new java.awt.BorderLayout());
+
+        lblCari.setText(" Cari: ");
+        filterPanel.add(lblCari, java.awt.BorderLayout.WEST);
+        filterPanel.add(txtSearch, java.awt.BorderLayout.CENTER);
+
+        topPanel.add(filterPanel, java.awt.BorderLayout.SOUTH);
+
+        add(topPanel, java.awt.BorderLayout.NORTH);
+
+        table.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
+        jScrollPane1.setViewportView(table);
+
+        add(jScrollPane1, java.awt.BorderLayout.CENTER);
+
+        btnBaru.setText("Baru");
+        btnBaru.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnBaruActionPerformed(evt);
+            }
+        });
+        buttonPanel.add(btnBaru);
+
+        btnSimpan.setText("Simpan");
+        btnSimpan.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnSimpanActionPerformed(evt);
+            }
+        });
+        buttonPanel.add(btnSimpan);
+
+        btnHapus.setText("Hapus");
+        btnHapus.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnHapusActionPerformed(evt);
+            }
+        });
+        buttonPanel.add(btnHapus);
+
+        add(buttonPanel, java.awt.BorderLayout.SOUTH);
+    }// </editor-fold>//GEN-END:initComponents
+
+    private void btnBaruActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBaruActionPerformed
+        clearForm();
+    }//GEN-LAST:event_btnBaruActionPerformed
+
+    private void btnSimpanActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSimpanActionPerformed
+        saveClient();
+    }//GEN-LAST:event_btnSimpanActionPerformed
+
+    private void btnHapusActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnHapusActionPerformed
+        deleteClient();
+    }//GEN-LAST:event_btnHapusActionPerformed
 
     private void loadData() {
         try {
@@ -113,16 +169,10 @@ public class ClientPanel extends JPanel {
                     new Object[]{"ID", "Nama", "Alamat", "Telepon", "Email"}, 0);
             for (Client c : list) {
                 model.addRow(new Object[]{
-                    c.getClientId(),
-                    c.getNama(),
-                    c.getAlamat(),
-                    c.getTelepon(),
-                    c.getEmail()
+                    c.getClientId(), c.getNama(), c.getAlamat(), c.getTelepon(), c.getEmail()
                 });
             }
             table.setModel(model);
-            
-            // Reapply sorter
             javax.swing.table.TableRowSorter<DefaultTableModel> sorter = new javax.swing.table.TableRowSorter<>(model);
             table.setRowSorter(sorter);
         } catch (SQLException ex) {
@@ -149,7 +199,6 @@ public class ClientPanel extends JPanel {
             c.setTelepon(txtTelepon.getText());
             c.setEmail(txtEmail.getText());
             c.setTanggalDaftar(new Date());
-
             if (c.getClientId() == 0) {
                 clientDAO.insert(c);
             } else {
@@ -163,11 +212,8 @@ public class ClientPanel extends JPanel {
     }
 
     private void deleteClient() {
-        if (txtId.getText().isEmpty()) {
-            return;
-        }
-        int confirm = JOptionPane.showConfirmDialog(this, "Hapus client ini?", "Konfirmasi",
-                JOptionPane.YES_NO_OPTION);
+        if (txtId.getText().isEmpty()) return;
+        int confirm = JOptionPane.showConfirmDialog(this, "Hapus client ini?", "Konfirmasi", JOptionPane.YES_NO_OPTION);
         if (confirm == JOptionPane.YES_OPTION) {
             try {
                 clientDAO.delete(Integer.parseInt(txtId.getText()));
@@ -189,5 +235,28 @@ public class ClientPanel extends JPanel {
             txtEmail.setText(table.getValueAt(row, 4).toString());
         }
     }
-}
 
+    // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton btnBaru;
+    private javax.swing.JButton btnHapus;
+    private javax.swing.JButton btnSimpan;
+    private javax.swing.JPanel buttonPanel;
+    private javax.swing.JPanel filterPanel;
+    private javax.swing.JPanel formPanel;
+    private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JLabel lblAlamat;
+    private javax.swing.JLabel lblCari;
+    private javax.swing.JLabel lblEmail;
+    private javax.swing.JLabel lblId;
+    private javax.swing.JLabel lblNama;
+    private javax.swing.JLabel lblTelepon;
+    private javax.swing.JTable table;
+    private javax.swing.JPanel topPanel;
+    private javax.swing.JTextField txtAlamat;
+    private javax.swing.JTextField txtEmail;
+    private javax.swing.JTextField txtId;
+    private javax.swing.JTextField txtNama;
+    private javax.swing.JTextField txtSearch;
+    private javax.swing.JTextField txtTelepon;
+    // End of variables declaration//GEN-END:variables
+}

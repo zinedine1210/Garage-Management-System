@@ -3,52 +3,78 @@ package com.mycompany.garagemanagementsystem.ui;
 import com.mycompany.garagemanagementsystem.dao.UserDAO;
 import com.mycompany.garagemanagementsystem.model.User;
 import com.mycompany.garagemanagementsystem.util.DBConnection;
-import java.awt.GridLayout;
 import java.sql.Connection;
 import java.sql.Statement;
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JPasswordField;
-import javax.swing.JTextField;
 
-public class LoginFrame extends JFrame {
-    
-    private final JTextField txtUsername;
-    private final JPasswordField txtPassword;
+public class LoginFrame extends javax.swing.JFrame {
+
     private final UserDAO userDAO = new UserDAO();
 
     public LoginFrame() {
-        setTitle("Login - Garage Management");
-        setSize(350, 200);
-        setLocationRelativeTo(null);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-        txtUsername = new JTextField(15);
-        txtPassword = new JPasswordField(15);
-
-        JButton btnLogin = new JButton("Login");
-        JButton btnAntrian = new JButton("Display Antrian TV");
-        btnLogin.addActionListener(e -> prosesLogin());
-        btnAntrian.addActionListener(e -> new QueueDashboardFrame().setVisible(true));
-
-        JPanel panel = new JPanel(new GridLayout(4, 2, 10, 10));
-        panel.add(new JLabel(" Username:"));
-        panel.add(txtUsername);
-        panel.add(new JLabel(" Password:"));
-        panel.add(txtPassword);
-        panel.add(new JLabel("")); // Spacer
-        panel.add(btnLogin);
-        panel.add(new JLabel("")); // Spacer
-        panel.add(btnAntrian);
-
-        add(panel);
-
-        // Pastikan tabel users ada saat login frame terbuka
+        initComponents();
         initDatabase();
     }
+
+    @SuppressWarnings("unchecked")
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
+    private void initComponents() {
+
+        panel = new javax.swing.JPanel();
+        jLabel1 = new javax.swing.JLabel();
+        txtUsername = new javax.swing.JTextField();
+        jLabel2 = new javax.swing.JLabel();
+        txtPassword = new javax.swing.JPasswordField();
+        jLabel3 = new javax.swing.JLabel();
+        btnLogin = new javax.swing.JButton();
+        jLabel4 = new javax.swing.JLabel();
+        btnAntrian = new javax.swing.JButton();
+
+        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setTitle("Login - Garage Management");
+
+        panel.setLayout(new java.awt.GridLayout(4, 2, 10, 10));
+
+        jLabel1.setText("Username:");
+        panel.add(jLabel1);
+
+        txtUsername.setColumns(15);
+        txtUsername.addActionListener(this::txtUsernameActionPerformed);
+        panel.add(txtUsername);
+
+        jLabel2.setText(" Password:");
+        panel.add(jLabel2);
+
+        txtPassword.setColumns(15);
+        panel.add(txtPassword);
+        panel.add(jLabel3);
+
+        btnLogin.setText("Login");
+        btnLogin.addActionListener(this::btnLoginActionPerformed);
+        panel.add(btnLogin);
+        panel.add(jLabel4);
+
+        btnAntrian.setText("Display Antrian TV");
+        btnAntrian.addActionListener(this::btnAntrianActionPerformed);
+        panel.add(btnAntrian);
+
+        getContentPane().add(panel, java.awt.BorderLayout.CENTER);
+
+        pack();
+        setLocationRelativeTo(null);
+    }// </editor-fold>//GEN-END:initComponents
+
+    private void btnLoginActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLoginActionPerformed
+        prosesLogin();
+    }//GEN-LAST:event_btnLoginActionPerformed
+
+    private void btnAntrianActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAntrianActionPerformed
+        new QueueDashboardFrame().setVisible(true);
+    }//GEN-LAST:event_btnAntrianActionPerformed
+
+    private void txtUsernameActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtUsernameActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_txtUsernameActionPerformed
 
     private void initDatabase() {
         String createTableSQL = "CREATE TABLE IF NOT EXISTS users (" +
@@ -75,12 +101,12 @@ public class LoginFrame extends JFrame {
         try {
             String uname = txtUsername.getText();
             String pwd = new String(txtPassword.getPassword());
-            
+
             User u = userDAO.login(uname, pwd);
             if (u != null) {
                 JOptionPane.showMessageDialog(this, "Selamat datang, " + u.getNamaLengkap());
                 new MainMenuFrame().setVisible(true);
-                this.dispose(); // Tutup halaman login
+                this.dispose();
             } else {
                 JOptionPane.showMessageDialog(this, "Username atau Password salah!", "Error", JOptionPane.ERROR_MESSAGE);
             }
@@ -88,4 +114,16 @@ public class LoginFrame extends JFrame {
             JOptionPane.showMessageDialog(this, "Terjadi kesalahan: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
+
+    // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton btnAntrian;
+    private javax.swing.JButton btnLogin;
+    private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel2;
+    private javax.swing.JLabel jLabel3;
+    private javax.swing.JLabel jLabel4;
+    private javax.swing.JPanel panel;
+    private javax.swing.JPasswordField txtPassword;
+    private javax.swing.JTextField txtUsername;
+    // End of variables declaration//GEN-END:variables
 }

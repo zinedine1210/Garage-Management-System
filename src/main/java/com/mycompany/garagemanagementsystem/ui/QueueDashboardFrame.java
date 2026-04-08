@@ -2,102 +2,112 @@ package com.mycompany.garagemanagementsystem.ui;
 
 import com.mycompany.garagemanagementsystem.dao.ServiceTransactionDAO;
 import com.mycompany.garagemanagementsystem.model.ServiceTransaction;
-import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.GridLayout;
 import java.sql.SQLException;
 import java.util.List;
 import javax.swing.BorderFactory;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.Timer;
 
-public class QueueDashboardFrame extends JFrame {
+public class QueueDashboardFrame extends javax.swing.JFrame {
 
-    private final JPanel pnlMenunggu;
-    private final JPanel pnlDikerjakan;
     private final ServiceTransactionDAO transDAO = new ServiceTransactionDAO();
 
     public QueueDashboardFrame() {
-        setTitle("Dashboard Antrian - Live Service Progress");
-        setSize(1000, 600);
-        setLocationRelativeTo(null);
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setLayout(new BorderLayout());
+        initComponents();
         getContentPane().setBackground(Color.BLACK);
-
-        JLabel lblTitle = new JLabel("STATUS ANTRIAN SERVIS", SwingConstants.CENTER);
-        lblTitle.setFont(new Font("Arial", Font.BOLD, 36));
-        lblTitle.setForeground(Color.WHITE);
         lblTitle.setBorder(BorderFactory.createEmptyBorder(20, 10, 20, 10));
-        add(lblTitle, BorderLayout.NORTH);
-
-        JPanel mainPanel = new JPanel(new GridLayout(1, 2, 20, 20));
-        mainPanel.setBackground(Color.BLACK);
         mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-
-        // Panel Kiri: Menunggu
-        JPanel wrapMenunggu = new JPanel(new BorderLayout());
-        wrapMenunggu.setBackground(new Color(25, 25, 25));
-        JLabel titleMenunggu = new JLabel("MENUNGGU (WAITING)", SwingConstants.CENTER);
-        titleMenunggu.setFont(new Font("Arial", Font.BOLD, 24));
-        titleMenunggu.setForeground(Color.YELLOW);
-        wrapMenunggu.add(titleMenunggu, BorderLayout.NORTH);
-
-        pnlMenunggu = new JPanel(new GridLayout(10, 1, 5, 5));
-        pnlMenunggu.setBackground(new Color(25, 25, 25));
-        wrapMenunggu.add(pnlMenunggu, BorderLayout.CENTER);
-
-        // Panel Kanan: Dikerjakan
-        JPanel wrapDikerjakan = new JPanel(new BorderLayout());
-        wrapDikerjakan.setBackground(new Color(25, 25, 25));
-        JLabel titleDikerjakan = new JLabel("SEDANG DIKERJAKAN (WORKING)", SwingConstants.CENTER);
-        titleDikerjakan.setFont(new Font("Arial", Font.BOLD, 24));
-        titleDikerjakan.setForeground(Color.GREEN);
-        wrapDikerjakan.add(titleDikerjakan, BorderLayout.NORTH);
-
-        pnlDikerjakan = new JPanel(new GridLayout(10, 1, 5, 5));
-        pnlDikerjakan.setBackground(new Color(25, 25, 25));
-        wrapDikerjakan.add(pnlDikerjakan, BorderLayout.CENTER);
-
-        mainPanel.add(wrapMenunggu);
-        mainPanel.add(wrapDikerjakan);
-        add(mainPanel, BorderLayout.CENTER);
-
         loadData();
-
-        // Auto Refresh Setiap 5 Detik
         Timer timer = new Timer(5000, e -> loadData());
         timer.start();
     }
+
+    @SuppressWarnings("unchecked")
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
+    private void initComponents() {
+
+        lblTitle = new javax.swing.JLabel();
+        mainPanel = new javax.swing.JPanel();
+        wrapMenunggu = new javax.swing.JPanel();
+        titleMenunggu = new javax.swing.JLabel();
+        pnlMenunggu = new javax.swing.JPanel();
+        wrapDikerjakan = new javax.swing.JPanel();
+        titleDikerjakan = new javax.swing.JLabel();
+        pnlDikerjakan = new javax.swing.JPanel();
+
+        setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
+        setTitle("Dashboard Antrian - Live Service Progress");
+        getContentPane().setLayout(new java.awt.BorderLayout());
+
+        lblTitle.setFont(new java.awt.Font("Arial", 1, 36));
+        lblTitle.setForeground(new java.awt.Color(255, 255, 255));
+        lblTitle.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        lblTitle.setText("STATUS ANTRIAN SERVIS");
+        getContentPane().add(lblTitle, java.awt.BorderLayout.NORTH);
+
+        mainPanel.setBackground(new java.awt.Color(0, 0, 0));
+        mainPanel.setLayout(new java.awt.GridLayout(1, 2, 20, 20));
+
+        wrapMenunggu.setBackground(new java.awt.Color(25, 25, 25));
+        wrapMenunggu.setLayout(new java.awt.BorderLayout());
+        titleMenunggu.setFont(new java.awt.Font("Arial", 1, 24));
+        titleMenunggu.setForeground(new java.awt.Color(255, 255, 0));
+        titleMenunggu.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        titleMenunggu.setText("MENUNGGU (WAITING)");
+        wrapMenunggu.add(titleMenunggu, java.awt.BorderLayout.NORTH);
+        pnlMenunggu.setBackground(new java.awt.Color(25, 25, 25));
+        pnlMenunggu.setLayout(new java.awt.GridLayout(10, 1, 5, 5));
+        wrapMenunggu.add(pnlMenunggu, java.awt.BorderLayout.CENTER);
+        mainPanel.add(wrapMenunggu);
+
+        wrapDikerjakan.setBackground(new java.awt.Color(25, 25, 25));
+        wrapDikerjakan.setLayout(new java.awt.BorderLayout());
+        titleDikerjakan.setFont(new java.awt.Font("Arial", 1, 24));
+        titleDikerjakan.setForeground(new java.awt.Color(0, 255, 0));
+        titleDikerjakan.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        titleDikerjakan.setText("SEDANG DIKERJAKAN (WORKING)");
+        wrapDikerjakan.add(titleDikerjakan, java.awt.BorderLayout.NORTH);
+        pnlDikerjakan.setBackground(new java.awt.Color(25, 25, 25));
+        pnlDikerjakan.setLayout(new java.awt.GridLayout(10, 1, 5, 5));
+        wrapDikerjakan.add(pnlDikerjakan, java.awt.BorderLayout.CENTER);
+        mainPanel.add(wrapDikerjakan);
+
+        getContentPane().add(mainPanel, java.awt.BorderLayout.CENTER);
+
+        setSize(1000, 600);
+        setLocationRelativeTo(null);
+    }// </editor-fold>//GEN-END:initComponents
 
     private void loadData() {
         try {
             List<ServiceTransaction> antrian = transDAO.getAntrian();
             pnlMenunggu.removeAll();
             pnlDikerjakan.removeAll();
-
             for (ServiceTransaction t : antrian) {
-                JLabel lblPlat = new JLabel(t.getKeluhan(), SwingConstants.CENTER); // numpang kolom keluhan
+                JLabel lblPlat = new JLabel(t.getKeluhan(), SwingConstants.CENTER);
                 lblPlat.setFont(new Font("Arial", Font.BOLD, 30));
                 lblPlat.setForeground(Color.WHITE);
-
-                if ("Menunggu".equals(t.getStatusServis())) {
-                    pnlMenunggu.add(lblPlat);
-                } else if ("Dikerjakan".equals(t.getStatusServis())) {
-                    pnlDikerjakan.add(lblPlat);
-                }
+                if ("Menunggu".equals(t.getStatusServis())) pnlMenunggu.add(lblPlat);
+                else if ("Dikerjakan".equals(t.getStatusServis())) pnlDikerjakan.add(lblPlat);
             }
-            pnlMenunggu.revalidate();
-            pnlMenunggu.repaint();
-            pnlDikerjakan.revalidate();
-            pnlDikerjakan.repaint();
-            
+            pnlMenunggu.revalidate(); pnlMenunggu.repaint();
+            pnlDikerjakan.revalidate(); pnlDikerjakan.repaint();
         } catch (SQLException ex) {
             System.err.println("Gagal memuat antrian: " + ex.getMessage());
         }
     }
+
+    // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JLabel lblTitle;
+    private javax.swing.JPanel mainPanel;
+    private javax.swing.JPanel pnlDikerjakan;
+    private javax.swing.JPanel pnlMenunggu;
+    private javax.swing.JLabel titleDikerjakan;
+    private javax.swing.JLabel titleMenunggu;
+    private javax.swing.JPanel wrapDikerjakan;
+    private javax.swing.JPanel wrapMenunggu;
+    // End of variables declaration//GEN-END:variables
 }
