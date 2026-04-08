@@ -1,23 +1,56 @@
 package com.mycompany.garagemanagementsystem.ui;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Cursor;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.UIManager;
 
 public class MainMenuFrame extends javax.swing.JFrame {
 
     private DashboardPanel dashboardPanel;
 
+    private static final Color TAB_BG = new Color(240, 244, 248);
+    private static final Color TAB_SELECTED_BG = Color.WHITE;
+    private static final Color TAB_HOVER_BG = new Color(220, 228, 236);
+    private static final Color TAB_TEXT = new Color(60, 60, 80);
+    private static final Color TAB_CLOSE_HOVER = new Color(220, 50, 50);
+    private static final Font TAB_FONT = new Font("Segoe UI", Font.PLAIN, 13);
+
     public MainMenuFrame() {
         initComponents();
         styleSidebarButtons();
+        styleTabbedPane();
         dashboardPanel = new DashboardPanel();
         tabbedPane.addTab("Dashboard", dashboardPanel);
         setExtendedState(javax.swing.JFrame.MAXIMIZED_BOTH);
+    }
+
+    private void styleTabbedPane() {
+        tabbedPane.setFont(TAB_FONT);
+        tabbedPane.setBackground(TAB_BG);
+        tabbedPane.setForeground(TAB_TEXT);
+        tabbedPane.setBorder(BorderFactory.createEmptyBorder(4, 0, 0, 0));
+        tabbedPane.setTabLayoutPolicy(javax.swing.JTabbedPane.SCROLL_TAB_LAYOUT);
+
+        UIManager.put("TabbedPane.selected", TAB_SELECTED_BG);
+        UIManager.put("TabbedPane.contentBorderInsets", new java.awt.Insets(0, 0, 0, 0));
+        UIManager.put("TabbedPane.tabAreaInsets", new java.awt.Insets(2, 6, 0, 6));
+        UIManager.put("TabbedPane.tabInsets", new java.awt.Insets(6, 14, 6, 14));
+
+        tabbedPane.updateUI();
     }
 
     private void styleSidebarButtons() {
@@ -174,22 +207,54 @@ public class MainMenuFrame extends javax.swing.JFrame {
         tabbedPane.addTab(title, panel);
         int idx = tabbedPane.indexOfTab(title);
 
-        JPanel tabTitle = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        tabTitle.setOpaque(false);
-        tabTitle.add(new JLabel(title + " "));
+        JPanel tabHeader = new JPanel(new BorderLayout(8, 0));
+        tabHeader.setOpaque(false);
+        tabHeader.setBorder(BorderFactory.createEmptyBorder(1, 0, 1, 0));
 
-        JButton btnClose = new JButton("X");
-        btnClose.setMargin(new java.awt.Insets(0, 0, 0, 0));
-        btnClose.setFocusPainted(false);
-        btnClose.setBorderPainted(false);
-        btnClose.setContentAreaFilled(false);
-        btnClose.addActionListener(e -> {
-            int i = tabbedPane.indexOfTab(title);
-            if (i >= 0) tabbedPane.removeTabAt(i);
+        JLabel lblTitle = new JLabel(title);
+        lblTitle.setFont(TAB_FONT);
+        lblTitle.setForeground(TAB_TEXT);
+        tabHeader.add(lblTitle, BorderLayout.CENTER);
+
+        JLabel btnClose = new JLabel("\u2715") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                if (getForeground().equals(TAB_CLOSE_HOVER)) {
+                    g2.setColor(new Color(255, 220, 220));
+                    g2.fillRoundRect(0, 0, getWidth(), getHeight(), 6, 6);
+                }
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        btnClose.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        btnClose.setForeground(new Color(160, 160, 170));
+        btnClose.setPreferredSize(new Dimension(20, 20));
+        btnClose.setHorizontalAlignment(JLabel.CENTER);
+        btnClose.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btnClose.setToolTipText("Tutup tab");
+        btnClose.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                btnClose.setForeground(TAB_CLOSE_HOVER);
+                btnClose.repaint();
+            }
+            @Override
+            public void mouseExited(MouseEvent e) {
+                btnClose.setForeground(new Color(160, 160, 170));
+                btnClose.repaint();
+            }
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                int i = tabbedPane.indexOfTab(title);
+                if (i >= 0) tabbedPane.removeTabAt(i);
+            }
         });
-        tabTitle.add(btnClose);
+        tabHeader.add(btnClose, BorderLayout.EAST);
 
-        tabbedPane.setTabComponentAt(idx, tabTitle);
+        tabbedPane.setTabComponentAt(idx, tabHeader);
         tabbedPane.setSelectedIndex(idx);
     }
 
