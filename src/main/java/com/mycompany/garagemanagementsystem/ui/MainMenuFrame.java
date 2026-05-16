@@ -106,7 +106,7 @@ public class MainMenuFrame extends javax.swing.JFrame {
         sidebarWrap.add(lblApp, java.awt.BorderLayout.NORTH);
 
         sidebarPanel.setBackground(new java.awt.Color(43, 45, 66));
-        sidebarPanel.setLayout(new java.awt.GridLayout(8, 1, 5, 5));
+        sidebarPanel.setLayout(new java.awt.GridLayout(9, 1, 5, 5));
 
         btnClient.setText("Data Client");
         btnClient.addActionListener(this::btnClientActionPerformed);
@@ -131,6 +131,16 @@ public class MainMenuFrame extends javax.swing.JFrame {
         btnTransaksi.setText("Transaksi Servis");
         btnTransaksi.addActionListener(this::btnTransaksiActionPerformed);
         sidebarPanel.add(btnTransaksi);
+
+        btnPembelian = new javax.swing.JButton();
+        btnPembelian.setText("Pembelian Sparepart");
+        btnPembelian.addActionListener(this::btnPembelianActionPerformed);
+        sidebarPanel.add(btnPembelian);
+
+        javax.swing.JButton btnPendaftaran = new javax.swing.JButton();
+        btnPendaftaran.setText("Pendaftaran Servis");
+        btnPendaftaran.addActionListener(e -> openTab("Pendaftaran Servis", new ServiceRegistrationPanel()));
+        sidebarPanel.add(btnPendaftaran);
 
         btnRiwayat.setText("Riwayat Servis");
         btnRiwayat.addActionListener(this::btnRiwayatActionPerformed);
@@ -191,6 +201,10 @@ public class MainMenuFrame extends javax.swing.JFrame {
     private void btnAntrianActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAntrianActionPerformed
         new QueueDashboardFrame().setVisible(true);
     }//GEN-LAST:event_btnAntrianActionPerformed
+
+    private void btnPembelianActionPerformed(java.awt.event.ActionEvent evt) {
+        openTab("Pembelian Sparepart", new SparepartPurchasePanel());
+    }
 
     private void btnRefreshActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRefreshActionPerformed
         dashboardPanel.loadData();
@@ -263,6 +277,7 @@ public class MainMenuFrame extends javax.swing.JFrame {
     private javax.swing.JButton btnAntrian;
     private javax.swing.JButton btnClient;
     private javax.swing.JButton btnMekanik;
+    private javax.swing.JButton btnPembelian;
     private javax.swing.JButton btnRefresh;
     private javax.swing.JButton btnRiwayat;
     private javax.swing.JButton btnSparepart;

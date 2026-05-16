@@ -113,6 +113,24 @@ public class SparepartPanel extends javax.swing.JPanel {
         btnHapus.setText("Hapus");
         btnHapus.addActionListener(new java.awt.event.ActionListener() { public void actionPerformed(java.awt.event.ActionEvent evt) { btnHapusActionPerformed(evt); } });
         buttonPanel.add(btnHapus);
+
+        javax.swing.JButton btnRefresh = new javax.swing.JButton();
+        btnRefresh.setText("Refresh");
+        btnRefresh.addActionListener(new java.awt.event.ActionListener() { public void actionPerformed(java.awt.event.ActionEvent evt) { loadData(); } });
+        buttonPanel.add(btnRefresh);
+
+        javax.swing.JButton btnPrint = new javax.swing.JButton();
+        btnPrint.setText("Export");
+        btnPrint.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                Object[] options = {"PDF", "Excel", "Batal"};
+                int choice = javax.swing.JOptionPane.showOptionDialog(SparepartPanel.this, "Pilih format export:", "Export Data", javax.swing.JOptionPane.YES_NO_CANCEL_OPTION, javax.swing.JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
+                if (choice == 0) com.mycompany.garagemanagementsystem.util.ExportUtils.exportTableToPDF(table, "Data_Sparepart");
+                else if (choice == 1) com.mycompany.garagemanagementsystem.util.ExportUtils.exportTableToExcel(table, "Data_Sparepart");
+            }
+        });
+        buttonPanel.add(btnPrint);
+
         add(buttonPanel, java.awt.BorderLayout.SOUTH);
     }// </editor-fold>//GEN-END:initComponents
 
@@ -129,6 +147,7 @@ public class SparepartPanel extends javax.swing.JPanel {
     private void loadSuppliers() {
         try {
             cbSupplier.removeAllItems();
+            cbSupplier.addItem("-- Tanpa Supplier --");
             for (Supplier s : supplierDAO.findAll()) {
                 cbSupplier.addItem(s);
             }
@@ -164,6 +183,8 @@ public class SparepartPanel extends javax.swing.JPanel {
         txtHargaBeli.setText("");
         txtHargaJual.setText("");
         if (cbSupplier.getItemCount() > 0) cbSupplier.setSelectedIndex(0);
+        table.clearSelection();
+        txtKode.requestFocusInWindow();
     }
 
     private void saveSparepart() {
@@ -179,8 +200,12 @@ public class SparepartPanel extends javax.swing.JPanel {
             s.setHargaBeli(Double.parseDouble(txtHargaBeli.getText()));
             s.setHargaJual(Double.parseDouble(txtHargaJual.getText()));
 
-            Supplier sel = (Supplier) cbSupplier.getSelectedItem();
-            s.setSupplierId(sel != null ? sel.getSupplierId() : 0);
+            Object sel = cbSupplier.getSelectedItem();
+            if (sel instanceof Supplier) {
+                s.setSupplierId(((Supplier) sel).getSupplierId());
+            } else {
+                s.setSupplierId(0);
+            }
 
             if (s.getSparepartId() == 0) sparepartDAO.insert(s);
             else sparepartDAO.update(s);
@@ -218,10 +243,15 @@ public class SparepartPanel extends javax.swing.JPanel {
             txtHargaJual.setText(table.getValueAt(row, 6).toString());
 
             int supplierId = Integer.parseInt(table.getValueAt(row, 7).toString());
-            for (int i = 0; i < cbSupplier.getItemCount(); i++) {
-                if (((Supplier) cbSupplier.getItemAt(i)).getSupplierId() == supplierId) {
-                    cbSupplier.setSelectedIndex(i);
-                    break;
+            if (supplierId == 0) {
+                cbSupplier.setSelectedIndex(0);
+            } else {
+                for (int i = 1; i < cbSupplier.getItemCount(); i++) {
+                    Object item = cbSupplier.getItemAt(i);
+                    if (item instanceof Supplier && ((Supplier) item).getSupplierId() == supplierId) {
+                        cbSupplier.setSelectedIndex(i);
+                        break;
+                    }
                 }
             }
         }

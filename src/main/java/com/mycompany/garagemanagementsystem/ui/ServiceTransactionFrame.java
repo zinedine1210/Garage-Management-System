@@ -2,11 +2,13 @@ package com.mycompany.garagemanagementsystem.ui;
 
 import com.mycompany.garagemanagementsystem.dao.ClientDAO;
 import com.mycompany.garagemanagementsystem.dao.MekanikDAO;
+import com.mycompany.garagemanagementsystem.dao.ServiceRegistrationDAO;
 import com.mycompany.garagemanagementsystem.dao.ServiceTransactionDAO;
 import com.mycompany.garagemanagementsystem.dao.SparepartDAO;
 import com.mycompany.garagemanagementsystem.dao.VehicleDAO;
 import com.mycompany.garagemanagementsystem.model.Client;
 import com.mycompany.garagemanagementsystem.model.Mekanik;
+import com.mycompany.garagemanagementsystem.model.ServiceRegistration;
 import com.mycompany.garagemanagementsystem.model.ServiceTransaction;
 import com.mycompany.garagemanagementsystem.model.Sparepart;
 import com.mycompany.garagemanagementsystem.model.TransactionDetail;
@@ -26,10 +28,12 @@ public class ServiceTransactionFrame extends javax.swing.JDialog {
     private final MekanikDAO mekanikDAO = new MekanikDAO();
     private final SparepartDAO sparepartDAO = new SparepartDAO();
     private final ServiceTransactionDAO transDAO = new ServiceTransactionDAO();
+    private final ServiceRegistrationDAO regDAO = new ServiceRegistrationDAO();
 
     private DefaultTableModel detailModel;
 
     private int editTransId = -1;
+    private Integer sourceRegistrationId = null;
 
     private boolean isFiltering = false;
 
@@ -52,6 +56,13 @@ public class ServiceTransactionFrame extends javax.swing.JDialog {
         loadTransactionInfo(transId);
     }
 
+    public ServiceTransactionFrame(Frame owner, ServiceRegistration reg) {
+        super(owner, true);
+        initComponents();
+        myInit();
+        prefillFromRegistration(reg);
+    }
+
     private void myInit() {
         detailModel = new DefaultTableModel(
                 new Object[]{"Sparepart ID", "Nama Sparepart", "Qty", "Harga", "Subtotal"}, 0);
@@ -64,6 +75,17 @@ public class ServiceTransactionFrame extends javax.swing.JDialog {
         });
         cbVehicle.addActionListener(e -> {
             if (!isFiltering) autofillClientByVehicle();
+        });
+
+        txtTotalJasa.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            public void insertUpdate(javax.swing.event.DocumentEvent e) { hitungTotal(); }
+            public void removeUpdate(javax.swing.event.DocumentEvent e) { hitungTotal(); }
+            public void changedUpdate(javax.swing.event.DocumentEvent e) { hitungTotal(); }
+        });
+        txtBayar.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            public void insertUpdate(javax.swing.event.DocumentEvent e) { hitungTotal(); }
+            public void removeUpdate(javax.swing.event.DocumentEvent e) { hitungTotal(); }
+            public void changedUpdate(javax.swing.event.DocumentEvent e) { hitungTotal(); }
         });
     }
 
@@ -145,6 +167,8 @@ public class ServiceTransactionFrame extends javax.swing.JDialog {
             ServiceTransaction t = transDAO.findById(transId);
             if (t == null) return;
 
+            sourceRegistrationId = t.getRegistrationId();
+
             isFiltering = true;
 
             for (int i = 0; i < clientList.size(); i++) {
@@ -202,6 +226,43 @@ public class ServiceTransactionFrame extends javax.swing.JDialog {
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(this, "Error load transaksi: " + ex.getMessage());
         }
+    }
+
+    private void prefillFromRegistration(ServiceRegistration reg) {
+        if (reg == null) return;
+        sourceRegistrationId = reg.getRegistrationId();
+        txtKeluhan.setText(reg.getKeluhan() != null ? reg.getKeluhan() : "");
+        cbStatusServis.setSelectedItem("Menunggu");
+
+        isFiltering = true;
+        for (int i = 0; i < clientList.size(); i++) {
+            if (clientList.get(i).getClientId() == reg.getClientId()) {
+                cbClient.setSelectedIndex(i + 1);
+                break;
+            }
+        }
+
+        cbVehicle.removeAllItems();
+        cbVehicle.addItem("-- Pilih Kendaraan --");
+        for (Vehicle v : vehicleList) {
+            if (v.getClientId() == reg.getClientId()) {
+                cbVehicle.addItem(v.getVehicleId() + " - " + v.getNoPolisi() + " - " + v.getMerk());
+            }
+        }
+        for (int i = 0; i < cbVehicle.getItemCount(); i++) {
+            if (cbVehicle.getItemAt(i).toString().startsWith(reg.getVehicleId() + " - ")) {
+                cbVehicle.setSelectedIndex(i);
+                break;
+            }
+        }
+
+        for (int i = 0; i < mekanikList.size(); i++) {
+            if (mekanikList.get(i).getMekanikId() == reg.getMekanikId()) {
+                cbMekanik.setSelectedIndex(i + 1);
+                break;
+            }
+        }
+        isFiltering = false;
     }
 
     @SuppressWarnings("unchecked")
@@ -317,10 +378,16 @@ public class ServiceTransactionFrame extends javax.swing.JDialog {
             public void actionPerformed(java.awt.event.ActionEvent evt) { btnBayarActionPerformed(evt); }
         });
         buttonPanel.add(btnBayar);
+        btnPrint = new javax.swing.JButton();
+        btnPrint.setText("Print");
+        btnPrint.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) { printTransaksi(); }
+        });
+        buttonPanel.add(btnPrint);
         getContentPane().add(buttonPanel, java.awt.BorderLayout.SOUTH);
 
         setSize(900, 600);
-        setLocationRelativeTo(null);
+        setLocationRelativeTo(getOwner());
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnAddClientActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAddClientActionPerformed
@@ -355,35 +422,18 @@ public class ServiceTransactionFrame extends javax.swing.JDialog {
             return;
         }
 
-        String[] options = new String[sparepartList.size()];
-        for (int i = 0; i < sparepartList.size(); i++) {
-            Sparepart s = sparepartList.get(i);
-            options[i] = s.getSparepartId() + " - " + s.getNamaSparepart()
-                       + " (Stok:" + s.getStok() + ", Harga:" + s.getHargaJual() + ")";
-        }
+        SparepartChooserDialog dialog = new SparepartChooserDialog(this, sparepartList);
+        dialog.setVisible(true);
 
-        String choice = (String) JOptionPane.showInputDialog(
-            this, "Pilih sparepart:", "Tambah Sparepart",
-            JOptionPane.PLAIN_MESSAGE, null, options, options[0]
-        );
-        if (choice == null) return;
+        Sparepart s = dialog.getSelectedSparepart();
+        int qty = dialog.getSelectedQty();
+        if (s == null || qty <= 0) return;
 
-        int spId = Integer.parseInt(choice.split(" - ")[0].trim());
-
-        String qtyStr = JOptionPane.showInputDialog(this, "Jumlah qty:");
-        if (qtyStr == null || qtyStr.trim().isEmpty()) return;
-        int qty = Integer.parseInt(qtyStr.trim());
-
-        for (Sparepart s : sparepartList) {
-            if (s.getSparepartId() == spId) {
-                double harga = s.getHargaJual();
-                double subtotal = harga * qty;
-                detailModel.addRow(new Object[]{
-                    spId, s.getNamaSparepart(), qty, harga, subtotal
-                });
-                break;
-            }
-        }
+        double harga = s.getHargaJual();
+        double subtotal = harga * qty;
+        detailModel.addRow(new Object[]{
+            s.getSparepartId(), s.getNamaSparepart(), qty, harga, subtotal
+        });
 
         hitungTotal();
     }
@@ -436,6 +486,7 @@ public class ServiceTransactionFrame extends javax.swing.JDialog {
             t.setVehicleId(vehicleId);
             t.setMekanikId(mekanikId);
             t.setKeluhan(txtKeluhan.getText().trim());
+            t.setRegistrationId(sourceRegistrationId);
             t.setStatusServis(cbStatusServis.getSelectedItem().toString());
             t.setTotalJasa(Double.parseDouble(txtTotalJasa.getText().trim()));
 
@@ -475,6 +526,16 @@ public class ServiceTransactionFrame extends javax.swing.JDialog {
                 int newId = transDAO.insertWithDetails(t);
                 editTransId = newId;
                 JOptionPane.showMessageDialog(this, "Transaksi berhasil disimpan! ID: " + newId);
+                if (sourceRegistrationId != null) {
+                    ServiceRegistration reg = regDAO.findById(sourceRegistrationId);
+                    if (reg != null) {
+                        reg.setStatus("InProgress");
+                        if (reg.getTanggalMulai() == null) {
+                            reg.setTanggalMulai(new Date());
+                        }
+                        regDAO.update(reg);
+                    }
+                }
             }
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(this, "Error simpan: " + ex.getMessage());
@@ -502,6 +563,16 @@ public class ServiceTransactionFrame extends javax.swing.JDialog {
             double kembali = bayar - grandTotal;
             transDAO.updateStatusPembayaran(editTransId, bayar, kembali);
 
+            ServiceTransaction saved = transDAO.findById(editTransId);
+            Integer regId = saved != null ? saved.getRegistrationId() : sourceRegistrationId;
+            if (regId != null) {
+                ServiceRegistration reg = regDAO.findById(regId);
+                if (reg != null) {
+                    reg.setStatus("Completed");
+                    regDAO.update(reg);
+                }
+            }
+
             txtKembali.setText(String.valueOf(kembali));
             cbStatusServis.setSelectedItem("Selesai Lunas");
             JOptionPane.showMessageDialog(this, "Pembayaran berhasil! Kembali: " + kembali);
@@ -512,11 +583,27 @@ public class ServiceTransactionFrame extends javax.swing.JDialog {
         }
     }
 
+    private void printTransaksi() {
+        if (editTransId <= 0) {
+            JOptionPane.showMessageDialog(this, "Simpan transaksi terlebih dahulu sebelum export nota.");
+            return;
+        }
+        Object[] options = {"PDF", "Excel", "Batal"};
+        int choice = JOptionPane.showOptionDialog(this, "Pilih format export nota transaksi:", "Export Nota", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
+        String title = "Nota_Transaksi_" + editTransId;
+        if (choice == 0) {
+            com.mycompany.garagemanagementsystem.util.ExportUtils.exportTableToPDF(tblDetail, title);
+        } else if (choice == 1) {
+            com.mycompany.garagemanagementsystem.util.ExportUtils.exportTableToExcel(tblDetail, title);
+        }
+    }
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnAddClient;
     private javax.swing.JButton btnBayar;
     private javax.swing.JButton btnHapusDetail;
     private javax.swing.JButton btnHitungTotal;
+    private javax.swing.JButton btnPrint;
     private javax.swing.JButton btnSimpanTrans;
     private javax.swing.JButton btnTambahDetail;
     private javax.swing.JPanel buttonPanel;

@@ -23,7 +23,11 @@ public class SparepartDAO {
             ps.setInt(4, s.getStok());
             ps.setDouble(5, s.getHargaBeli());
             ps.setDouble(6, s.getHargaJual());
-            ps.setInt(7, s.getSupplierId());
+            if (s.getSupplierId() > 0) {
+                ps.setInt(7, s.getSupplierId());
+            } else {
+                ps.setNull(7, java.sql.Types.INTEGER);
+            }
             ps.executeUpdate();
         }
     }
@@ -39,7 +43,11 @@ public class SparepartDAO {
             ps.setInt(4, s.getStok());
             ps.setDouble(5, s.getHargaBeli());
             ps.setDouble(6, s.getHargaJual());
-            ps.setInt(7, s.getSupplierId());
+            if (s.getSupplierId() > 0) {
+                ps.setInt(7, s.getSupplierId());
+            } else {
+                ps.setNull(7, java.sql.Types.INTEGER);
+            }
             ps.setInt(8, s.getSparepartId());
             ps.executeUpdate();
         }
@@ -97,5 +105,29 @@ public class SparepartDAO {
             }
         }
         return null;
+    }
+
+    public List<Sparepart> findBySupplierId(int supplierId) throws SQLException {
+        List<Sparepart> list = new ArrayList<>();
+        String sql = "SELECT * FROM sparepart WHERE supplier_id=? ORDER BY nama_sparepart";
+        try (Connection conn = DBConnection.getConnection();
+                PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, supplierId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Sparepart s = new Sparepart();
+                    s.setSparepartId(rs.getInt("sparepart_id"));
+                    s.setKodeSparepart(rs.getString("kode_sparepart"));
+                    s.setNamaSparepart(rs.getString("nama_sparepart"));
+                    s.setSatuan(rs.getString("satuan"));
+                    s.setStok(rs.getInt("stok"));
+                    s.setHargaBeli(rs.getDouble("harga_beli"));
+                    s.setHargaJual(rs.getDouble("harga_jual"));
+                    s.setSupplierId(rs.getInt("supplier_id"));
+                    list.add(s);
+                }
+            }
+        }
+        return list;
     }
 }

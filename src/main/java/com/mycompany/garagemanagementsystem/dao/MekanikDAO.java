@@ -61,4 +61,22 @@ public class MekanikDAO {
         }
         return list;
     }
+
+    public Mekanik findById(int id) throws SQLException {
+        String sql = "SELECT * FROM mekanik WHERE mekanik_id = ?";
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Mekanik m = new Mekanik();
+                    m.setMekanikId(rs.getInt("mekanik_id"));
+                    m.setNama(rs.getString("nama"));
+                    m.setTelepon(rs.getString("telepon"));
+                    m.setSpesialis(rs.getString("spesialis"));
+                    return m;
+                }
+            }
+        }
+        return null;
+    }
 }

@@ -152,6 +152,27 @@ public class ClientPanel extends javax.swing.JPanel {
         });
         buttonPanel.add(btnHapus);
 
+        javax.swing.JButton btnRefresh = new javax.swing.JButton();
+        btnRefresh.setText("Refresh");
+        btnRefresh.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                loadData();
+            }
+        });
+        buttonPanel.add(btnRefresh);
+
+        javax.swing.JButton btnPrint = new javax.swing.JButton();
+        btnPrint.setText("Export");
+        btnPrint.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                Object[] options = {"PDF", "Excel", "Batal"};
+                int choice = javax.swing.JOptionPane.showOptionDialog(ClientPanel.this, "Pilih format export:", "Export Data", javax.swing.JOptionPane.YES_NO_CANCEL_OPTION, javax.swing.JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
+                if (choice == 0) com.mycompany.garagemanagementsystem.util.ExportUtils.exportTableToPDF(table, "Data_Client");
+                else if (choice == 1) com.mycompany.garagemanagementsystem.util.ExportUtils.exportTableToExcel(table, "Data_Client");
+            }
+        });
+        buttonPanel.add(btnPrint);
+
         add(buttonPanel, java.awt.BorderLayout.SOUTH);
     }// </editor-fold>//GEN-END:initComponents
 
@@ -194,6 +215,8 @@ public class ClientPanel extends javax.swing.JPanel {
         txtAlamat.setText("");
         txtTelepon.setText("");
         txtEmail.setText("");
+        table.clearSelection();
+        txtNama.requestFocusInWindow();
     }
 
     private void saveClient() {

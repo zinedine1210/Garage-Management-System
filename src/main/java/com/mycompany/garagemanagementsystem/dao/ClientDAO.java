@@ -68,4 +68,24 @@ public class ClientDAO {
         }
         return list;
     }
+
+    public Client findById(int id) throws SQLException {
+        String sql = "SELECT * FROM client WHERE client_id = ?";
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Client c = new Client();
+                    c.setClientId(rs.getInt("client_id"));
+                    c.setNama(rs.getString("nama"));
+                    c.setAlamat(rs.getString("alamat"));
+                    c.setTelepon(rs.getString("telepon"));
+                    c.setEmail(rs.getString("email"));
+                    c.setTanggalDaftar(rs.getDate("tanggal_daftar"));
+                    return c;
+                }
+            }
+        }
+        return null;
+    }
 }

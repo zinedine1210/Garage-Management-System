@@ -15,9 +15,9 @@ public class ServiceTransactionDAO {
 
     public int insertWithDetails(ServiceTransaction t) throws SQLException {
         String sqlHeader = "INSERT INTO service_transaction "
-                + "(tanggal, client_id, vehicle_id, mekanik_id, keluhan, status_servis, "
+                + "(tanggal, client_id, vehicle_id, mekanik_id, registration_id, keluhan, status_servis, "
                 + " total_jasa, total_sparepart, grand_total, bayar, kembali, user_kasir) "
-                + "VALUES (?,?,?,?,?,?,?,?,?,?,?,?)";
+                + "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)";
         String sqlDetail = "INSERT INTO transaction_detail "
                 + "(trans_id, sparepart_id, qty, harga, subtotal) VALUES (?,?,?,?,?)";
         String sqlUpdateStok = "UPDATE sparepart SET stok = stok - ? WHERE sparepart_id = ?";
@@ -37,14 +37,19 @@ public class ServiceTransactionDAO {
             psHeader.setInt(2, t.getClientId());
             psHeader.setInt(3, t.getVehicleId());
             psHeader.setInt(4, t.getMekanikId());
-            psHeader.setString(5, t.getKeluhan());
-            psHeader.setString(6, t.getStatusServis());
-            psHeader.setDouble(7, t.getTotalJasa());
-            psHeader.setDouble(8, t.getTotalSparepart());
-            psHeader.setDouble(9, t.getGrandTotal());
-            psHeader.setDouble(10, t.getBayar());
-            psHeader.setDouble(11, t.getKembali());
-            psHeader.setString(12, t.getUserKasir());
+            if (t.getRegistrationId() != null) {
+                psHeader.setInt(5, t.getRegistrationId());
+            } else {
+                psHeader.setNull(5, java.sql.Types.INTEGER);
+            }
+            psHeader.setString(6, t.getKeluhan());
+            psHeader.setString(7, t.getStatusServis());
+            psHeader.setDouble(8, t.getTotalJasa());
+            psHeader.setDouble(9, t.getTotalSparepart());
+            psHeader.setDouble(10, t.getGrandTotal());
+            psHeader.setDouble(11, t.getBayar());
+            psHeader.setDouble(12, t.getKembali());
+            psHeader.setString(13, t.getUserKasir());
             psHeader.executeUpdate();
 
             rsKeys = psHeader.getGeneratedKeys();
@@ -140,6 +145,7 @@ public class ServiceTransactionDAO {
             while(rs.next()) {
                 ServiceTransaction t = new ServiceTransaction();
                 t.setTransId(rs.getInt("trans_id"));
+                t.setRegistrationId((Integer) rs.getObject("registration_id"));
                 t.setTanggal(rs.getTimestamp("tanggal"));
                 t.setClientId(rs.getInt("client_id"));
                 t.setVehicleId(rs.getInt("vehicle_id"));
@@ -205,9 +211,12 @@ public class ServiceTransactionDAO {
 
     public List<ServiceTransaction> getAntrian() throws SQLException {
         List<ServiceTransaction> list = new java.util.ArrayList<>();
-        String sql = "SELECT t.trans_id, t.status_servis, v.no_polisi "
+        String sql = "SELECT t.trans_id, t.status_servis, t.keluhan, t.tanggal, "
+                   + "v.no_polisi, v.merk, v.tipe, c.nama as client_nama, m.nama as mekanik_nama "
                    + "FROM service_transaction t "
                    + "JOIN vehicle v ON t.vehicle_id = v.vehicle_id "
+                   + "JOIN client c ON t.client_id = c.client_id "
+                   + "JOIN mekanik m ON t.mekanik_id = m.mekanik_id "
                    + "WHERE DATE(t.tanggal) = CURDATE() AND t.status_servis IN ('Menunggu', 'Dikerjakan') "
                    + "ORDER BY t.tanggal ASC";
         
@@ -218,7 +227,11 @@ public class ServiceTransactionDAO {
                 ServiceTransaction t = new ServiceTransaction();
                 t.setTransId(rs.getInt("trans_id"));
                 t.setStatusServis(rs.getString("status_servis"));
-                t.setKeluhan(rs.getString("no_polisi")); 
+                t.setNoPolisi(rs.getString("no_polisi"));
+                t.setClientNama(rs.getString("client_nama"));
+                t.setMekanikNama(rs.getString("mekanik_nama"));
+                t.setKeluhan(rs.getString("keluhan"));
+                t.setTanggal(rs.getTimestamp("tanggal"));
                 list.add(t);
             }
         }
@@ -235,6 +248,7 @@ public class ServiceTransactionDAO {
                 if (rs.next()) {
                     t = new ServiceTransaction();
                     t.setTransId(rs.getInt("trans_id"));
+                    t.setRegistrationId((Integer) rs.getObject("registration_id"));
                     t.setTanggal(rs.getTimestamp("tanggal"));
                     t.setClientId(rs.getInt("client_id"));
                     t.setVehicleId(rs.getInt("vehicle_id"));
@@ -278,9 +292,9 @@ public class ServiceTransactionDAO {
         String sqlSelectOldDetails = "SELECT sparepart_id, qty FROM transaction_detail WHERE trans_id=?";
         String sqlDeleteDetails = "DELETE FROM transaction_detail WHERE trans_id=?";
         String sqlUpdateHeader = "UPDATE service_transaction SET "
-                + "client_id=?, vehicle_id=?, mekanik_id=?, keluhan=?, status_servis=?, "
-                + "total_jasa=?, total_sparepart=?, grand_total=?, bayar=?, kembali=?, user_kasir=? "
-                + "WHERE trans_id=?";
+            + "client_id=?, vehicle_id=?, mekanik_id=?, registration_id=?, keluhan=?, status_servis=?, "
+            + "total_jasa=?, total_sparepart=?, grand_total=?, bayar=?, kembali=?, user_kasir=? "
+            + "WHERE trans_id=?";
         String sqlInsertDetail = "INSERT INTO transaction_detail "
                 + "(trans_id, sparepart_id, qty, harga, subtotal) VALUES (?,?,?,?,?)";
         String sqlRevertStok = "UPDATE sparepart SET stok = stok + ? WHERE sparepart_id = ?";
@@ -313,15 +327,20 @@ public class ServiceTransactionDAO {
                 psHeader.setInt(1, t.getClientId());
                 psHeader.setInt(2, t.getVehicleId());
                 psHeader.setInt(3, t.getMekanikId());
-                psHeader.setString(4, t.getKeluhan());
-                psHeader.setString(5, t.getStatusServis());
-                psHeader.setDouble(6, t.getTotalJasa());
-                psHeader.setDouble(7, t.getTotalSparepart());
-                psHeader.setDouble(8, t.getGrandTotal());
-                psHeader.setDouble(9, t.getBayar());
-                psHeader.setDouble(10, t.getKembali());
-                psHeader.setString(11, t.getUserKasir());
-                psHeader.setInt(12, t.getTransId());
+                if (t.getRegistrationId() != null) {
+                    psHeader.setInt(4, t.getRegistrationId());
+                } else {
+                    psHeader.setNull(4, java.sql.Types.INTEGER);
+                }
+                psHeader.setString(5, t.getKeluhan());
+                psHeader.setString(6, t.getStatusServis());
+                psHeader.setDouble(7, t.getTotalJasa());
+                psHeader.setDouble(8, t.getTotalSparepart());
+                psHeader.setDouble(9, t.getGrandTotal());
+                psHeader.setDouble(10, t.getBayar());
+                psHeader.setDouble(11, t.getKembali());
+                psHeader.setString(12, t.getUserKasir());
+                psHeader.setInt(13, t.getTransId());
                 psHeader.executeUpdate();
             }
 

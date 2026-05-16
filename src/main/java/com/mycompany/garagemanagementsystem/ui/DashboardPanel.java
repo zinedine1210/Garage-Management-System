@@ -5,6 +5,9 @@ import java.awt.BorderLayout;
 import java.awt.Font;
 import java.sql.SQLException;
 import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import javax.swing.JLabel;
@@ -22,6 +25,9 @@ public class DashboardPanel extends javax.swing.JPanel {
     private final DashboardDAO dashDAO = new DashboardDAO();
     private ChartPanel chartPanelTipe, chartPanelKategori, chartPanelOmzetBulanan;
     private DefaultTableModel tblAntrianModel, tblSparepartModel;
+    private javax.swing.JButton btnDateFrom, btnDateTo, btnRefresh;
+    private javax.swing.JLabel lblDateFrom, lblDateTo;
+    private Date filterDateFrom, filterDateTo;
 
     public DashboardPanel() {
         initComponents();
@@ -44,14 +50,103 @@ public class DashboardPanel extends javax.swing.JPanel {
         chartPanelOmzetBulanan = new ChartPanel(null);
         pnlChart3.add(chartPanelOmzetBulanan, BorderLayout.CENTER);
 
+        javax.swing.JPanel filterPanel = new javax.swing.JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 10, 5));
+        filterPanel.add(new JLabel("Filter Tanggal:"));
+        filterPanel.add(new JLabel("Dari:"));
+        lblDateFrom = new JLabel("---");
+        filterPanel.add(lblDateFrom);
+        btnDateFrom = new javax.swing.JButton("Pilih");
+        btnDateFrom.addActionListener(e -> pickDateFrom());
+        filterPanel.add(btnDateFrom);
+        filterPanel.add(new JLabel("Sampai:"));
+        lblDateTo = new JLabel("---");
+        filterPanel.add(lblDateTo);
+        btnDateTo = new javax.swing.JButton("Pilih");
+        btnDateTo.addActionListener(e -> pickDateTo());
+        filterPanel.add(btnDateTo);
+        btnRefresh = new javax.swing.JButton("Refresh");
+        btnRefresh.addActionListener(e -> loadData());
+        filterPanel.add(btnRefresh);
+        javax.swing.JButton btnReset = new javax.swing.JButton("Reset");
+        btnReset.addActionListener(e -> {
+            setDefaultDateRangeThisMonth();
+            loadData();
+        });
+        filterPanel.add(btnReset);
+        
+        javax.swing.JButton btnPrint = new javax.swing.JButton("Print Dashboard");
+        btnPrint.addActionListener(e -> printDashboard());
+        filterPanel.add(btnPrint);
+
+        add(filterPanel, BorderLayout.NORTH);
+
+        setDefaultDateRangeThisMonth();
         loadData();
+    }
+
+    private void setDefaultDateRangeThisMonth() {
+        Calendar cal = Calendar.getInstance();
+        cal.set(Calendar.DAY_OF_MONTH, 1);
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+        filterDateFrom = cal.getTime();
+
+        cal.add(Calendar.MONTH, 1);
+        cal.add(Calendar.DAY_OF_MONTH, -1);
+        cal.set(Calendar.HOUR_OF_DAY, 23);
+        cal.set(Calendar.MINUTE, 59);
+        cal.set(Calendar.SECOND, 59);
+        cal.set(Calendar.MILLISECOND, 999);
+        filterDateTo = cal.getTime();
+
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        lblDateFrom.setText(sdf.format(filterDateFrom));
+        lblDateTo.setText(sdf.format(filterDateTo));
+    }
+
+    private void pickDateFrom() {
+        java.awt.Frame owner = javax.swing.SwingUtilities.getWindowAncestor(this) instanceof java.awt.Frame ? (java.awt.Frame)javax.swing.SwingUtilities.getWindowAncestor(this) : null;
+        JCalendarDialog dialog = new JCalendarDialog(owner, filterDateFrom);
+        dialog.setVisible(true);
+        if (dialog.isConfirmed()) {
+            filterDateFrom = dialog.getSelectedDate();
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            lblDateFrom.setText(sdf.format(filterDateFrom));
+            loadData();
+        }
+    }
+
+    private void pickDateTo() {
+        java.awt.Frame owner = javax.swing.SwingUtilities.getWindowAncestor(this) instanceof java.awt.Frame ? (java.awt.Frame)javax.swing.SwingUtilities.getWindowAncestor(this) : null;
+        JCalendarDialog dialog = new JCalendarDialog(owner, filterDateTo);
+        dialog.setVisible(true);
+        if (dialog.isConfirmed()) {
+            filterDateTo = dialog.getSelectedDate();
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            lblDateTo.setText(sdf.format(filterDateTo));
+            loadData();
+        }
+    }
+
+    private void printDashboard() {
+        Object[] options = {"PDF", "Excel", "Batal"};
+        int choice = javax.swing.JOptionPane.showOptionDialog(this, "Pilih format export:", "Export Dashboard", javax.swing.JOptionPane.YES_NO_CANCEL_OPTION, javax.swing.JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
+        if (choice == 0) com.mycompany.garagemanagementsystem.util.ExportUtils.exportTableToPDF(tblAntrian, "Dashboard_Antrian");
+        else if (choice == 1) com.mycompany.garagemanagementsystem.util.ExportUtils.exportTableToExcel(tblAntrian, "Dashboard_Antrian");
     }
 
     public void loadData() {
         NumberFormat nf = NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
         try {
-            lblTransHariIni.setText(String.valueOf(dashDAO.getTransaksiHariIni()));
-            lblOmzetHariIni.setText(nf.format(dashDAO.getOmzetHariIni()));
+            if (filterDateFrom != null && filterDateTo != null) {
+                lblTransHariIni.setText(String.valueOf(dashDAO.getTransaksiByDateRange(filterDateFrom, filterDateTo)));
+                lblOmzetHariIni.setText(nf.format(dashDAO.getOmzetByDateRange(filterDateFrom, filterDateTo)));
+            } else {
+                lblTransHariIni.setText(String.valueOf(dashDAO.getTransaksiHariIni()));
+                lblOmzetHariIni.setText(nf.format(dashDAO.getOmzetHariIni()));
+            }
             lblAntrian.setText(String.valueOf(dashDAO.getTotalAntrean()));
             lblDalamPengerjaan.setText(String.valueOf(dashDAO.getDalamPengerjaan()));
             lblSelesai.setText(String.valueOf(dashDAO.getServisSelesai()));

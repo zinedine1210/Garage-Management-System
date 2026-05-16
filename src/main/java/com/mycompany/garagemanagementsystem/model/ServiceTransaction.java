@@ -6,6 +6,7 @@ import java.util.List;
 public class ServiceTransaction {
 
     private int transId;
+    private Integer registrationId;
     private Date tanggal;
     private int clientId;
     private int vehicleId;
@@ -26,6 +27,14 @@ public class ServiceTransaction {
 
     public void setTransId(int transId) {
         this.transId = transId;
+    }
+
+    public Integer getRegistrationId() {
+        return registrationId;
+    }
+
+    public void setRegistrationId(Integer registrationId) {
+        this.registrationId = registrationId;
     }
 
     public Date getTanggal() {

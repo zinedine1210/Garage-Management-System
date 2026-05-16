@@ -81,4 +81,29 @@ public class VehicleDAO {
         }
         return list;
     }
+
+    public List<Vehicle> findByClientId(int clientId) throws SQLException {
+        List<Vehicle> list = new ArrayList<>();
+        String sql = "SELECT * FROM vehicle WHERE client_id = ? ORDER BY no_polisi";
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, clientId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Vehicle v = new Vehicle();
+                    v.setVehicleId(rs.getInt("vehicle_id"));
+                    v.setClientId(rs.getInt("client_id"));
+                    v.setNoPolisi(rs.getString("no_polisi"));
+                    v.setMerk(rs.getString("merk"));
+                    v.setTipe(rs.getString("tipe"));
+                    v.setCc(rs.getInt("cc"));
+                    v.setTipeKendaraan(rs.getString("tipe_kendaraan"));
+                    v.setTahun(rs.getInt("tahun"));
+                    v.setNoRangka(rs.getString("no_rangka"));
+                    v.setNoMesin(rs.getString("no_mesin"));
+                    list.add(v);
+                }
+            }
+        }
+        return list;
+    }
 }

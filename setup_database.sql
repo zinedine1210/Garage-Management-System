@@ -67,6 +67,22 @@ CREATE TABLE IF NOT EXISTS vehicle (
     FOREIGN KEY (client_id) REFERENCES client(client_id) ON DELETE CASCADE
 );
 
+-- Tabel Service Registration (Pendaftaran Servis)
+CREATE TABLE IF NOT EXISTS service_registration (
+    registration_id INT AUTO_INCREMENT PRIMARY KEY,
+    vehicle_id INT NOT NULL,
+    client_id INT NOT NULL,
+    keluhan TEXT,
+    mekanik_id INT NOT NULL,
+    status VARCHAR(50) DEFAULT 'Registered',
+    tanggal_daftar DATE NOT NULL,
+    tanggal_mulai DATE,
+    catatan TEXT,
+    FOREIGN KEY (vehicle_id) REFERENCES vehicle(vehicle_id),
+    FOREIGN KEY (client_id) REFERENCES client(client_id),
+    FOREIGN KEY (mekanik_id) REFERENCES mekanik(mekanik_id)
+);
+
 -- Tabel Service Transaction
 CREATE TABLE IF NOT EXISTS service_transaction (
     trans_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -74,6 +90,7 @@ CREATE TABLE IF NOT EXISTS service_transaction (
     client_id INT,
     vehicle_id INT,
     mekanik_id INT,
+    registration_id INT NULL,
     keluhan TEXT,
     status_servis VARCHAR(50),
     total_jasa DOUBLE DEFAULT 0,
@@ -84,7 +101,8 @@ CREATE TABLE IF NOT EXISTS service_transaction (
     user_kasir VARCHAR(50),
     FOREIGN KEY (client_id) REFERENCES client(client_id),
     FOREIGN KEY (vehicle_id) REFERENCES vehicle(vehicle_id),
-    FOREIGN KEY (mekanik_id) REFERENCES mekanik(mekanik_id)
+    FOREIGN KEY (mekanik_id) REFERENCES mekanik(mekanik_id),
+    FOREIGN KEY (registration_id) REFERENCES service_registration(registration_id) ON DELETE SET NULL
 );
 
 -- Tabel Transaction Detail
@@ -97,6 +115,20 @@ CREATE TABLE IF NOT EXISTS transaction_detail (
     subtotal DOUBLE DEFAULT 0,
     FOREIGN KEY (trans_id) REFERENCES service_transaction(trans_id) ON DELETE CASCADE,
     FOREIGN KEY (sparepart_id) REFERENCES sparepart(sparepart_id) ON DELETE SET NULL
+);
+
+-- Tabel Pembelian Sparepart (Transaksi ke-3: Pembelian dari Supplier)
+CREATE TABLE IF NOT EXISTS sparepart_purchase (
+    purchase_id INT AUTO_INCREMENT PRIMARY KEY,
+    tanggal DATETIME,
+    supplier_id INT,
+    sparepart_id INT,
+    qty INT DEFAULT 1,
+    harga_beli DOUBLE DEFAULT 0,
+    total_harga DOUBLE DEFAULT 0,
+    keterangan TEXT,
+    FOREIGN KEY (supplier_id) REFERENCES supplier(supplier_id),
+    FOREIGN KEY (sparepart_id) REFERENCES sparepart(sparepart_id)
 );
 
 -- ==========================================
@@ -182,6 +214,17 @@ INSERT INTO vehicle (client_id, no_polisi, merk, tipe, cc, tipe_kendaraan, tahun
 (9, 'BA 7788 YZA', 'Yamaha', 'MT-15', 150, 'Roda 2', 2022, 'MHY778899001I', 'YG778899I'),
 (10, 'BG 9900 BCD', 'Honda', 'Scoopy', 110, 'Lebih dari Roda 2', 2020, 'MHK889900112J', 'JF889900J');
 
+-- Dummy Service Registration (untuk uji flow pendaftaran -> transaksi)
+INSERT INTO service_registration (vehicle_id, client_id, keluhan, mekanik_id, status, tanggal_daftar, tanggal_mulai, catatan) VALUES
+-- Registered: siap diproses lewat tombol "Mulai Servis"
+(1, 1, 'Servis berkala 2.000 km dan cek rem', 1, 'Registered', CURDATE(), NULL, 'Customer minta selesai hari ini'),
+-- Registered: contoh antrean baru
+(2, 2, 'Ganti oli, cek CVT, suara kasar saat akselerasi', 3, 'Registered', CURDATE(), NULL, 'Tunggu approval sparepart'),
+-- InProgress: contoh unit yang sedang dikerjakan
+(3, 3, 'Tarikan berat, minta cek roller dan v-belt', 5, 'InProgress', CURDATE() - INTERVAL 1 DAY, CURDATE(), 'Estimasi selesai sore'),
+-- Completed: contoh unit sudah selesai
+(4, 4, 'Overheat ringan dan flushing coolant', 2, 'Completed', CURDATE() - INTERVAL 3 DAY, CURDATE() - INTERVAL 2 DAY, 'Sudah diambil customer');
+
 -- Dummy Service Transaction (10+) untuk Dashboard
 INSERT INTO service_transaction (tanggal, client_id, vehicle_id, mekanik_id, keluhan, status_servis, total_jasa, total_sparepart, grand_total, bayar, kembali, user_kasir) VALUES 
 -- Trans 1: Hari ini - Selesai Lunas (Omzet Hari ini, > 80k Jasa alias Servis Berat)
@@ -222,3 +265,11 @@ INSERT INTO transaction_detail (trans_id, sparepart_id, qty, harga, subtotal) VA
 -- Trans 8 (Oli Mesin id 1, Filter Udara id 9)
 (8, 1, 1, 52000, 52000),
 (8, 9, 1, 60000, 60000);
+
+-- Dummy Sparepart Purchase (Pembelian dari Supplier)
+INSERT INTO sparepart_purchase (tanggal, supplier_id, sparepart_id, qty, harga_beli, total_harga, keterangan) VALUES
+(NOW() - INTERVAL 30 DAY, 1, 1, 20, 45000, 900000, 'Restock oli mesin'),
+(NOW() - INTERVAL 25 DAY, 8, 3, 10, 15000, 150000, 'Restock busi NGK'),
+(NOW() - INTERVAL 20 DAY, 6, 6, 5, 180000, 900000, 'Restock ban IRC 90/90'),
+(NOW() - INTERVAL 15 DAY, 4, 8, 3, 180000, 540000, 'Restock aki Yuasa'),
+(NOW() - INTERVAL 10 DAY, 2, 4, 8, 40000, 320000, 'Restock kampas rem depan');

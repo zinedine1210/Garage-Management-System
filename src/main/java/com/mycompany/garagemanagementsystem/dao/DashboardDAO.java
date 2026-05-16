@@ -217,4 +217,28 @@ public class DashboardDAO {
         }
         return list;
     }
+
+    public int getTransaksiByDateRange(java.util.Date dateFrom, java.util.Date dateTo) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM service_transaction WHERE DATE(tanggal) BETWEEN ? AND ?";
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setDate(1, new java.sql.Date(dateFrom.getTime()));
+            ps.setDate(2, new java.sql.Date(dateTo.getTime()));
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        }
+        return 0;
+    }
+
+    public double getOmzetByDateRange(java.util.Date dateFrom, java.util.Date dateTo) throws SQLException {
+        String sql = "SELECT SUM(grand_total) FROM service_transaction WHERE DATE(tanggal) BETWEEN ? AND ?";
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setDate(1, new java.sql.Date(dateFrom.getTime()));
+            ps.setDate(2, new java.sql.Date(dateTo.getTime()));
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getDouble(1);
+            }
+        }
+        return 0;
+    }
 }

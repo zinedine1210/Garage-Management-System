@@ -25,6 +25,7 @@ public class ServiceHistoryPanel extends javax.swing.JPanel {
         btnCari = new javax.swing.JButton();
         lblSpacer = new javax.swing.JLabel();
         jScrollPane1 = new javax.swing.JScrollPane();
+        table = new javax.swing.JTable();
 
         setLayout(new java.awt.BorderLayout());
 
@@ -41,6 +42,12 @@ public class ServiceHistoryPanel extends javax.swing.JPanel {
         btnCari.addActionListener(this::btnCariActionPerformed);
         searchPanel.add(btnCari);
         searchPanel.add(lblSpacer);
+
+        table.setModel(new DefaultTableModel(
+            new Object[][]{},
+            new String[]{"Tanggal", "Mekanik", "Keluhan/Pekerjaan", "Sparepart Diganti", "Total Biaya"}
+        ));
+        jScrollPane1.setViewportView(table);
 
         add(searchPanel, java.awt.BorderLayout.NORTH);
         add(jScrollPane1, java.awt.BorderLayout.CENTER);
