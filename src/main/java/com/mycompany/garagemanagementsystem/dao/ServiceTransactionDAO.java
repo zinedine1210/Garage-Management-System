@@ -16,8 +16,8 @@ public class ServiceTransactionDAO {
     public int insertWithDetails(ServiceTransaction t) throws SQLException {
         String sqlHeader = "INSERT INTO service_transaction "
                 + "(tanggal, client_id, vehicle_id, mekanik_id, registration_id, keluhan, status_servis, "
-                + " total_jasa, total_sparepart, grand_total, bayar, kembali, user_kasir) "
-                + "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)";
+                + " total_jasa, total_sparepart, grand_total, bayar, kembali, metode_bayar, user_kasir) "
+                + "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
         String sqlDetail = "INSERT INTO transaction_detail "
                 + "(trans_id, sparepart_id, qty, harga, subtotal) VALUES (?,?,?,?,?)";
         String sqlUpdateStok = "UPDATE sparepart SET stok = stok - ? WHERE sparepart_id = ?";
@@ -49,7 +49,8 @@ public class ServiceTransactionDAO {
             psHeader.setDouble(10, t.getGrandTotal());
             psHeader.setDouble(11, t.getBayar());
             psHeader.setDouble(12, t.getKembali());
-            psHeader.setString(13, t.getUserKasir());
+            psHeader.setString(13, t.getMetodeBayar());
+            psHeader.setString(14, t.getUserKasir());
             psHeader.executeUpdate();
 
             rsKeys = psHeader.getGeneratedKeys();
@@ -157,6 +158,7 @@ public class ServiceTransactionDAO {
                 t.setGrandTotal(rs.getDouble("grand_total"));
                 t.setBayar(rs.getDouble("bayar"));
                 t.setKembali(rs.getDouble("kembali"));
+                t.setMetodeBayar(rs.getString("metode_bayar"));
                 t.setUserKasir(rs.getString("user_kasir"));
                 
                 t.setClientNama(rs.getString("client_nama"));
@@ -260,6 +262,7 @@ public class ServiceTransactionDAO {
                     t.setGrandTotal(rs.getDouble("grand_total"));
                     t.setBayar(rs.getDouble("bayar"));
                     t.setKembali(rs.getDouble("kembali"));
+                    t.setMetodeBayar(rs.getString("metode_bayar"));
                     t.setUserKasir(rs.getString("user_kasir"));
                 }
             }
@@ -288,12 +291,42 @@ public class ServiceTransactionDAO {
         return t;
     }
 
+    public ServiceTransaction findByRegistrationId(int registrationId) throws SQLException {
+        String sql = "SELECT * FROM service_transaction WHERE registration_id = ? ORDER BY trans_id DESC LIMIT 1";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, registrationId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    ServiceTransaction t = new ServiceTransaction();
+                    t.setTransId(rs.getInt("trans_id"));
+                    t.setRegistrationId((Integer) rs.getObject("registration_id"));
+                    t.setTanggal(rs.getTimestamp("tanggal"));
+                    t.setClientId(rs.getInt("client_id"));
+                    t.setVehicleId(rs.getInt("vehicle_id"));
+                    t.setMekanikId(rs.getInt("mekanik_id"));
+                    t.setKeluhan(rs.getString("keluhan"));
+                    t.setStatusServis(rs.getString("status_servis"));
+                    t.setTotalJasa(rs.getDouble("total_jasa"));
+                    t.setTotalSparepart(rs.getDouble("total_sparepart"));
+                    t.setGrandTotal(rs.getDouble("grand_total"));
+                    t.setBayar(rs.getDouble("bayar"));
+                    t.setKembali(rs.getDouble("kembali"));
+                    t.setMetodeBayar(rs.getString("metode_bayar"));
+                    t.setUserKasir(rs.getString("user_kasir"));
+                    return t;
+                }
+            }
+        }
+        return null;
+    }
+
     public void updateWithDetails(ServiceTransaction t) throws SQLException {
         String sqlSelectOldDetails = "SELECT sparepart_id, qty FROM transaction_detail WHERE trans_id=?";
         String sqlDeleteDetails = "DELETE FROM transaction_detail WHERE trans_id=?";
         String sqlUpdateHeader = "UPDATE service_transaction SET "
             + "client_id=?, vehicle_id=?, mekanik_id=?, registration_id=?, keluhan=?, status_servis=?, "
-            + "total_jasa=?, total_sparepart=?, grand_total=?, bayar=?, kembali=?, user_kasir=? "
+            + "total_jasa=?, total_sparepart=?, grand_total=?, bayar=?, kembali=?, metode_bayar=?, user_kasir=? "
             + "WHERE trans_id=?";
         String sqlInsertDetail = "INSERT INTO transaction_detail "
                 + "(trans_id, sparepart_id, qty, harga, subtotal) VALUES (?,?,?,?,?)";
@@ -339,8 +372,9 @@ public class ServiceTransactionDAO {
                 psHeader.setDouble(9, t.getGrandTotal());
                 psHeader.setDouble(10, t.getBayar());
                 psHeader.setDouble(11, t.getKembali());
-                psHeader.setString(12, t.getUserKasir());
-                psHeader.setInt(13, t.getTransId());
+                psHeader.setString(12, t.getMetodeBayar());
+                psHeader.setString(13, t.getUserKasir());
+                psHeader.setInt(14, t.getTransId());
                 psHeader.executeUpdate();
             }
 

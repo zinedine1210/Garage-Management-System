@@ -21,8 +21,8 @@ public class ServiceRegistrationDAO {
             ps.setString(3, sr.getKeluhan());
             ps.setInt(4, sr.getMekanikId());
             ps.setString(5, sr.getStatus());
-            ps.setDate(6, new java.sql.Date(sr.getTanggalDaftar().getTime()));
-            ps.setDate(7, sr.getTanggalMulai() != null ? new java.sql.Date(sr.getTanggalMulai().getTime()) : null);
+            ps.setTimestamp(6, new java.sql.Timestamp(sr.getTanggalDaftar().getTime()));
+            ps.setTimestamp(7, sr.getTanggalMulai() != null ? new java.sql.Timestamp(sr.getTanggalMulai().getTime()) : null);
             ps.setString(8, sr.getCatatan());
             ps.executeUpdate();
         }
@@ -36,7 +36,7 @@ public class ServiceRegistrationDAO {
             ps.setString(3, sr.getKeluhan());
             ps.setInt(4, sr.getMekanikId());
             ps.setString(5, sr.getStatus());
-            ps.setDate(6, sr.getTanggalMulai() != null ? new java.sql.Date(sr.getTanggalMulai().getTime()) : null);
+            ps.setTimestamp(6, sr.getTanggalMulai() != null ? new java.sql.Timestamp(sr.getTanggalMulai().getTime()) : null);
             ps.setString(7, sr.getCatatan());
             ps.setInt(8, sr.getRegistrationId());
             ps.executeUpdate();
@@ -63,9 +63,10 @@ public class ServiceRegistrationDAO {
                 sr.setKeluhan(rs.getString("keluhan"));
                 sr.setMekanikId(rs.getInt("mekanik_id"));
                 sr.setStatus(rs.getString("status"));
-                sr.setTanggalDaftar(new java.util.Date(rs.getDate("tanggal_daftar").getTime()));
-                java.sql.Date tanggalMulai = rs.getDate("tanggal_mulai");
-                if (tanggalMulai != null) sr.setTanggalMulai(new java.util.Date(tanggalMulai.getTime()));
+                java.sql.Timestamp tsDaftar = rs.getTimestamp("tanggal_daftar");
+                if (tsDaftar != null) sr.setTanggalDaftar(new java.util.Date(tsDaftar.getTime()));
+                java.sql.Timestamp tsMulai = rs.getTimestamp("tanggal_mulai");
+                if (tsMulai != null) sr.setTanggalMulai(new java.util.Date(tsMulai.getTime()));
                 sr.setCatatan(rs.getString("catatan"));
                 list.add(sr);
             }
@@ -86,9 +87,10 @@ public class ServiceRegistrationDAO {
                     sr.setKeluhan(rs.getString("keluhan"));
                     sr.setMekanikId(rs.getInt("mekanik_id"));
                     sr.setStatus(rs.getString("status"));
-                    sr.setTanggalDaftar(new java.util.Date(rs.getDate("tanggal_daftar").getTime()));
-                    java.sql.Date tanggalMulai = rs.getDate("tanggal_mulai");
-                    if (tanggalMulai != null) sr.setTanggalMulai(new java.util.Date(tanggalMulai.getTime()));
+                    java.sql.Timestamp tsDaftar = rs.getTimestamp("tanggal_daftar");
+                    if (tsDaftar != null) sr.setTanggalDaftar(new java.util.Date(tsDaftar.getTime()));
+                    java.sql.Timestamp tsMulai = rs.getTimestamp("tanggal_mulai");
+                    if (tsMulai != null) sr.setTanggalMulai(new java.util.Date(tsMulai.getTime()));
                     sr.setCatatan(rs.getString("catatan"));
                     return sr;
                 }
@@ -111,9 +113,10 @@ public class ServiceRegistrationDAO {
                     sr.setKeluhan(rs.getString("keluhan"));
                     sr.setMekanikId(rs.getInt("mekanik_id"));
                     sr.setStatus(rs.getString("status"));
-                    sr.setTanggalDaftar(new java.util.Date(rs.getDate("tanggal_daftar").getTime()));
-                    java.sql.Date tanggalMulai = rs.getDate("tanggal_mulai");
-                    if (tanggalMulai != null) sr.setTanggalMulai(new java.util.Date(tanggalMulai.getTime()));
+                    java.sql.Timestamp tsDaftar = rs.getTimestamp("tanggal_daftar");
+                    if (tsDaftar != null) sr.setTanggalDaftar(new java.util.Date(tsDaftar.getTime()));
+                    java.sql.Timestamp tsMulai = rs.getTimestamp("tanggal_mulai");
+                    if (tsMulai != null) sr.setTanggalMulai(new java.util.Date(tsMulai.getTime()));
                     sr.setCatatan(rs.getString("catatan"));
                     list.add(sr);
                 }

@@ -18,6 +18,7 @@ public class ServiceTransaction {
     private double grandTotal;
     private double bayar;
     private double kembali;
+    private String metodeBayar;
     private String userKasir;
     private List<TransactionDetail> details;
 
@@ -123,6 +124,14 @@ public class ServiceTransaction {
 
     public void setKembali(double kembali) {
         this.kembali = kembali;
+    }
+
+    public String getMetodeBayar() {
+        return metodeBayar;
+    }
+
+    public void setMetodeBayar(String metodeBayar) {
+        this.metodeBayar = metodeBayar;
     }
 
     public String getUserKasir() {

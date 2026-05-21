@@ -106,7 +106,7 @@ public class MainMenuFrame extends javax.swing.JFrame {
         sidebarWrap.add(lblApp, java.awt.BorderLayout.NORTH);
 
         sidebarPanel.setBackground(new java.awt.Color(43, 45, 66));
-        sidebarPanel.setLayout(new java.awt.GridLayout(9, 1, 5, 5));
+        sidebarPanel.setLayout(new java.awt.GridLayout(0, 1, 0, 2));
 
         btnClient.setText("Data Client");
         btnClient.addActionListener(this::btnClientActionPerformed);

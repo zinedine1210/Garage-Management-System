@@ -202,14 +202,17 @@ public class ServiceTransactionFrame extends javax.swing.JDialog {
             isFiltering = false;
 
             txtKeluhan.setText(t.getKeluhan());
-            for (int i = 0; i < cbStatusServis.getItemCount(); i++) {
-                if (cbStatusServis.getItemAt(i).toString().equals(t.getStatusServis())) {
-                    cbStatusServis.setSelectedIndex(i);
-                    break;
-                }
-            }
             txtTotalJasa.setText(String.valueOf(t.getTotalJasa()));
             txtBayar.setText(String.valueOf(t.getBayar()));
+
+            if (t.getMetodeBayar() != null) {
+                for (int i = 0; i < cbMetodeBayar.getItemCount(); i++) {
+                    if (cbMetodeBayar.getItemAt(i).toString().equals(t.getMetodeBayar())) {
+                        cbMetodeBayar.setSelectedIndex(i);
+                        break;
+                    }
+                }
+            }
 
             detailModel.setRowCount(0);
             if (t.getDetails() != null) {
@@ -232,7 +235,6 @@ public class ServiceTransactionFrame extends javax.swing.JDialog {
         if (reg == null) return;
         sourceRegistrationId = reg.getRegistrationId();
         txtKeluhan.setText(reg.getKeluhan() != null ? reg.getKeluhan() : "");
-        cbStatusServis.setSelectedItem("Menunggu");
 
         isFiltering = true;
         for (int i = 0; i < clientList.size(); i++) {
@@ -283,9 +285,6 @@ public class ServiceTransactionFrame extends javax.swing.JDialog {
         jScrollPane2 = new javax.swing.JScrollPane();
         txtKeluhan = new javax.swing.JTextArea();
         lblSpacer3 = new javax.swing.JLabel();
-        lblStatusAntrian = new javax.swing.JLabel();
-        cbStatusServis = new javax.swing.JComboBox();
-        lblSpacer4 = new javax.swing.JLabel();
         jScrollPane1 = new javax.swing.JScrollPane();
         tblDetail = new javax.swing.JTable();
         totalPanel = new javax.swing.JPanel();
@@ -302,16 +301,14 @@ public class ServiceTransactionFrame extends javax.swing.JDialog {
         buttonPanel = new javax.swing.JPanel();
         btnTambahDetail = new javax.swing.JButton();
         btnHapusDetail = new javax.swing.JButton();
-        btnHitungTotal = new javax.swing.JButton();
         btnSimpanTrans = new javax.swing.JButton();
-        btnBayar = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setTitle("Transaksi Servis");
         setModal(true);
         getContentPane().setLayout(new java.awt.BorderLayout());
 
-        headerPanel.setLayout(new java.awt.GridLayout(5, 3, 5, 5));
+        headerPanel.setLayout(new java.awt.GridLayout(4, 3, 5, 5));
         lblClient.setText("Client:"); headerPanel.add(lblClient);
         headerPanel.add(cbClient);
         btnAddClient.setText("+ New Client");
@@ -330,26 +327,25 @@ public class ServiceTransactionFrame extends javax.swing.JDialog {
         jScrollPane2.setViewportView(txtKeluhan);
         headerPanel.add(jScrollPane2);
         lblSpacer3.setText(""); headerPanel.add(lblSpacer3);
-        lblStatusAntrian.setText("Status Antrian:"); headerPanel.add(lblStatusAntrian);
-        cbStatusServis.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Menunggu", "Dikerjakan", "Selesai Lunas" }));
-        headerPanel.add(cbStatusServis);
-        lblSpacer4.setText(""); headerPanel.add(lblSpacer4);
         getContentPane().add(headerPanel, java.awt.BorderLayout.NORTH);
 
         jScrollPane1.setViewportView(tblDetail);
         getContentPane().add(jScrollPane1, java.awt.BorderLayout.CENTER);
 
-        totalPanel.setLayout(new java.awt.GridLayout(5, 2));
+        totalPanel.setLayout(new java.awt.GridLayout(6, 2));
         lblTotalJasa.setText("Total Jasa:"); totalPanel.add(lblTotalJasa);
         txtTotalJasa.setText("0"); txtTotalJasa.setColumns(10); totalPanel.add(txtTotalJasa);
         lblTotalSparepart.setText("Total Sparepart:"); totalPanel.add(lblTotalSparepart);
         txtTotalSparepart.setText("0"); txtTotalSparepart.setColumns(10); txtTotalSparepart.setEditable(false); totalPanel.add(txtTotalSparepart);
         lblGrandTotal.setText("Grand Total:"); totalPanel.add(lblGrandTotal);
         txtGrandTotal.setText("0"); txtGrandTotal.setColumns(10); txtGrandTotal.setEditable(false); totalPanel.add(txtGrandTotal);
-        lblBayar.setText("Bayar:"); totalPanel.add(lblBayar);
+        lblBayar.setText("Bayar (optional):"); totalPanel.add(lblBayar);
         txtBayar.setText("0"); txtBayar.setColumns(10); totalPanel.add(txtBayar);
         lblKembali.setText("Kembali:"); totalPanel.add(lblKembali);
         txtKembali.setText("0"); txtKembali.setColumns(10); txtKembali.setEditable(false); totalPanel.add(txtKembali);
+        lblMetodeBayar = new javax.swing.JLabel("Metode Bayar:"); totalPanel.add(lblMetodeBayar);
+        cbMetodeBayar = new javax.swing.JComboBox(new String[]{"Cash", "QRIS", "Transfer Bank", "Debit", "Lainnya"});
+        totalPanel.add(cbMetodeBayar);
         getContentPane().add(totalPanel, java.awt.BorderLayout.EAST);
 
         buttonPanel.setLayout(new java.awt.FlowLayout());
@@ -363,21 +359,11 @@ public class ServiceTransactionFrame extends javax.swing.JDialog {
             public void actionPerformed(java.awt.event.ActionEvent evt) { btnHapusDetailActionPerformed(evt); }
         });
         buttonPanel.add(btnHapusDetail);
-        btnHitungTotal.setText("Hitung Total");
-        btnHitungTotal.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) { btnHitungTotalActionPerformed(evt); }
-        });
-        buttonPanel.add(btnHitungTotal);
         btnSimpanTrans.setText("Simpan Transaksi");
         btnSimpanTrans.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) { btnSimpanTransActionPerformed(evt); }
         });
         buttonPanel.add(btnSimpanTrans);
-        btnBayar.setText("Bayar");
-        btnBayar.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) { btnBayarActionPerformed(evt); }
-        });
-        buttonPanel.add(btnBayar);
         btnPrint = new javax.swing.JButton();
         btnPrint.setText("Print");
         btnPrint.addActionListener(new java.awt.event.ActionListener() {
@@ -404,17 +390,9 @@ public class ServiceTransactionFrame extends javax.swing.JDialog {
         else JOptionPane.showMessageDialog(this, "Pilih baris detail yang akan dihapus.");
     }//GEN-LAST:event_btnHapusDetailActionPerformed
 
-    private void btnHitungTotalActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnHitungTotalActionPerformed
-        hitungTotal();
-    }//GEN-LAST:event_btnHitungTotalActionPerformed
-
     private void btnSimpanTransActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSimpanTransActionPerformed
         simpanTransaksi();
     }//GEN-LAST:event_btnSimpanTransActionPerformed
-
-    private void btnBayarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBayarActionPerformed
-        prosesBayar();
-    }//GEN-LAST:event_btnBayarActionPerformed
 
     private void addDetailRow() {
         if (sparepartList == null || sparepartList.isEmpty()) {
@@ -487,7 +465,7 @@ public class ServiceTransactionFrame extends javax.swing.JDialog {
             t.setMekanikId(mekanikId);
             t.setKeluhan(txtKeluhan.getText().trim());
             t.setRegistrationId(sourceRegistrationId);
-            t.setStatusServis(cbStatusServis.getSelectedItem().toString());
+            t.setStatusServis("Dikerjakan");
             t.setTotalJasa(Double.parseDouble(txtTotalJasa.getText().trim()));
 
             double totalSp = 0;
@@ -505,6 +483,7 @@ public class ServiceTransactionFrame extends javax.swing.JDialog {
             }
             t.setBayar(bayar);
             t.setKembali(bayar - t.getGrandTotal());
+            t.setMetodeBayar(cbMetodeBayar.getSelectedItem().toString());
             t.setUserKasir("admin");
 
             List<TransactionDetail> details = new ArrayList<>();
@@ -574,7 +553,6 @@ public class ServiceTransactionFrame extends javax.swing.JDialog {
             }
 
             txtKembali.setText(String.valueOf(kembali));
-            cbStatusServis.setSelectedItem("Selesai Lunas");
             JOptionPane.showMessageDialog(this, "Pembayaran berhasil! Kembali: " + kembali);
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(this, "Error bayar: " + ex.getMessage());
@@ -600,16 +578,15 @@ public class ServiceTransactionFrame extends javax.swing.JDialog {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnAddClient;
-    private javax.swing.JButton btnBayar;
     private javax.swing.JButton btnHapusDetail;
-    private javax.swing.JButton btnHitungTotal;
     private javax.swing.JButton btnPrint;
     private javax.swing.JButton btnSimpanTrans;
+    private javax.swing.JLabel lblMetodeBayar;
+    private javax.swing.JComboBox cbMetodeBayar;
     private javax.swing.JButton btnTambahDetail;
     private javax.swing.JPanel buttonPanel;
     private javax.swing.JComboBox cbClient;
     private javax.swing.JComboBox cbMekanik;
-    private javax.swing.JComboBox cbStatusServis;
     private javax.swing.JComboBox cbVehicle;
     private javax.swing.JPanel headerPanel;
     private javax.swing.JScrollPane jScrollPane1;
@@ -623,8 +600,6 @@ public class ServiceTransactionFrame extends javax.swing.JDialog {
     private javax.swing.JLabel lblSpacer1;
     private javax.swing.JLabel lblSpacer2;
     private javax.swing.JLabel lblSpacer3;
-    private javax.swing.JLabel lblSpacer4;
-    private javax.swing.JLabel lblStatusAntrian;
     private javax.swing.JLabel lblTotalJasa;
     private javax.swing.JLabel lblTotalSparepart;
     private javax.swing.JLabel lblVehicle;

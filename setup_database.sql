@@ -75,8 +75,8 @@ CREATE TABLE IF NOT EXISTS service_registration (
     keluhan TEXT,
     mekanik_id INT NOT NULL,
     status VARCHAR(50) DEFAULT 'Registered',
-    tanggal_daftar DATE NOT NULL,
-    tanggal_mulai DATE,
+    tanggal_daftar DATETIME NOT NULL,
+    tanggal_mulai DATETIME,
     catatan TEXT,
     FOREIGN KEY (vehicle_id) REFERENCES vehicle(vehicle_id),
     FOREIGN KEY (client_id) REFERENCES client(client_id),
@@ -98,6 +98,7 @@ CREATE TABLE IF NOT EXISTS service_transaction (
     grand_total DOUBLE DEFAULT 0,
     bayar DOUBLE DEFAULT 0,
     kembali DOUBLE DEFAULT 0,
+    metode_bayar VARCHAR(50) DEFAULT 'Cash',
     user_kasir VARCHAR(50),
     FOREIGN KEY (client_id) REFERENCES client(client_id),
     FOREIGN KEY (vehicle_id) REFERENCES vehicle(vehicle_id),
@@ -217,13 +218,13 @@ INSERT INTO vehicle (client_id, no_polisi, merk, tipe, cc, tipe_kendaraan, tahun
 -- Dummy Service Registration (untuk uji flow pendaftaran -> transaksi)
 INSERT INTO service_registration (vehicle_id, client_id, keluhan, mekanik_id, status, tanggal_daftar, tanggal_mulai, catatan) VALUES
 -- Registered: siap diproses lewat tombol "Mulai Servis"
-(1, 1, 'Servis berkala 2.000 km dan cek rem', 1, 'Registered', CURDATE(), NULL, 'Customer minta selesai hari ini'),
+(1, 1, 'Servis berkala 2.000 km dan cek rem', 1, 'Registered', NOW(), NULL, 'Customer minta selesai hari ini'),
 -- Registered: contoh antrean baru
-(2, 2, 'Ganti oli, cek CVT, suara kasar saat akselerasi', 3, 'Registered', CURDATE(), NULL, 'Tunggu approval sparepart'),
+(2, 2, 'Ganti oli, cek CVT, suara kasar saat akselerasi', 3, 'Registered', NOW() - INTERVAL 30 MINUTE, NULL, 'Tunggu approval sparepart'),
 -- InProgress: contoh unit yang sedang dikerjakan
-(3, 3, 'Tarikan berat, minta cek roller dan v-belt', 5, 'InProgress', CURDATE() - INTERVAL 1 DAY, CURDATE(), 'Estimasi selesai sore'),
+(3, 3, 'Tarikan berat, minta cek roller dan v-belt', 5, 'InProgress', NOW() - INTERVAL 1 DAY, NOW(), 'Estimasi selesai sore'),
 -- Completed: contoh unit sudah selesai
-(4, 4, 'Overheat ringan dan flushing coolant', 2, 'Completed', CURDATE() - INTERVAL 3 DAY, CURDATE() - INTERVAL 2 DAY, 'Sudah diambil customer');
+(4, 4, 'Overheat ringan dan flushing coolant', 2, 'Completed', NOW() - INTERVAL 3 DAY, NOW() - INTERVAL 2 DAY, 'Sudah diambil customer');
 
 -- Dummy Service Transaction (10+) untuk Dashboard
 INSERT INTO service_transaction (tanggal, client_id, vehicle_id, mekanik_id, keluhan, status_servis, total_jasa, total_sparepart, grand_total, bayar, kembali, user_kasir) VALUES 
