@@ -9,6 +9,12 @@ public class TransactionDetail {
     private double harga;
     private double subtotal;
 
+    // Display fields
+    private String sparepartNama;
+
+    public String getSparepartNama() { return sparepartNama; }
+    public void setSparepartNama(String sparepartNama) { this.sparepartNama = sparepartNama; }
+
     public int getDetailId() {
         return detailId;
     }

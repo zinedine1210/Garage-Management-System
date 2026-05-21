@@ -9,6 +9,7 @@ import com.mycompany.garagemanagementsystem.model.Client;
 import com.mycompany.garagemanagementsystem.model.Mekanik;
 import com.mycompany.garagemanagementsystem.model.ServiceRegistration;
 import com.mycompany.garagemanagementsystem.model.ServiceTransaction;
+import com.mycompany.garagemanagementsystem.model.TransactionDetail;
 import com.mycompany.garagemanagementsystem.model.Vehicle;
 import com.mycompany.garagemanagementsystem.util.StyledTable;
 import com.mycompany.garagemanagementsystem.util.UIHelper;
@@ -40,6 +41,7 @@ public class ServiceRegistrationPanel extends javax.swing.JPanel {
     private JTextField txtSearch;
     private JLabel lblInfo;
     private int selectedRegId = -1;
+    private JButton btnDetail;
 
     public ServiceRegistrationPanel() {
         buildUI();
@@ -149,6 +151,18 @@ public class ServiceRegistrationPanel extends javax.swing.JPanel {
         JButton btnRefresh = UIHelper.createStyledButton("Refresh", new Color(108, 117, 125));
         btnRefresh.addActionListener(e -> { selectedRegId = -1; loadTable(); lblInfo.setText(" "); });
         buttonPanel.add(btnRefresh);
+
+        btnDetail = UIHelper.createStyledButton("\uD83D\uDCCB Lihat Detail", new Color(13, 110, 253));
+        btnDetail.setVisible(false);
+        btnDetail.addActionListener(e -> showDetail());
+        buttonPanel.add(btnDetail);
+
+        // Show Detail button only for Completed registrations
+        styledTable.addSelectionListener(e -> {
+            Object[] row = styledTable.getSelectedRowData();
+            boolean show = row != null && row[6] != null && "Completed".equalsIgnoreCase(row[6].toString());
+            btnDetail.setVisible(show);
+        });
 
         add(buttonPanel, BorderLayout.SOUTH);
     }
@@ -427,6 +441,63 @@ public class ServiceRegistrationPanel extends javax.swing.JPanel {
             loadTable();
             selectedRegId = -1;
             lblInfo.setText(" ");
+        } catch (SQLException ex) {
+            UIHelper.error(this, "Error: " + ex.getMessage());
+        }
+    }
+
+    private void showDetail() {
+        if (selectedRegId < 0) { UIHelper.warn(this, "Pilih pendaftaran dari tabel."); return; }
+        try {
+            ServiceTransaction t = transDAO.findByRegistrationId(selectedRegId);
+            if (t == null) { UIHelper.warn(this, "Transaksi belum dibuat untuk pendaftaran ini."); return; }
+            t = transDAO.findByIdFull(t.getTransId());
+            if (t == null) { UIHelper.error(this, "Detail transaksi tidak ditemukan."); return; }
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("══════════════════════════════\n");
+            sb.append("   DETAIL PENDAFTARAN SERVIS\n");
+            sb.append("══════════════════════════════\n\n");
+            sb.append("No. Registrasi: REG-").append(String.format("%05d", selectedRegId)).append("\n");
+            sb.append("No. Transaksi : TRX-").append(String.format("%05d", t.getTransId())).append("\n");
+            sb.append("Tanggal       : ").append(t.getTanggal() != null ? new SimpleDateFormat("dd-MM-yyyy HH:mm").format(t.getTanggal()) : "-").append("\n");
+            sb.append("Status        : ").append(t.getStatusServis()).append("\n");
+            sb.append("Metode Bayar  : ").append(t.getMetodeBayar() != null ? t.getMetodeBayar() : "Cash").append("\n");
+
+            sb.append("\n── Pelanggan & Kendaraan ──\n");
+            sb.append("Pelanggan     : ").append(t.getClientNama() != null ? t.getClientNama() : "-").append("\n");
+            sb.append("No. Polisi    : ").append(t.getNoPolisi() != null ? t.getNoPolisi() : "-").append("\n");
+            sb.append("Mekanik       : ").append(t.getMekanikNama() != null ? t.getMekanikNama() : "-").append("\n");
+
+            sb.append("\n── Keluhan ──\n");
+            sb.append(t.getKeluhan() != null && !t.getKeluhan().isEmpty() ? t.getKeluhan() : "-").append("\n");
+
+            if (t.getDetails() != null && !t.getDetails().isEmpty()) {
+                sb.append("\n── Sparepart ──\n");
+                for (int i = 0; i < t.getDetails().size(); i++) {
+                    TransactionDetail d = t.getDetails().get(i);
+                    sb.append(String.format("  %d. %s (Qty: %d)\n", i + 1,
+                            d.getSparepartNama() != null ? d.getSparepartNama() : "Sparepart #" + d.getSparepartId(),
+                            d.getQty()));
+                }
+            }
+
+            sb.append("\n── Total ──\n");
+            sb.append("Total Jasa      : Rp ").append(String.format("%,.0f", t.getTotalJasa())).append("\n");
+            sb.append("Total Sparepart : Rp ").append(String.format("%,.0f", t.getTotalSparepart())).append("\n");
+            sb.append("Grand Total     : Rp ").append(String.format("%,.0f", t.getGrandTotal())).append("\n");
+            sb.append("Bayar           : Rp ").append(String.format("%,.0f", t.getBayar())).append("\n");
+            sb.append("Kembali         : Rp ").append(String.format("%,.0f", Math.max(0, t.getKembali()))).append("\n");
+
+            JTextArea ta = new JTextArea(sb.toString());
+            ta.setEditable(false);
+            ta.setFont(new Font("Monospaced", Font.PLAIN, 12));
+            ta.setBackground(new Color(245, 245, 250));
+            JScrollPane sp = new JScrollPane(ta);
+            sp.setPreferredSize(new Dimension(420, 450));
+            Window win = SwingUtilities.getWindowAncestor(this);
+            Frame owner = (win instanceof Frame) ? (Frame) win : null;
+            JOptionPane.showMessageDialog(owner, sp, "Detail Pendaftaran - REG-" + String.format("%05d", selectedRegId), JOptionPane.PLAIN_MESSAGE);
         } catch (SQLException ex) {
             UIHelper.error(this, "Error: " + ex.getMessage());
         }

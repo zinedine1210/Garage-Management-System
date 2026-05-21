@@ -124,4 +124,31 @@ public class ServiceRegistrationDAO {
         }
         return list;
     }
+
+    public List<ServiceRegistration> getRegisteredForQueue() throws SQLException {
+        List<ServiceRegistration> list = new ArrayList<>();
+        String sql = "SELECT r.registration_id, r.tanggal_daftar, r.keluhan, "
+                   + "v.no_polisi, m.nama AS mekanik_nama "
+                   + "FROM transaksi_pendaftaran r "
+                   + "JOIN vehicle v ON r.vehicle_id = v.vehicle_id "
+                   + "JOIN mekanik m ON r.mekanik_id = m.mekanik_id "
+                   + "WHERE r.status = 'Registered' "
+                   + "ORDER BY r.tanggal_daftar ASC";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                ServiceRegistration sr = new ServiceRegistration();
+                sr.setRegistrationId(rs.getInt("registration_id"));
+                java.sql.Timestamp ts = rs.getTimestamp("tanggal_daftar");
+                if (ts != null) sr.setTanggalDaftar(new java.util.Date(ts.getTime()));
+                sr.setKeluhan(rs.getString("keluhan"));
+                sr.setNoPolisi(rs.getString("no_polisi"));
+                sr.setMekanikNama(rs.getString("mekanik_nama"));
+                sr.setStatus("Registered");
+                list.add(sr);
+            }
+        }
+        return list;
+    }
 }

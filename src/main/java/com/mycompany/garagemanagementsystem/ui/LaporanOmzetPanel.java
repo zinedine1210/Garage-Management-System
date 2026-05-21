@@ -107,8 +107,9 @@ public class LaporanOmzetPanel extends javax.swing.JPanel {
         btnExport.addActionListener(e -> {
             String[] options = {"PDF", "Excel", "Batal"};
             int choice = UIHelper.showOptions(this, "Pilih format export:", "Export Laporan Omzet", options);
-            if (choice == 0) ExportUtils.exportTableToPDF(styledTable.getTable(), "Laporan_Omzet");
-            else if (choice == 1) ExportUtils.exportTableToExcel(styledTable.getTable(), "Laporan_Omzet");
+            int[] totCols = {1, 2, 3, 4};
+            if (choice == 0) ExportUtils.exportTableToPDFWithTotals(styledTable.getTable(), "Laporan_Omzet", totCols);
+            else if (choice == 1) ExportUtils.exportTableToExcelWithTotals(styledTable.getTable(), "Laporan_Omzet", totCols);
         });
         buttonPanel.add(btnExport);
         add(buttonPanel, BorderLayout.SOUTH);

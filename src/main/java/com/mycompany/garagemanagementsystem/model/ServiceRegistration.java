@@ -13,6 +13,10 @@ public class ServiceRegistration {
     private Date tanggalMulai;
     private String catatan;
 
+    // Display fields (from JOINs)
+    private String noPolisi;
+    private String mekanikNama;
+
     // Getters and Setters
     public int getRegistrationId() { return registrationId; }
     public void setRegistrationId(int registrationId) { this.registrationId = registrationId; }
@@ -40,4 +44,10 @@ public class ServiceRegistration {
 
     public String getCatatan() { return catatan; }
     public void setCatatan(String catatan) { this.catatan = catatan; }
+
+    public String getNoPolisi() { return noPolisi; }
+    public void setNoPolisi(String noPolisi) { this.noPolisi = noPolisi; }
+
+    public String getMekanikNama() { return mekanikNama; }
+    public void setMekanikNama(String mekanikNama) { this.mekanikNama = mekanikNama; }
 }

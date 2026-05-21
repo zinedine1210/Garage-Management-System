@@ -93,6 +93,18 @@ public class AppConfig {
         return null;
     }
 
+    public static String getCompanyCity() {
+        return props.getProperty("company.city", "Jakarta");
+    }
+
+    public static String getCompanyPicName() {
+        return props.getProperty("company.pic.name", "");
+    }
+
+    public static String getCompanyPicPosition() {
+        return props.getProperty("company.pic.position", "");
+    }
+
     public static String getCompanyPhoneFormatted() {
         return "Telp: " + getCompanyPhone();
     }

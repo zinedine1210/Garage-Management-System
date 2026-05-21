@@ -438,7 +438,7 @@ public class ServiceTransactionFrame extends javax.swing.JDialog {
             bayar = Double.parseDouble(txtBayar.getText().trim());
         } catch (NumberFormatException ignored) {
         }
-        double kembali = bayar - grandTotal;
+        double kembali = Math.max(0, bayar - grandTotal);
         txtKembali.setText(String.valueOf(kembali));
     }
 
@@ -483,7 +483,7 @@ public class ServiceTransactionFrame extends javax.swing.JDialog {
             } catch (NumberFormatException ignored) {
             }
             t.setBayar(bayar);
-            t.setKembali(bayar - t.getGrandTotal());
+            t.setKembali(Math.max(0, bayar - t.getGrandTotal()));
             t.setMetodeBayar(cbMetodeBayar.getSelectedItem().toString());
             t.setUserKasir("admin");
 

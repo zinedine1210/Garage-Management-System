@@ -100,8 +100,9 @@ public class LaporanKinerjaMekanikPanel extends javax.swing.JPanel {
         btnExport.addActionListener(e -> {
             String[] options = {"PDF", "Excel", "Batal"};
             int choice = UIHelper.showOptions(this, "Pilih format export:", "Export Laporan Kinerja", options);
-            if (choice == 0) ExportUtils.exportTableToPDF(styledTable.getTable(), "Laporan_Kinerja_Mekanik");
-            else if (choice == 1) ExportUtils.exportTableToExcel(styledTable.getTable(), "Laporan_Kinerja_Mekanik");
+            int[] totCols = {3, 4, 5, 6, 7};
+            if (choice == 0) ExportUtils.exportTableToPDFWithTotals(styledTable.getTable(), "Laporan_Kinerja_Mekanik", totCols);
+            else if (choice == 1) ExportUtils.exportTableToExcelWithTotals(styledTable.getTable(), "Laporan_Kinerja_Mekanik", totCols);
         });
         buttonPanel.add(btnExport);
         add(buttonPanel, BorderLayout.SOUTH);

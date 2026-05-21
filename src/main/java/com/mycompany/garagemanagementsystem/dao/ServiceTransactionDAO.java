@@ -411,4 +411,70 @@ public class ServiceTransactionDAO {
             }
         }
     }
+
+    /**
+     * findByIdFull: returns ServiceTransaction with joined client/vehicle/mekanik names
+     * and detail rows with sparepart names.
+     */
+    public ServiceTransaction findByIdFull(int transId) throws SQLException {
+        ServiceTransaction t = null;
+        String sqlHeader = "SELECT t.*, c.nama as client_nama, v.no_polisi, v.merk, v.tipe, m.nama as mekanik_nama "
+                + "FROM transaksi_servis t "
+                + "LEFT JOIN client c ON t.client_id = c.client_id "
+                + "LEFT JOIN vehicle v ON t.vehicle_id = v.vehicle_id "
+                + "LEFT JOIN mekanik m ON t.mekanik_id = m.mekanik_id "
+                + "WHERE t.trans_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sqlHeader)) {
+            ps.setInt(1, transId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    t = new ServiceTransaction();
+                    t.setTransId(rs.getInt("trans_id"));
+                    t.setRegistrationId((Integer) rs.getObject("registration_id"));
+                    t.setTanggal(rs.getTimestamp("tanggal"));
+                    t.setClientId(rs.getInt("client_id"));
+                    t.setVehicleId(rs.getInt("vehicle_id"));
+                    t.setMekanikId(rs.getInt("mekanik_id"));
+                    t.setKeluhan(rs.getString("keluhan"));
+                    t.setStatusServis(rs.getString("status_servis"));
+                    t.setTotalJasa(rs.getDouble("total_jasa"));
+                    t.setTotalSparepart(rs.getDouble("total_sparepart"));
+                    t.setGrandTotal(rs.getDouble("grand_total"));
+                    t.setBayar(rs.getDouble("bayar"));
+                    t.setKembali(rs.getDouble("kembali"));
+                    t.setMetodeBayar(rs.getString("metode_bayar"));
+                    t.setUserKasir(rs.getString("user_kasir"));
+                    t.setClientNama(rs.getString("client_nama"));
+                    t.setNoPolisi(rs.getString("no_polisi"));
+                    t.setMekanikNama(rs.getString("mekanik_nama"));
+                }
+            }
+        }
+        if (t != null) {
+            String sqlDetail = "SELECT d.*, s.nama_sparepart FROM transaksi_servis_detail d "
+                    + "LEFT JOIN sparepart s ON d.sparepart_id = s.sparepart_id "
+                    + "WHERE d.trans_id = ?";
+            try (Connection conn = DBConnection.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(sqlDetail)) {
+                ps.setInt(1, transId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    List<TransactionDetail> details = new java.util.ArrayList<>();
+                    while (rs.next()) {
+                        TransactionDetail d = new TransactionDetail();
+                        d.setDetailId(rs.getInt("detail_id"));
+                        d.setTransId(rs.getInt("trans_id"));
+                        d.setSparepartId(rs.getInt("sparepart_id"));
+                        d.setQty(rs.getInt("qty"));
+                        d.setHarga(rs.getDouble("harga"));
+                        d.setSubtotal(rs.getDouble("subtotal"));
+                        d.setSparepartNama(rs.getString("nama_sparepart"));
+                        details.add(d);
+                    }
+                    t.setDetails(details);
+                }
+            }
+        }
+        return t;
+    }
 }

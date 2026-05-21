@@ -141,6 +141,10 @@ public class TransactionListPanel extends javax.swing.JPanel {
         btnRefresh.addActionListener(e -> loadData());
         buttonPanel.add(btnRefresh);
 
+        JButton btnPrint = createStyledButton("\uD83D\uDDA8 Print Nota", new Color(139, 92, 246));
+        btnPrint.addActionListener(e -> printReceipt());
+        buttonPanel.add(btnPrint);
+
         JButton btnExport = createStyledButton("Export", new Color(23, 162, 184));
         btnExport.addActionListener(e -> {
             String[] options = {"PDF", "Excel", "Batal"};
@@ -245,6 +249,24 @@ public class TransactionListPanel extends javax.swing.JPanel {
         if (owner != null) return owner;
         Window w = SwingUtilities.getWindowAncestor(this);
         return w instanceof Frame ? (Frame) w : null;
+    }
+
+    private void printReceipt() {
+        Object[] row = styledTable.getSelectedRowData();
+        if (row == null) {
+            UIHelper.warn(this, "Pilih transaksi yang akan dicetak notanya.");
+            return;
+        }
+        try {
+            ServiceTransaction t = transDAO.findByIdFull((int) row[0]);
+            if (t == null) {
+                UIHelper.error(this, "Transaksi tidak ditemukan.");
+                return;
+            }
+            ExportUtils.printServiceReceipt(t);
+        } catch (java.sql.SQLException ex) {
+            UIHelper.error(this, "Error: " + ex.getMessage());
+        }
     }
 
     private JButton createStyledButton(String text, Color bg) {
