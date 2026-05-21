@@ -31,7 +31,7 @@ public class LoginFrame extends javax.swing.JFrame {
         btnAntrian = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("Login - Garage Management");
+        setTitle("Login - " + com.mycompany.garagemanagementsystem.util.AppConfig.getAppName());
 
         panel.setLayout(new java.awt.GridLayout(4, 2, 10, 10));
 

@@ -97,7 +97,7 @@ public class ServiceRegistrationPanel extends javax.swing.JPanel {
         };
         table = new JTable(tableModel);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        table.setRowHeight(24);
+        table.setRowHeight(22);
         table.getSelectionModel().addListSelectionListener(e -> {
             int row = table.getSelectedRow();
             if (row >= 0) {

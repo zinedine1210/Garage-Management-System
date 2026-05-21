@@ -11,11 +11,13 @@ import java.io.FileOutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import com.mycompany.garagemanagementsystem.util.AppConfig;
+
 public class ExportUtils {
 
-    private static final String NAMA_BENGKEL = "BENGKEL GARAGE MANAGEMENT";
-    private static final String ALAMAT_BENGKEL = "Jl. Raya Otomotif No. 123, Jakarta";
-    private static final String TELP_BENGKEL = "Telp: 021-555-1234";
+    private static String getNamaBengkel() { return AppConfig.getCompanyName(); }
+    private static String getAlamatBengkel() { return AppConfig.getCompanyAddress(); }
+    private static String getTelpBengkel() { return AppConfig.getCompanyPhoneFormatted(); }
 
     public static void exportTableToExcel(JTable table, String title) {
         JFileChooser fc = new JFileChooser();
@@ -36,10 +38,10 @@ public class ExportUtils {
             titleStyle.setFont(titleFont);
 
             Row r0 = sheet.createRow(0);
-            r0.createCell(0).setCellValue(NAMA_BENGKEL);
+            r0.createCell(0).setCellValue(getNamaBengkel());
             r0.getCell(0).setCellStyle(titleStyle);
             Row r1 = sheet.createRow(1);
-            r1.createCell(0).setCellValue(ALAMAT_BENGKEL + " | " + TELP_BENGKEL);
+            r1.createCell(0).setCellValue(getAlamatBengkel() + " | " + getTelpBengkel());
             Row r2 = sheet.createRow(2);
             r2.createCell(0).setCellValue(getDocDescription(title));
             Row r3 = sheet.createRow(3);
@@ -100,11 +102,11 @@ public class ExportUtils {
             com.itextpdf.text.Font fontAlamat = new com.itextpdf.text.Font(com.itextpdf.text.Font.FontFamily.HELVETICA, 10, com.itextpdf.text.Font.NORMAL);
             com.itextpdf.text.Font fontDocTitle = new com.itextpdf.text.Font(com.itextpdf.text.Font.FontFamily.HELVETICA, 12, com.itextpdf.text.Font.BOLD);
 
-            Paragraph pBengkel = new Paragraph(NAMA_BENGKEL, fontBengkel);
+            Paragraph pBengkel = new Paragraph(getNamaBengkel(), fontBengkel);
             pBengkel.setAlignment(Element.ALIGN_CENTER);
             doc.add(pBengkel);
 
-            Paragraph pAlamat = new Paragraph(ALAMAT_BENGKEL + " | " + TELP_BENGKEL, fontAlamat);
+            Paragraph pAlamat = new Paragraph(getAlamatBengkel() + " | " + getTelpBengkel(), fontAlamat);
             pAlamat.setAlignment(Element.ALIGN_CENTER);
             doc.add(pAlamat);
 
@@ -171,6 +173,8 @@ public class ExportUtils {
     private static String getDocDescription(String title) {
         if (title.startsWith("Nota_Transaksi")) return "NOTA SERVIS KENDARAAN";
         if (title.startsWith("Laporan_Transaksi")) return "LAPORAN TRANSAKSI SERVIS";
+        if (title.startsWith("Laporan_Pembelian")) return "LAPORAN PEMBELIAN SPAREPART";
+        if (title.startsWith("Laporan_Pendapatan")) return "LAPORAN PENDAPATAN";
         if (title.startsWith("Dashboard")) return "LAPORAN DASHBOARD BENGKEL";
         if (title.startsWith("Data_Client")) return "LAPORAN DATA PELANGGAN";
         if (title.startsWith("Data_Kendaraan")) return "LAPORAN DATA KENDARAAN";

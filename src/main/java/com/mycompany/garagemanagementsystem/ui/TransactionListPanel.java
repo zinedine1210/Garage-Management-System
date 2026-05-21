@@ -44,6 +44,8 @@ public class TransactionListPanel extends javax.swing.JPanel {
     }
 
     private void myInit() {
+        setBorder(javax.swing.BorderFactory.createEmptyBorder(8, 8, 8, 8));
+        table.setRowHeight(22);
         txtSearch.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
             public void insertUpdate(javax.swing.event.DocumentEvent e) { applyFilter(); }
             public void removeUpdate(javax.swing.event.DocumentEvent e) { applyFilter(); }
@@ -252,6 +254,15 @@ public class TransactionListPanel extends javax.swing.JPanel {
             public void actionPerformed(java.awt.event.ActionEvent evt) { printLaporan(); }
         });
         buttonPanel.add(btnPrint);
+        javax.swing.JButton btnExport = new javax.swing.JButton();
+        btnExport.setText("Export");
+        btnExport.addActionListener(e -> {
+            String[] options = {"PDF", "Excel"};
+            int choice = javax.swing.JOptionPane.showOptionDialog(this, "Pilih format export:", "Export Data", javax.swing.JOptionPane.YES_NO_CANCEL_OPTION, javax.swing.JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
+            if (choice == 0) com.mycompany.garagemanagementsystem.util.ExportUtils.exportTableToPDF(table, "Data_Transaksi_Servis");
+            else if (choice == 1) com.mycompany.garagemanagementsystem.util.ExportUtils.exportTableToExcel(table, "Data_Transaksi_Servis");
+        });
+        buttonPanel.add(btnExport);
         add(buttonPanel, java.awt.BorderLayout.SOUTH);
     }// </editor-fold>//GEN-END:initComponents
 

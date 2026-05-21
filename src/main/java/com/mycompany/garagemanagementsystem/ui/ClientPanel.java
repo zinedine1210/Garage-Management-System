@@ -18,6 +18,8 @@ public class ClientPanel extends javax.swing.JPanel {
     }
 
     private void myInit() {
+        setBorder(javax.swing.BorderFactory.createEmptyBorder(8, 8, 8, 8));
+        table.setRowHeight(22);
         table.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
 
         table.getSelectionModel().addListSelectionListener(e -> isiFormDariTabel());

@@ -14,11 +14,11 @@ import java.util.List;
 public class ServiceTransactionDAO {
 
     public int insertWithDetails(ServiceTransaction t) throws SQLException {
-        String sqlHeader = "INSERT INTO service_transaction "
+        String sqlHeader = "INSERT INTO transaksi_servis "
                 + "(tanggal, client_id, vehicle_id, mekanik_id, registration_id, keluhan, status_servis, "
                 + " total_jasa, total_sparepart, grand_total, bayar, kembali, metode_bayar, user_kasir) "
                 + "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
-        String sqlDetail = "INSERT INTO transaction_detail "
+        String sqlDetail = "INSERT INTO transaksi_servis_detail "
                 + "(trans_id, sparepart_id, qty, harga, subtotal) VALUES (?,?,?,?,?)";
         String sqlUpdateStok = "UPDATE sparepart SET stok = stok - ? WHERE sparepart_id = ?";
 
@@ -111,7 +111,7 @@ public class ServiceTransactionDAO {
     }
 
     public void updateStatusPembayaran(int transId, double bayar, double kembali) throws SQLException {
-        String sql = "UPDATE service_transaction "
+        String sql = "UPDATE transaksi_servis "
                 + "SET bayar=?, kembali=?, status_servis='Selesai Lunas' WHERE trans_id=?";
         try (Connection conn = DBConnection.getConnection();
                 PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -123,7 +123,7 @@ public class ServiceTransactionDAO {
     }
 
     public void updateStatusServis(int transId, String status) throws SQLException {
-        String sql = "UPDATE service_transaction SET status_servis=? WHERE trans_id=?";
+        String sql = "UPDATE transaksi_servis SET status_servis=? WHERE trans_id=?";
         try (Connection conn = DBConnection.getConnection();
                 PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, status);
@@ -135,7 +135,7 @@ public class ServiceTransactionDAO {
     public List<ServiceTransaction> findAll() throws SQLException {
         List<ServiceTransaction> list = new java.util.ArrayList<>();
         String sql = "SELECT t.*, c.nama as client_nama, v.no_polisi, m.nama as mekanik_nama "
-                + "FROM service_transaction t "
+                + "FROM transaksi_servis t "
                 + "LEFT JOIN client c ON t.client_id = c.client_id "
                 + "LEFT JOIN vehicle v ON t.vehicle_id = v.vehicle_id "
                 + "LEFT JOIN mekanik m ON t.mekanik_id = m.mekanik_id "
@@ -172,7 +172,7 @@ public class ServiceTransactionDAO {
     }
 
     public void delete(int transId) throws SQLException {
-        String sql = "DELETE FROM service_transaction WHERE trans_id=?";
+        String sql = "DELETE FROM transaksi_servis WHERE trans_id=?";
         try (Connection conn = DBConnection.getConnection();
                 PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, transId);
@@ -184,10 +184,10 @@ public class ServiceTransactionDAO {
         List<com.mycompany.garagemanagementsystem.model.ServiceHistoryItem> list = new java.util.ArrayList<>();
         String sql = "SELECT t.tanggal, t.keluhan, t.grand_total, m.nama as nama_mekanik, "
                    + "GROUP_CONCAT(CONCAT(s.nama_sparepart, ' (', td.qty, ')') SEPARATOR ', ') as spareparts "
-                   + "FROM service_transaction t "
+                   + "FROM transaksi_servis t "
                    + "JOIN vehicle v ON t.vehicle_id = v.vehicle_id "
                    + "JOIN mekanik m ON t.mekanik_id = m.mekanik_id "
-                   + "LEFT JOIN transaction_detail td ON t.trans_id = td.trans_id "
+                   + "LEFT JOIN transaksi_servis_detail td ON t.trans_id = td.trans_id "
                    + "LEFT JOIN sparepart s ON td.sparepart_id = s.sparepart_id "
                    + "WHERE v.no_polisi LIKE ? "
                    + "GROUP BY t.trans_id "
@@ -215,7 +215,7 @@ public class ServiceTransactionDAO {
         List<ServiceTransaction> list = new java.util.ArrayList<>();
         String sql = "SELECT t.trans_id, t.status_servis, t.keluhan, t.tanggal, "
                    + "v.no_polisi, v.merk, v.tipe, c.nama as client_nama, m.nama as mekanik_nama "
-                   + "FROM service_transaction t "
+                   + "FROM transaksi_servis t "
                    + "JOIN vehicle v ON t.vehicle_id = v.vehicle_id "
                    + "JOIN client c ON t.client_id = c.client_id "
                    + "JOIN mekanik m ON t.mekanik_id = m.mekanik_id "
@@ -242,7 +242,7 @@ public class ServiceTransactionDAO {
 
     public ServiceTransaction findById(int transId) throws SQLException {
         ServiceTransaction t = null;
-        String sqlHeader = "SELECT * FROM service_transaction WHERE trans_id = ?";
+        String sqlHeader = "SELECT * FROM transaksi_servis WHERE trans_id = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sqlHeader)) {
             ps.setInt(1, transId);
@@ -268,7 +268,7 @@ public class ServiceTransactionDAO {
             }
         }
         if (t != null) {
-            String sqlDetail = "SELECT * FROM transaction_detail WHERE trans_id = ?";
+            String sqlDetail = "SELECT * FROM transaksi_servis_detail WHERE trans_id = ?";
             try (Connection conn = DBConnection.getConnection();
                  PreparedStatement ps = conn.prepareStatement(sqlDetail)) {
                 ps.setInt(1, transId);
@@ -292,7 +292,7 @@ public class ServiceTransactionDAO {
     }
 
     public ServiceTransaction findByRegistrationId(int registrationId) throws SQLException {
-        String sql = "SELECT * FROM service_transaction WHERE registration_id = ? ORDER BY trans_id DESC LIMIT 1";
+        String sql = "SELECT * FROM transaksi_servis WHERE registration_id = ? ORDER BY trans_id DESC LIMIT 1";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, registrationId);
@@ -322,13 +322,13 @@ public class ServiceTransactionDAO {
     }
 
     public void updateWithDetails(ServiceTransaction t) throws SQLException {
-        String sqlSelectOldDetails = "SELECT sparepart_id, qty FROM transaction_detail WHERE trans_id=?";
-        String sqlDeleteDetails = "DELETE FROM transaction_detail WHERE trans_id=?";
-        String sqlUpdateHeader = "UPDATE service_transaction SET "
+        String sqlSelectOldDetails = "SELECT sparepart_id, qty FROM transaksi_servis_detail WHERE trans_id=?";
+        String sqlDeleteDetails = "DELETE FROM transaksi_servis_detail WHERE trans_id=?";
+        String sqlUpdateHeader = "UPDATE transaksi_servis SET "
             + "client_id=?, vehicle_id=?, mekanik_id=?, registration_id=?, keluhan=?, status_servis=?, "
             + "total_jasa=?, total_sparepart=?, grand_total=?, bayar=?, kembali=?, metode_bayar=?, user_kasir=? "
             + "WHERE trans_id=?";
-        String sqlInsertDetail = "INSERT INTO transaction_detail "
+        String sqlInsertDetail = "INSERT INTO transaksi_servis_detail "
                 + "(trans_id, sparepart_id, qty, harga, subtotal) VALUES (?,?,?,?,?)";
         String sqlRevertStok = "UPDATE sparepart SET stok = stok + ? WHERE sparepart_id = ?";
         String sqlReduceStok = "UPDATE sparepart SET stok = stok - ? WHERE sparepart_id = ?";

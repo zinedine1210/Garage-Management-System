@@ -1,5 +1,6 @@
 package com.mycompany.garagemanagementsystem.ui;
 
+import com.mycompany.garagemanagementsystem.util.AppConfig;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
@@ -9,36 +10,155 @@ import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.GridLayout;
 import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.UIManager;
 
 public class MainMenuFrame extends javax.swing.JFrame {
 
     private DashboardPanel dashboardPanel;
+    private javax.swing.JTabbedPane tabbedPane;
 
+    private static final Color SIDEBAR_BG = new Color(43, 45, 66);
+    private static final Color SIDEBAR_SECTION_BG = new Color(35, 37, 56);
+    private static final Color SIDEBAR_BTN_HOVER = new Color(58, 61, 90);
     private static final Color TAB_BG = new Color(240, 244, 248);
     private static final Color TAB_SELECTED_BG = Color.WHITE;
-    private static final Color TAB_HOVER_BG = new Color(220, 228, 236);
     private static final Color TAB_TEXT = new Color(60, 60, 80);
     private static final Color TAB_CLOSE_HOVER = new Color(220, 50, 50);
     private static final Font TAB_FONT = new Font("Segoe UI", Font.PLAIN, 13);
+    private static final Font SECTION_FONT = new Font("Segoe UI", Font.BOLD, 11);
+    private static final Font MENU_FONT = new Font("Segoe UI", Font.PLAIN, 13);
 
     public MainMenuFrame() {
-        initComponents();
-        styleSidebarButtons();
-        styleTabbedPane();
+        initUI();
         dashboardPanel = new DashboardPanel();
         tabbedPane.addTab("Dashboard", dashboardPanel);
         setExtendedState(javax.swing.JFrame.MAXIMIZED_BOTH);
     }
 
-    private void styleTabbedPane() {
+    private void initUI() {
+        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setTitle(AppConfig.getAppName() + " - Executive Dashboard");
+        setLayout(new BorderLayout());
+
+        // ========== SIDEBAR ==========
+        JPanel sidebarWrap = new JPanel(new BorderLayout());
+        sidebarWrap.setBackground(SIDEBAR_BG);
+        sidebarWrap.setPreferredSize(new Dimension(230, 0));
+
+        // --- Header: Logo + App Name ---
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setBackground(SIDEBAR_BG);
+        headerPanel.setBorder(BorderFactory.createEmptyBorder(15, 10, 15, 10));
+
+        String logoPath = AppConfig.getLogoPath();
+        if (logoPath != null && !logoPath.isEmpty()) {
+            try {
+                ImageIcon icon = new ImageIcon(logoPath);
+                java.awt.Image img = icon.getImage().getScaledInstance(40, 40, java.awt.Image.SCALE_SMOOTH);
+                JLabel lblLogo = new JLabel(new ImageIcon(img));
+                lblLogo.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 10));
+                headerPanel.add(lblLogo, BorderLayout.WEST);
+            } catch (Exception ignored) {}
+        }
+
+        JLabel lblApp = new JLabel("<html><div style='text-align:center;'>" + AppConfig.getAppName() + "</div></html>");
+        lblApp.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        lblApp.setForeground(Color.WHITE);
+        lblApp.setHorizontalAlignment(JLabel.CENTER);
+        headerPanel.add(lblApp, BorderLayout.CENTER);
+
+        sidebarWrap.add(headerPanel, BorderLayout.NORTH);
+
+        // --- Menu Sections ---
+        JPanel menuPanel = new JPanel();
+        menuPanel.setLayout(new BoxLayout(menuPanel, BoxLayout.Y_AXIS));
+        menuPanel.setBackground(SIDEBAR_BG);
+
+        // Dashboard
+        menuPanel.add(createSectionLabel("DASHBOARD"));
+        menuPanel.add(createMenuButton("Dashboard", e -> {
+            for (int i = 0; i < tabbedPane.getTabCount(); i++) {
+                if (tabbedPane.getTitleAt(i).equals("Dashboard")) {
+                    tabbedPane.setSelectedIndex(i);
+                    return;
+                }
+            }
+        }));
+
+        menuPanel.add(Box.createVerticalStrut(8));
+
+        // Master Data
+        menuPanel.add(createSectionLabel("MASTER DATA"));
+        menuPanel.add(createMenuButton("Data Client", e -> openTab("Data Client", new ClientPanel())));
+        menuPanel.add(createMenuButton("Data Kendaraan", e -> openTab("Data Kendaraan", new VehiclePanel())));
+        menuPanel.add(createMenuButton("Data Mekanik", e -> openTab("Data Mekanik", new MekanikPanel())));
+        menuPanel.add(createMenuButton("Data Sparepart", e -> openTab("Data Sparepart", new SparepartPanel())));
+        menuPanel.add(createMenuButton("Data Supplier", e -> openTab("Data Supplier", new SupplierPanel())));
+
+        menuPanel.add(Box.createVerticalStrut(8));
+
+        // Transaksi
+        menuPanel.add(createSectionLabel("TRANSAKSI"));
+        menuPanel.add(createMenuButton("Pendaftaran Servis", e -> openTab("Pendaftaran Servis", new ServiceRegistrationPanel())));
+        menuPanel.add(createMenuButton("Transaksi Servis", e -> openTab("Transaksi Servis", new TransactionListPanel(this))));
+        menuPanel.add(createMenuButton("Pembelian Sparepart", e -> openTab("Pembelian Sparepart", new SparepartPurchasePanel())));
+
+        menuPanel.add(Box.createVerticalStrut(8));
+
+        // Laporan
+        menuPanel.add(createSectionLabel("LAPORAN"));
+        menuPanel.add(createMenuButton("Lap. Transaksi Servis", e -> openTab("Lap. Transaksi Servis", new LaporanTransaksiPanel())));
+        menuPanel.add(createMenuButton("Lap. Pembelian", e -> openTab("Lap. Pembelian", new LaporanPembelianPanel())));
+        menuPanel.add(createMenuButton("Lap. Pendapatan", e -> openTab("Lap. Pendapatan", new LaporanPendapatanPanel())));
+
+        menuPanel.add(Box.createVerticalStrut(8));
+
+        // Lainnya
+        menuPanel.add(createSectionLabel("LAINNYA"));
+        menuPanel.add(createMenuButton("Riwayat Servis", e -> openTab("Riwayat Servis", new ServiceHistoryPanel())));
+        menuPanel.add(createMenuButton("Layar Antrian (TV)", e -> new QueueDashboardFrame().setVisible(true)));
+
+        JScrollPane menuScroll = new JScrollPane(menuPanel);
+        menuScroll.setBorder(null);
+        menuScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        menuScroll.getVerticalScrollBar().setUnitIncrement(16);
+        menuScroll.getViewport().setBackground(SIDEBAR_BG);
+        sidebarWrap.add(menuScroll, BorderLayout.CENTER);
+
+        // --- Bottom: Refresh ---
+        JPanel bottomPanel = new JPanel(new BorderLayout());
+        bottomPanel.setBackground(new Color(35, 37, 56));
+        bottomPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+
+        JButton btnRefresh = new JButton("Refresh Data");
+        btnRefresh.setBackground(new Color(60, 60, 90));
+        btnRefresh.setForeground(Color.WHITE);
+        btnRefresh.setFont(MENU_FONT);
+        btnRefresh.setFocusPainted(false);
+        btnRefresh.setBorderPainted(false);
+        btnRefresh.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btnRefresh.addActionListener(e -> {
+            if (dashboardPanel != null) dashboardPanel.loadData();
+        });
+        bottomPanel.add(btnRefresh, BorderLayout.CENTER);
+        sidebarWrap.add(bottomPanel, BorderLayout.SOUTH);
+
+        add(sidebarWrap, BorderLayout.WEST);
+
+        // ========== TABBED PANE ==========
+        tabbedPane = new javax.swing.JTabbedPane();
         tabbedPane.setFont(TAB_FONT);
         tabbedPane.setBackground(TAB_BG);
         tabbedPane.setForeground(TAB_TEXT);
@@ -49,166 +169,54 @@ public class MainMenuFrame extends javax.swing.JFrame {
         UIManager.put("TabbedPane.contentBorderInsets", new java.awt.Insets(0, 0, 0, 0));
         UIManager.put("TabbedPane.tabAreaInsets", new java.awt.Insets(2, 6, 0, 6));
         UIManager.put("TabbedPane.tabInsets", new java.awt.Insets(6, 14, 6, 14));
-
         tabbedPane.updateUI();
-    }
 
-    private void styleSidebarButtons() {
-        Color bg = new Color(43, 45, 66);
-        Color fg = Color.WHITE;
-        Font font = new Font("Segoe UI", Font.PLAIN, 14);
-        for (Component c : sidebarPanel.getComponents()) {
-            if (c instanceof JButton) {
-                JButton b = (JButton) c;
-                b.setBackground(bg);
-                b.setForeground(fg);
-                b.setFont(font);
-                b.setFocusPainted(false);
-                b.setBorderPainted(false);
-            }
-        }
-        btnRefresh.setBackground(new Color(60, 60, 90));
-        btnRefresh.setForeground(Color.WHITE);
-        btnRefresh.setFont(font);
-        btnRefresh.setFocusPainted(false);
-    }
-
-    @SuppressWarnings("unchecked")
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
-    private void initComponents() {
-
-        sidebarWrap = new javax.swing.JPanel();
-        lblApp = new javax.swing.JLabel();
-        sidebarPanel = new javax.swing.JPanel();
-        btnClient = new javax.swing.JButton();
-        btnVehicle = new javax.swing.JButton();
-        btnMekanik = new javax.swing.JButton();
-        btnSparepart = new javax.swing.JButton();
-        btnSupplier = new javax.swing.JButton();
-        btnTransaksi = new javax.swing.JButton();
-        btnRiwayat = new javax.swing.JButton();
-        btnAntrian = new javax.swing.JButton();
-        bottomSidebar = new javax.swing.JPanel();
-        btnRefresh = new javax.swing.JButton();
-        tabbedPane = new javax.swing.JTabbedPane();
-
-        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("Garage Management System - Executive Dashboard");
-
-        sidebarWrap.setBackground(new java.awt.Color(43, 45, 66));
-        sidebarWrap.setPreferredSize(new java.awt.Dimension(220, 0));
-        sidebarWrap.setLayout(new java.awt.BorderLayout());
-
-        lblApp.setFont(new java.awt.Font("Segoe UI", 1, 22)); // NOI18N
-        lblApp.setForeground(new java.awt.Color(255, 255, 255));
-        lblApp.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        lblApp.setText("Garage System");
-        sidebarWrap.add(lblApp, java.awt.BorderLayout.NORTH);
-
-        sidebarPanel.setBackground(new java.awt.Color(43, 45, 66));
-        sidebarPanel.setLayout(new java.awt.GridLayout(0, 1, 0, 2));
-
-        btnClient.setText("Data Client");
-        btnClient.addActionListener(this::btnClientActionPerformed);
-        sidebarPanel.add(btnClient);
-
-        btnVehicle.setText("Data Vehicle");
-        btnVehicle.addActionListener(this::btnVehicleActionPerformed);
-        sidebarPanel.add(btnVehicle);
-
-        btnMekanik.setText("Data Mekanik");
-        btnMekanik.addActionListener(this::btnMekanikActionPerformed);
-        sidebarPanel.add(btnMekanik);
-
-        btnSparepart.setText("Data Sparepart");
-        btnSparepart.addActionListener(this::btnSparepartActionPerformed);
-        sidebarPanel.add(btnSparepart);
-
-        btnSupplier.setText("Data Supplier");
-        btnSupplier.addActionListener(this::btnSupplierActionPerformed);
-        sidebarPanel.add(btnSupplier);
-
-        btnTransaksi.setText("Transaksi Servis");
-        btnTransaksi.addActionListener(this::btnTransaksiActionPerformed);
-        sidebarPanel.add(btnTransaksi);
-
-        btnPembelian = new javax.swing.JButton();
-        btnPembelian.setText("Pembelian Sparepart");
-        btnPembelian.addActionListener(this::btnPembelianActionPerformed);
-        sidebarPanel.add(btnPembelian);
-
-        javax.swing.JButton btnPendaftaran = new javax.swing.JButton();
-        btnPendaftaran.setText("Pendaftaran Servis");
-        btnPendaftaran.addActionListener(e -> openTab("Pendaftaran Servis", new ServiceRegistrationPanel()));
-        sidebarPanel.add(btnPendaftaran);
-
-        btnRiwayat.setText("Riwayat Servis");
-        btnRiwayat.addActionListener(this::btnRiwayatActionPerformed);
-        sidebarPanel.add(btnRiwayat);
-
-        btnAntrian.setText("Layar Antrian (TV)");
-        btnAntrian.addActionListener(this::btnAntrianActionPerformed);
-        sidebarPanel.add(btnAntrian);
-
-        sidebarWrap.add(sidebarPanel, java.awt.BorderLayout.CENTER);
-
-        bottomSidebar.setBackground(new java.awt.Color(43, 45, 66));
-        bottomSidebar.setLayout(new java.awt.BorderLayout());
-
-        btnRefresh.setText("Refresh Data");
-        btnRefresh.addActionListener(this::btnRefreshActionPerformed);
-        bottomSidebar.add(btnRefresh, java.awt.BorderLayout.CENTER);
-
-        sidebarWrap.add(bottomSidebar, java.awt.BorderLayout.SOUTH);
-
-        getContentPane().add(sidebarWrap, java.awt.BorderLayout.WEST);
-
-        tabbedPane.setBackground(new java.awt.Color(240, 244, 248));
-        getContentPane().add(tabbedPane, java.awt.BorderLayout.CENTER);
+        add(tabbedPane, BorderLayout.CENTER);
 
         pack();
         setLocationRelativeTo(null);
-    }// </editor-fold>//GEN-END:initComponents
-
-    private void btnClientActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnClientActionPerformed
-        openTab("Data Client", new ClientPanel());
-    }//GEN-LAST:event_btnClientActionPerformed
-
-    private void btnVehicleActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnVehicleActionPerformed
-        openTab("Data Vehicle", new VehiclePanel());
-    }//GEN-LAST:event_btnVehicleActionPerformed
-
-    private void btnMekanikActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnMekanikActionPerformed
-        openTab("Data Mekanik", new MekanikPanel());
-    }//GEN-LAST:event_btnMekanikActionPerformed
-
-    private void btnSparepartActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSparepartActionPerformed
-        openTab("Data Sparepart", new SparepartPanel());
-    }//GEN-LAST:event_btnSparepartActionPerformed
-
-    private void btnSupplierActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSupplierActionPerformed
-        openTab("Data Supplier", new SupplierPanel());
-    }//GEN-LAST:event_btnSupplierActionPerformed
-
-    private void btnTransaksiActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnTransaksiActionPerformed
-        openTab("Transaksi Servis", new TransactionListPanel(this));
-    }//GEN-LAST:event_btnTransaksiActionPerformed
-
-    private void btnRiwayatActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRiwayatActionPerformed
-        openTab("Riwayat Servis", new ServiceHistoryPanel());
-    }//GEN-LAST:event_btnRiwayatActionPerformed
-
-    private void btnAntrianActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAntrianActionPerformed
-        new QueueDashboardFrame().setVisible(true);
-    }//GEN-LAST:event_btnAntrianActionPerformed
-
-    private void btnPembelianActionPerformed(java.awt.event.ActionEvent evt) {
-        openTab("Pembelian Sparepart", new SparepartPurchasePanel());
     }
 
-    private void btnRefreshActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRefreshActionPerformed
-        dashboardPanel.loadData();
-    }//GEN-LAST:event_btnRefreshActionPerformed
+    private JPanel createSectionLabel(String text) {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(SIDEBAR_SECTION_BG);
+        panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
+        panel.setBorder(BorderFactory.createEmptyBorder(6, 12, 4, 12));
+
+        JLabel lbl = new JLabel(text);
+        lbl.setFont(SECTION_FONT);
+        lbl.setForeground(new Color(140, 150, 180));
+        panel.add(lbl, BorderLayout.WEST);
+
+        return panel;
+    }
+
+    private JButton createMenuButton(String text, java.awt.event.ActionListener action) {
+        JButton btn = new JButton("  " + text);
+        btn.setHorizontalAlignment(JButton.LEFT);
+        btn.setBackground(SIDEBAR_BG);
+        btn.setForeground(Color.WHITE);
+        btn.setFont(MENU_FONT);
+        btn.setFocusPainted(false);
+        btn.setBorderPainted(false);
+        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
+        btn.setPreferredSize(new Dimension(220, 36));
+
+        btn.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                btn.setBackground(SIDEBAR_BTN_HOVER);
+            }
+            @Override
+            public void mouseExited(MouseEvent e) {
+                btn.setBackground(SIDEBAR_BG);
+            }
+        });
+
+        btn.addActionListener(action);
+        return btn;
+    }
 
     private void openTab(String title, Component panel) {
         for (int i = 0; i < tabbedPane.getTabCount(); i++) {
@@ -271,22 +279,4 @@ public class MainMenuFrame extends javax.swing.JFrame {
         tabbedPane.setTabComponentAt(idx, tabHeader);
         tabbedPane.setSelectedIndex(idx);
     }
-
-    // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JPanel bottomSidebar;
-    private javax.swing.JButton btnAntrian;
-    private javax.swing.JButton btnClient;
-    private javax.swing.JButton btnMekanik;
-    private javax.swing.JButton btnPembelian;
-    private javax.swing.JButton btnRefresh;
-    private javax.swing.JButton btnRiwayat;
-    private javax.swing.JButton btnSparepart;
-    private javax.swing.JButton btnSupplier;
-    private javax.swing.JButton btnTransaksi;
-    private javax.swing.JButton btnVehicle;
-    private javax.swing.JLabel lblApp;
-    private javax.swing.JPanel sidebarPanel;
-    private javax.swing.JPanel sidebarWrap;
-    private javax.swing.JTabbedPane tabbedPane;
-    // End of variables declaration//GEN-END:variables
 }

@@ -14,7 +14,7 @@ import java.util.List;
 public class SparepartPurchaseDAO {
 
     public void insert(SparepartPurchase p) throws SQLException {
-        String sqlInsert = "INSERT INTO sparepart_purchase "
+        String sqlInsert = "INSERT INTO transaksi_pembelian "
                 + "(tanggal, supplier_id, sparepart_id, qty, harga_beli, total_harga, keterangan) "
                 + "VALUES (?,?,?,?,?,?,?)";
         String sqlUpdateStok = "UPDATE sparepart SET stok = stok + ? WHERE sparepart_id = ?";
@@ -53,7 +53,7 @@ public class SparepartPurchaseDAO {
     public List<SparepartPurchase> findAll() throws SQLException {
         List<SparepartPurchase> list = new ArrayList<>();
         String sql = "SELECT p.*, s.nama as supplier_nama, sp.nama_sparepart, sp.kode_sparepart "
-                + "FROM sparepart_purchase p "
+                + "FROM transaksi_pembelian p "
                 + "LEFT JOIN supplier s ON p.supplier_id = s.supplier_id "
                 + "LEFT JOIN sparepart sp ON p.sparepart_id = sp.sparepart_id "
                 + "ORDER BY p.tanggal DESC";
@@ -80,7 +80,7 @@ public class SparepartPurchaseDAO {
     }
 
     public void delete(int purchaseId) throws SQLException {
-        String sql = "DELETE FROM sparepart_purchase WHERE purchase_id=?";
+        String sql = "DELETE FROM transaksi_pembelian WHERE purchase_id=?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, purchaseId);

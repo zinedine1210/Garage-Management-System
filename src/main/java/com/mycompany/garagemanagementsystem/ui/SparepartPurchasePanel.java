@@ -88,6 +88,8 @@ public class SparepartPurchasePanel extends javax.swing.JPanel {
 
         table = new JTable();
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        table.setRowHeight(22);
+        setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
         add(new JScrollPane(table), BorderLayout.CENTER);
 
         JPanel buttonPanel = new JPanel(new FlowLayout());
@@ -102,6 +104,15 @@ public class SparepartPurchasePanel extends javax.swing.JPanel {
         JButton btnRefresh = new JButton("Refresh");
         btnRefresh.addActionListener(e -> loadData());
         buttonPanel.add(btnRefresh);
+
+        JButton btnExport = new JButton("Export");
+        btnExport.addActionListener(e -> {
+            String[] options = {"PDF", "Excel"};
+            int choice = JOptionPane.showOptionDialog(this, "Pilih format export:", "Export Data", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
+            if (choice == 0) com.mycompany.garagemanagementsystem.util.ExportUtils.exportTableToPDF(table, "Data_Pembelian_Sparepart");
+            else if (choice == 1) com.mycompany.garagemanagementsystem.util.ExportUtils.exportTableToExcel(table, "Data_Pembelian_Sparepart");
+        });
+        buttonPanel.add(btnExport);
 
         add(buttonPanel, BorderLayout.SOUTH);
 

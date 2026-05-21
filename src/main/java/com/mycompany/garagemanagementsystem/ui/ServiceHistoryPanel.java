@@ -13,6 +13,9 @@ public class ServiceHistoryPanel extends javax.swing.JPanel {
 
     public ServiceHistoryPanel() {
         initComponents();
+        setBorder(javax.swing.BorderFactory.createEmptyBorder(8, 8, 8, 8));
+        table.setRowHeight(22);
+        table.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
     }
 
     @SuppressWarnings("unchecked")

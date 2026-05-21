@@ -13,7 +13,7 @@ import java.util.List;
 public class ServiceRegistrationDAO {
 
     public void insert(ServiceRegistration sr) throws SQLException {
-        String sql = "INSERT INTO service_registration (vehicle_id, client_id, keluhan, mekanik_id, status, tanggal_daftar, tanggal_mulai, catatan) " +
+        String sql = "INSERT INTO transaksi_pendaftaran (vehicle_id, client_id, keluhan, mekanik_id, status, tanggal_daftar, tanggal_mulai, catatan) " +
                 "VALUES (?,?,?,?,?,?,?,?)";
         try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, sr.getVehicleId());
@@ -29,7 +29,7 @@ public class ServiceRegistrationDAO {
     }
 
     public void update(ServiceRegistration sr) throws SQLException {
-        String sql = "UPDATE service_registration SET vehicle_id=?, client_id=?, keluhan=?, mekanik_id=?, status=?, tanggal_mulai=?, catatan=? WHERE registration_id=?";
+        String sql = "UPDATE transaksi_pendaftaran SET vehicle_id=?, client_id=?, keluhan=?, mekanik_id=?, status=?, tanggal_mulai=?, catatan=? WHERE registration_id=?";
         try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, sr.getVehicleId());
             ps.setInt(2, sr.getClientId());
@@ -44,7 +44,7 @@ public class ServiceRegistrationDAO {
     }
 
     public void delete(int id) throws SQLException {
-        String sql = "DELETE FROM service_registration WHERE registration_id=?";
+        String sql = "DELETE FROM transaksi_pendaftaran WHERE registration_id=?";
         try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, id);
             ps.executeUpdate();
@@ -53,7 +53,7 @@ public class ServiceRegistrationDAO {
 
     public List<ServiceRegistration> findAll() throws SQLException {
         List<ServiceRegistration> list = new ArrayList<>();
-        String sql = "SELECT * FROM service_registration ORDER BY tanggal_daftar DESC";
+        String sql = "SELECT * FROM transaksi_pendaftaran ORDER BY tanggal_daftar DESC";
         try (Connection conn = DBConnection.getConnection(); Statement st = conn.createStatement(); ResultSet rs = st.executeQuery(sql)) {
             while (rs.next()) {
                 ServiceRegistration sr = new ServiceRegistration();
@@ -75,7 +75,7 @@ public class ServiceRegistrationDAO {
     }
 
     public ServiceRegistration findById(int id) throws SQLException {
-        String sql = "SELECT * FROM service_registration WHERE registration_id=?";
+        String sql = "SELECT * FROM transaksi_pendaftaran WHERE registration_id=?";
         try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, id);
             try (ResultSet rs = ps.executeQuery()) {
@@ -101,7 +101,7 @@ public class ServiceRegistrationDAO {
 
     public List<ServiceRegistration> findByStatus(String status) throws SQLException {
         List<ServiceRegistration> list = new ArrayList<>();
-        String sql = "SELECT * FROM service_registration WHERE status=? ORDER BY tanggal_daftar DESC";
+        String sql = "SELECT * FROM transaksi_pendaftaran WHERE status=? ORDER BY tanggal_daftar DESC";
         try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, status);
             try (ResultSet rs = ps.executeQuery()) {
