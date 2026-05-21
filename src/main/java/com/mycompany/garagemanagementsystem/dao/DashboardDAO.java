@@ -346,4 +346,120 @@ public class DashboardDAO {
         }
         return 0;
     }
+
+    // ==================== NEW REPORT QUERIES ====================
+
+    /**
+     * Laporan Omzet: omzet per hari/minggu/bulan sesuai groupBy.
+     * groupBy: "DAY", "WEEK", "MONTH"
+     */
+    public java.util.List<Object[]> getLaporanOmzet(java.util.Date dateFrom, java.util.Date dateTo, String groupBy) throws SQLException {
+        java.util.List<Object[]> list = new java.util.ArrayList<>();
+        String groupExpr;
+        String labelExpr;
+        switch (groupBy) {
+            case "WEEK":
+                groupExpr = "CONCAT(YEAR(t.tanggal), '-W', LPAD(WEEK(t.tanggal, 1), 2, '0'))";
+                labelExpr = groupExpr;
+                break;
+            case "MONTH":
+                groupExpr = "DATE_FORMAT(t.tanggal, '%Y-%m')";
+                labelExpr = groupExpr;
+                break;
+            default:
+                groupExpr = "DATE(t.tanggal)";
+                labelExpr = groupExpr;
+                break;
+        }
+        String sql = "SELECT " + labelExpr + " as periode, COUNT(t.trans_id) as jml, "
+                   + "SUM(t.total_jasa) as sum_jasa, SUM(t.total_sparepart) as sum_sp, "
+                   + "SUM(t.grand_total) as sum_total "
+                   + "FROM transaksi_servis t "
+                   + "WHERE DATE(t.tanggal) BETWEEN ? AND ? "
+                   + "GROUP BY " + groupExpr + " ORDER BY MIN(t.tanggal) ASC";
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setDate(1, new java.sql.Date(dateFrom.getTime()));
+            ps.setDate(2, new java.sql.Date(dateTo.getTime()));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(new Object[]{
+                        rs.getString("periode"),
+                        rs.getInt("jml"),
+                        rs.getDouble("sum_jasa"),
+                        rs.getDouble("sum_sp"),
+                        rs.getDouble("sum_total")
+                    });
+                }
+            }
+        }
+        return list;
+    }
+
+    /**
+     * Laporan Kinerja Mekanik: detail per mekanik di range tanggal
+     */
+    public java.util.List<Object[]> getLaporanKinerjaMekanik(java.util.Date dateFrom, java.util.Date dateTo) throws SQLException {
+        java.util.List<Object[]> list = new java.util.ArrayList<>();
+        String sql = "SELECT m.mekanik_id, m.nama, m.spesialis, COUNT(t.trans_id) as total_servis, "
+                   + "SUM(CASE WHEN t.status_servis = 'Selesai Lunas' THEN 1 ELSE 0 END) as selesai, "
+                   + "SUM(CASE WHEN t.status_servis = 'Dikerjakan' THEN 1 ELSE 0 END) as dalam_proses, "
+                   + "SUM(t.total_jasa) as total_jasa, SUM(t.grand_total) as total_revenue "
+                   + "FROM mekanik m "
+                   + "LEFT JOIN transaksi_servis t ON m.mekanik_id = t.mekanik_id "
+                   + "AND DATE(t.tanggal) BETWEEN ? AND ? "
+                   + "GROUP BY m.mekanik_id, m.nama, m.spesialis "
+                   + "ORDER BY total_servis DESC";
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setDate(1, new java.sql.Date(dateFrom.getTime()));
+            ps.setDate(2, new java.sql.Date(dateTo.getTime()));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(new Object[]{
+                        rs.getInt("mekanik_id"),
+                        rs.getString("nama"),
+                        rs.getString("spesialis"),
+                        rs.getInt("total_servis"),
+                        rs.getInt("selesai"),
+                        rs.getInt("dalam_proses"),
+                        rs.getDouble("total_jasa"),
+                        rs.getDouble("total_revenue")
+                    });
+                }
+            }
+        }
+        return list;
+    }
+
+    /**
+     * Laporan Sparepart Terlaris: sparepart terjual terbanyak di range tanggal
+     */
+    public java.util.List<Object[]> getLaporanSparepartTerlaris(java.util.Date dateFrom, java.util.Date dateTo) throws SQLException {
+        java.util.List<Object[]> list = new java.util.ArrayList<>();
+        String sql = "SELECT s.sparepart_id, s.kode_sparepart, s.nama_sparepart, s.satuan, "
+                   + "SUM(td.qty) as total_qty, SUM(td.subtotal) as total_nilai, "
+                   + "COUNT(DISTINCT td.trans_id) as jml_transaksi "
+                   + "FROM transaksi_servis_detail td "
+                   + "JOIN sparepart s ON td.sparepart_id = s.sparepart_id "
+                   + "JOIN transaksi_servis t ON td.trans_id = t.trans_id "
+                   + "WHERE DATE(t.tanggal) BETWEEN ? AND ? AND td.sparepart_id IS NOT NULL "
+                   + "GROUP BY s.sparepart_id, s.kode_sparepart, s.nama_sparepart, s.satuan "
+                   + "ORDER BY total_qty DESC";
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setDate(1, new java.sql.Date(dateFrom.getTime()));
+            ps.setDate(2, new java.sql.Date(dateTo.getTime()));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(new Object[]{
+                        rs.getString("kode_sparepart"),
+                        rs.getString("nama_sparepart"),
+                        rs.getString("satuan"),
+                        rs.getInt("total_qty"),
+                        rs.getDouble("total_nilai"),
+                        rs.getInt("jml_transaksi")
+                    });
+                }
+            }
+        }
+        return list;
+    }
 }

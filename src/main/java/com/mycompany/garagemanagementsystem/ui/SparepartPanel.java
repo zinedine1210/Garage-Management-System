@@ -4,247 +4,142 @@ import com.mycompany.garagemanagementsystem.dao.SparepartDAO;
 import com.mycompany.garagemanagementsystem.dao.SupplierDAO;
 import com.mycompany.garagemanagementsystem.model.Sparepart;
 import com.mycompany.garagemanagementsystem.model.Supplier;
+import com.mycompany.garagemanagementsystem.util.ExportUtils;
+import com.mycompany.garagemanagementsystem.util.StyledTable;
+import com.mycompany.garagemanagementsystem.util.UIHelper;
+import java.awt.*;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
-import javax.swing.JOptionPane;
-import javax.swing.table.DefaultTableModel;
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 
 public class SparepartPanel extends javax.swing.JPanel {
 
     private final SparepartDAO sparepartDAO = new SparepartDAO();
     private final SupplierDAO supplierDAO = new SupplierDAO();
+    private StyledTable styledTable;
+    private JTextField txtSearch;
+    private List<Supplier> supplierList = new ArrayList<>();
 
     public SparepartPanel() {
-        initComponents();
-        myInit();
-    }
-
-    private void myInit() {
-        setBorder(javax.swing.BorderFactory.createEmptyBorder(8, 8, 8, 8));
-        table.setRowHeight(22);
-        table.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
-        table.getSelectionModel().addListSelectionListener(e -> isiFormDariTabel());
-        txtSearch.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-            public void insertUpdate(javax.swing.event.DocumentEvent e) { filterTabel(); }
-            public void removeUpdate(javax.swing.event.DocumentEvent e) { filterTabel(); }
-            public void changedUpdate(javax.swing.event.DocumentEvent e) { filterTabel(); }
-            private void filterTabel() {
-                String teks = txtSearch.getText();
-                if (table.getRowSorter() == null) {
-                    table.setRowSorter(new javax.swing.table.TableRowSorter<>((DefaultTableModel) table.getModel()));
-                }
-                javax.swing.table.TableRowSorter<DefaultTableModel> sorter =
-                        (javax.swing.table.TableRowSorter<DefaultTableModel>) table.getRowSorter();
-                if (teks.trim().isEmpty()) sorter.setRowFilter(null);
-                else sorter.setRowFilter(javax.swing.RowFilter.regexFilter("(?i)" + teks));
-            }
-        });
-        loadSuppliers();
+        buildUI();
         loadData();
     }
 
-    @SuppressWarnings("unchecked")
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
-    private void initComponents() {
+    private void buildUI() {
+        setLayout(new BorderLayout(0, 8));
+        setBorder(new EmptyBorder(12, 12, 12, 12));
+        setBackground(new Color(243, 245, 249));
 
-        topPanel = new javax.swing.JPanel();
-        formPanel = new javax.swing.JPanel();
-        lblId = new javax.swing.JLabel();
-        txtId = new javax.swing.JTextField();
-        lblKode = new javax.swing.JLabel();
-        txtKode = new javax.swing.JTextField();
-        lblNama = new javax.swing.JLabel();
-        txtNama = new javax.swing.JTextField();
-        lblSatuan = new javax.swing.JLabel();
-        txtSatuan = new javax.swing.JTextField();
-        lblStok = new javax.swing.JLabel();
-        txtStok = new javax.swing.JTextField();
-        lblHargaBeli = new javax.swing.JLabel();
-        txtHargaBeli = new javax.swing.JTextField();
-        lblHargaJual = new javax.swing.JLabel();
-        txtHargaJual = new javax.swing.JTextField();
-        lblSupplier = new javax.swing.JLabel();
-        cbSupplier = new javax.swing.JComboBox();
-        filterPanel = new javax.swing.JPanel();
-        lblCari = new javax.swing.JLabel();
-        txtSearch = new javax.swing.JTextField();
-        jScrollPane1 = new javax.swing.JScrollPane();
-        table = new javax.swing.JTable();
-        buttonPanel = new javax.swing.JPanel();
-        btnBaru = new javax.swing.JButton();
-        btnSimpan = new javax.swing.JButton();
-        btnHapus = new javax.swing.JButton();
+        JPanel topWrap = new JPanel(new BorderLayout(0, 6));
+        topWrap.setOpaque(false);
+        topWrap.add(UIHelper.createPageHeader("Data Sparepart", "Kelola stok dan informasi sparepart bengkel"), BorderLayout.NORTH);
 
-        setLayout(new java.awt.BorderLayout());
-        topPanel.setLayout(new java.awt.BorderLayout());
-        formPanel.setLayout(new java.awt.GridLayout(8, 2));
-        lblId.setText("ID:"); formPanel.add(lblId);
-        txtId.setColumns(5); txtId.setEnabled(false); formPanel.add(txtId);
-        lblKode.setText("Kode:"); formPanel.add(lblKode);
-        txtKode.setColumns(15); formPanel.add(txtKode);
-        lblNama.setText("Nama:"); formPanel.add(lblNama);
-        txtNama.setColumns(20); formPanel.add(txtNama);
-        lblSatuan.setText("Satuan:"); formPanel.add(lblSatuan);
-        txtSatuan.setColumns(10); formPanel.add(txtSatuan);
-        lblStok.setText("Stok:"); formPanel.add(lblStok);
-        txtStok.setColumns(5); formPanel.add(txtStok);
-        lblHargaBeli.setText("Harga Beli:"); formPanel.add(lblHargaBeli);
-        txtHargaBeli.setColumns(10); formPanel.add(txtHargaBeli);
-        lblHargaJual.setText("Harga Jual:"); formPanel.add(lblHargaJual);
-        txtHargaJual.setColumns(10); formPanel.add(txtHargaJual);
-        lblSupplier.setText("Supplier:"); formPanel.add(lblSupplier);
-        formPanel.add(cbSupplier);
-        topPanel.add(formPanel, java.awt.BorderLayout.CENTER);
+        JPanel filterBar = new JPanel(new BorderLayout(10, 0));
+        filterBar.setBackground(Color.WHITE);
+        filterBar.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(220, 225, 235)),
+                new EmptyBorder(10, 16, 10, 16)));
+        JLabel lblSearch = new JLabel("\uD83D\uDD0D Cari:");
+        lblSearch.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        filterBar.add(lblSearch, BorderLayout.WEST);
+        txtSearch = new JTextField();
+        txtSearch.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        txtSearch.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(200, 205, 215)),
+                new EmptyBorder(6, 10, 6, 10)));
+        txtSearch.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            public void insertUpdate(javax.swing.event.DocumentEvent e) { styledTable.filterData(txtSearch.getText()); }
+            public void removeUpdate(javax.swing.event.DocumentEvent e) { styledTable.filterData(txtSearch.getText()); }
+            public void changedUpdate(javax.swing.event.DocumentEvent e) { styledTable.filterData(txtSearch.getText()); }
+        });
+        filterBar.add(txtSearch, BorderLayout.CENTER);
+        topWrap.add(filterBar, BorderLayout.CENTER);
+        add(topWrap, BorderLayout.NORTH);
 
-        filterPanel.setLayout(new java.awt.BorderLayout());
-        lblCari.setText(" Cari: "); filterPanel.add(lblCari, java.awt.BorderLayout.WEST);
-        filterPanel.add(txtSearch, java.awt.BorderLayout.CENTER);
-        topPanel.add(filterPanel, java.awt.BorderLayout.SOUTH);
-        add(topPanel, java.awt.BorderLayout.NORTH);
+        styledTable = new StyledTable();
+        add(styledTable, BorderLayout.CENTER);
 
-        table.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
-        jScrollPane1.setViewportView(table);
-        add(jScrollPane1, java.awt.BorderLayout.CENTER);
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 8));
+        buttonPanel.setBackground(new Color(243, 245, 249));
 
-        btnBaru.setText("Baru");
-        btnBaru.addActionListener(new java.awt.event.ActionListener() { public void actionPerformed(java.awt.event.ActionEvent evt) { btnBaruActionPerformed(evt); } });
-        buttonPanel.add(btnBaru);
-        btnSimpan.setText("Simpan");
-        btnSimpan.addActionListener(new java.awt.event.ActionListener() { public void actionPerformed(java.awt.event.ActionEvent evt) { btnSimpanActionPerformed(evt); } });
-        buttonPanel.add(btnSimpan);
-        btnHapus.setText("Hapus");
-        btnHapus.addActionListener(new java.awt.event.ActionListener() { public void actionPerformed(java.awt.event.ActionEvent evt) { btnHapusActionPerformed(evt); } });
+        JButton btnTambah = createStyledButton("+ Tambah", new Color(40, 167, 69));
+        btnTambah.addActionListener(e -> showFormDialog(null));
+        buttonPanel.add(btnTambah);
+
+        JButton btnEdit = createStyledButton("Edit", new Color(0, 123, 255));
+        btnEdit.addActionListener(e -> {
+            Object[] row = styledTable.getSelectedRowData();
+            if (row == null) { UIHelper.warn(this, "Pilih data yang akan diedit."); return; }
+            showFormDialog(row);
+        });
+        buttonPanel.add(btnEdit);
+
+        JButton btnHapus = createStyledButton("Hapus", new Color(220, 53, 69));
+        btnHapus.addActionListener(e -> deleteData());
         buttonPanel.add(btnHapus);
 
-        javax.swing.JButton btnRefresh = new javax.swing.JButton();
-        btnRefresh.setText("Refresh");
-        btnRefresh.addActionListener(new java.awt.event.ActionListener() { public void actionPerformed(java.awt.event.ActionEvent evt) { loadData(); } });
+        JButton btnRefresh = createStyledButton("Refresh", new Color(108, 117, 125));
+        btnRefresh.addActionListener(e -> loadData());
         buttonPanel.add(btnRefresh);
 
-        javax.swing.JButton btnPrint = new javax.swing.JButton();
-        btnPrint.setText("Export");
-        btnPrint.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                Object[] options = {"PDF", "Excel", "Batal"};
-                int choice = javax.swing.JOptionPane.showOptionDialog(SparepartPanel.this, "Pilih format export:", "Export Data", javax.swing.JOptionPane.YES_NO_CANCEL_OPTION, javax.swing.JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
-                if (choice == 0) com.mycompany.garagemanagementsystem.util.ExportUtils.exportTableToPDF(table, "Data_Sparepart");
-                else if (choice == 1) com.mycompany.garagemanagementsystem.util.ExportUtils.exportTableToExcel(table, "Data_Sparepart");
-            }
+        JButton btnExport = createStyledButton("Export", new Color(23, 162, 184));
+        btnExport.addActionListener(e -> {
+            String[] options = {"PDF", "Excel", "Batal"};
+            int choice = UIHelper.showOptions(this, "Pilih format export:", "Export Data Sparepart", options);
+            if (choice == 0) ExportUtils.exportTableToPDF(styledTable.getTable(), "Data_Sparepart");
+            else if (choice == 1) ExportUtils.exportTableToExcel(styledTable.getTable(), "Data_Sparepart");
         });
-        buttonPanel.add(btnPrint);
-
-        add(buttonPanel, java.awt.BorderLayout.SOUTH);
-    }// </editor-fold>//GEN-END:initComponents
-
-    private void btnBaruActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBaruActionPerformed
-        clearForm();
-    }//GEN-LAST:event_btnBaruActionPerformed
-    private void btnSimpanActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSimpanActionPerformed
-        saveSparepart();
-    }//GEN-LAST:event_btnSimpanActionPerformed
-    private void btnHapusActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnHapusActionPerformed
-        deleteSparepart();
-    }//GEN-LAST:event_btnHapusActionPerformed
-
-    private void loadSuppliers() {
-        try {
-            cbSupplier.removeAllItems();
-            cbSupplier.addItem("-- Tanpa Supplier --");
-            for (Supplier s : supplierDAO.findAll()) {
-                cbSupplier.addItem(s);
-            }
-        } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this, "Error load suppliers: " + ex.getMessage());
-        }
+        buttonPanel.add(btnExport);
+        add(buttonPanel, BorderLayout.SOUTH);
     }
 
-    private void loadData() {
-        try {
-            List<Sparepart> list = sparepartDAO.findAll();
-            DefaultTableModel model = new DefaultTableModel(
-                    new Object[]{"ID", "Kode", "Nama", "Satuan", "Stok", "Harga Beli", "Harga Jual", "Supplier ID"}, 0);
-            for (Sparepart s : list) {
-                model.addRow(new Object[]{
-                    s.getSparepartId(), s.getKodeSparepart(), s.getNamaSparepart(),
-                    s.getSatuan(), s.getStok(), s.getHargaBeli(), s.getHargaJual(), s.getSupplierId()
-                });
-            }
-            table.setModel(model);
-            table.setRowSorter(new javax.swing.table.TableRowSorter<>(model));
-        } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this, "Error load data: " + ex.getMessage());
-        }
-    }
+    @SuppressWarnings("unchecked")
+    private void showFormDialog(Object[] existingData) {
+        loadSuppliers();
+        String dlgTitle = existingData == null ? "Tambah Sparepart Baru" : "Edit Data Sparepart";
+        String dlgSub = "Lengkapi informasi sparepart bengkel";
+        JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), dlgTitle, true);
+        dialog.setLayout(new BorderLayout());
 
-    private void clearForm() {
-        txtId.setText("");
-        txtKode.setText("");
-        txtNama.setText("");
-        txtSatuan.setText("");
-        txtStok.setText("");
-        txtHargaBeli.setText("");
-        txtHargaJual.setText("");
-        if (cbSupplier.getItemCount() > 0) cbSupplier.setSelectedIndex(0);
-        table.clearSelection();
-        txtKode.requestFocusInWindow();
-    }
+        dialog.add(UIHelper.createDialogHeader(dlgTitle, dlgSub), BorderLayout.NORTH);
 
-    private void saveSparepart() {
-        try {
-            Sparepart s = new Sparepart();
-            if (!txtId.getText().isEmpty()) {
-                s.setSparepartId(Integer.parseInt(txtId.getText()));
-            }
-            s.setKodeSparepart(txtKode.getText());
-            s.setNamaSparepart(txtNama.getText());
-            s.setSatuan(txtSatuan.getText());
-            s.setStok(Integer.parseInt(txtStok.getText()));
-            s.setHargaBeli(Double.parseDouble(txtHargaBeli.getText()));
-            s.setHargaJual(Double.parseDouble(txtHargaJual.getText()));
+        JPanel form = new JPanel(new GridBagLayout());
+        form.setBorder(new EmptyBorder(20, 24, 10, 24));
+        form.setBackground(Color.WHITE);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 6, 5, 6);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.anchor = GridBagConstraints.WEST;
 
-            Object sel = cbSupplier.getSelectedItem();
-            if (sel instanceof Supplier) {
-                s.setSupplierId(((Supplier) sel).getSupplierId());
-            } else {
-                s.setSupplierId(0);
-            }
+        JTextField txtKode = new JTextField(20);
+        JTextField txtNama = new JTextField(20);
+        JTextField txtSatuan = new JTextField(20);
+        JTextField txtStok = new JTextField(20);
+        JTextField txtHargaBeli = new JTextField(20);
+        JTextField txtHargaJual = new JTextField(20);
+        JComboBox<Object> cbSupplier = new JComboBox<>();
+        cbSupplier.addItem("-- Tanpa Supplier --");
+        for (Supplier s : supplierList) cbSupplier.addItem(s);
 
-            if (s.getSparepartId() == 0) sparepartDAO.insert(s);
-            else sparepartDAO.update(s);
-            loadData();
-            clearForm();
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Error simpan: " + ex.getMessage());
-        }
-    }
+        int r = 0;
+        addFormField(form, gbc, r++, "Kode:", txtKode);
+        addFormField(form, gbc, r++, "Nama:", txtNama);
+        addFormField(form, gbc, r++, "Satuan:", txtSatuan);
+        addFormField(form, gbc, r++, "Stok:", txtStok);
+        addFormField(form, gbc, r++, "Harga Beli:", txtHargaBeli);
+        addFormField(form, gbc, r++, "Harga Jual:", txtHargaJual);
+        addFormField(form, gbc, r++, "Supplier:", cbSupplier);
 
-    private void deleteSparepart() {
-        if (txtId.getText().isEmpty()) return;
-        int confirm = JOptionPane.showConfirmDialog(this, "Hapus sparepart ini?",
-                "Konfirmasi", JOptionPane.YES_NO_OPTION);
-        if (confirm == JOptionPane.YES_OPTION) {
-            try {
-                sparepartDAO.delete(Integer.parseInt(txtId.getText()));
-                loadData();
-                clearForm();
-            } catch (SQLException ex) {
-                JOptionPane.showMessageDialog(this, "Error hapus: " + ex.getMessage());
-            }
-        }
-    }
-
-    private void isiFormDariTabel() {
-        int row = table.getSelectedRow();
-        if (row >= 0) {
-            txtId.setText(table.getValueAt(row, 0).toString());
-            txtKode.setText(table.getValueAt(row, 1).toString());
-            txtNama.setText(table.getValueAt(row, 2).toString());
-            txtSatuan.setText(table.getValueAt(row, 3).toString());
-            txtStok.setText(table.getValueAt(row, 4).toString());
-            txtHargaBeli.setText(table.getValueAt(row, 5).toString());
-            txtHargaJual.setText(table.getValueAt(row, 6).toString());
-
-            int supplierId = Integer.parseInt(table.getValueAt(row, 7).toString());
+        if (existingData != null) {
+            txtKode.setText(str(existingData[1]));
+            txtNama.setText(str(existingData[2]));
+            txtSatuan.setText(str(existingData[3]));
+            txtStok.setText(str(existingData[4]));
+            txtHargaBeli.setText(str(existingData[5]));
+            txtHargaJual.setText(str(existingData[6]));
+            int supplierId = (int) existingData[7];
             if (supplierId == 0) {
                 cbSupplier.setSelectedIndex(0);
             } else {
@@ -257,35 +152,90 @@ public class SparepartPanel extends javax.swing.JPanel {
                 }
             }
         }
+
+        dialog.add(form, BorderLayout.CENTER);
+
+        JPanel btnPanel = UIHelper.createDialogButtonPanel();
+
+        JButton btnCancel = createStyledButton("Batal", new Color(108, 117, 125));
+        btnCancel.addActionListener(e -> dialog.dispose());
+        btnPanel.add(btnCancel);
+
+        JButton btnSave = createStyledButton("Simpan", new Color(40, 167, 69));
+        btnSave.addActionListener(e -> {
+            try {
+                Sparepart sp = new Sparepart();
+                if (existingData != null) sp.setSparepartId((int) existingData[0]);
+                sp.setKodeSparepart(txtKode.getText());
+                sp.setNamaSparepart(txtNama.getText());
+                sp.setSatuan(txtSatuan.getText());
+                sp.setStok(Integer.parseInt(txtStok.getText()));
+                sp.setHargaBeli(Double.parseDouble(txtHargaBeli.getText()));
+                sp.setHargaJual(Double.parseDouble(txtHargaJual.getText()));
+                Object sel = cbSupplier.getSelectedItem();
+                sp.setSupplierId(sel instanceof Supplier ? ((Supplier) sel).getSupplierId() : 0);
+
+                if (sp.getSparepartId() == 0) sparepartDAO.insert(sp);
+                else sparepartDAO.update(sp);
+                dialog.dispose();
+                loadData();
+            } catch (Exception ex) {
+                UIHelper.error(dialog, "Error: " + ex.getMessage());
+            }
+        });
+        btnPanel.add(btnSave);
+        dialog.add(btnPanel, BorderLayout.SOUTH);
+
+        dialog.pack();
+        dialog.setMinimumSize(new Dimension(460, 400));
+        dialog.setLocationRelativeTo(this);
+        dialog.setVisible(true);
     }
 
-    // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton btnBaru;
-    private javax.swing.JButton btnHapus;
-    private javax.swing.JButton btnSimpan;
-    private javax.swing.JPanel buttonPanel;
-    private javax.swing.JComboBox cbSupplier;
-    private javax.swing.JPanel filterPanel;
-    private javax.swing.JPanel formPanel;
-    private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JLabel lblCari;
-    private javax.swing.JLabel lblHargaBeli;
-    private javax.swing.JLabel lblHargaJual;
-    private javax.swing.JLabel lblId;
-    private javax.swing.JLabel lblKode;
-    private javax.swing.JLabel lblNama;
-    private javax.swing.JLabel lblSatuan;
-    private javax.swing.JLabel lblStok;
-    private javax.swing.JLabel lblSupplier;
-    private javax.swing.JTable table;
-    private javax.swing.JPanel topPanel;
-    private javax.swing.JTextField txtHargaBeli;
-    private javax.swing.JTextField txtHargaJual;
-    private javax.swing.JTextField txtId;
-    private javax.swing.JTextField txtKode;
-    private javax.swing.JTextField txtNama;
-    private javax.swing.JTextField txtSatuan;
-    private javax.swing.JTextField txtSearch;
-    private javax.swing.JTextField txtStok;
-    // End of variables declaration//GEN-END:variables
+    private void loadSuppliers() {
+        try { supplierList = supplierDAO.findAll(); } catch (SQLException ignored) {}
+    }
+
+    private void deleteData() {
+        Object[] row = styledTable.getSelectedRowData();
+        if (row == null) { UIHelper.warn(this, "Pilih data yang akan dihapus."); return; }
+        if (UIHelper.confirm(this, "Hapus sparepart \"" + row[2] + "\"?", "Konfirmasi Hapus")) {
+            try {
+                sparepartDAO.delete((int) row[0]);
+                loadData();
+            } catch (SQLException ex) {
+                UIHelper.error(this, "Error: " + ex.getMessage());
+            }
+        }
+    }
+
+    private void loadData() {
+        try {
+            List<Sparepart> list = sparepartDAO.findAll();
+            List<Object[]> data = new ArrayList<>();
+            for (Sparepart s : list) {
+                data.add(new Object[]{s.getSparepartId(), s.getKodeSparepart(), s.getNamaSparepart(),
+                        s.getSatuan(), s.getStok(), s.getHargaBeli(), s.getHargaJual(), s.getSupplierId()});
+            }
+            styledTable.setData(new String[]{"ID", "Kode", "Nama", "Satuan", "Stok", "Harga Beli", "Harga Jual", "Supplier ID"}, data);
+        } catch (SQLException ex) {
+            UIHelper.error(this, "Error load data: " + ex.getMessage());
+        }
+    }
+
+    private JButton createStyledButton(String text, Color bg) {
+        return UIHelper.createStyledButton(text, bg);
+    }
+
+    private void addFormField(JPanel form, GridBagConstraints gbc, int row, String label, JComponent field) {
+        gbc.gridx = 0; gbc.gridy = row; gbc.weightx = 0;
+        JLabel lbl = new JLabel(label);
+        lbl.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        form.add(lbl, gbc);
+        gbc.gridx = 1; gbc.weightx = 1.0;
+        field.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        form.add(field, gbc);
+    }
+
+    private String str(Object o) { return o != null ? o.toString() : ""; }
 }

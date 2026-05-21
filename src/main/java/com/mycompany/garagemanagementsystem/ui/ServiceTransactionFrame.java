@@ -20,6 +20,7 @@ import java.util.Date;
 import java.util.List;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
+import com.mycompany.garagemanagementsystem.util.UIHelper;
 
 public class ServiceTransactionFrame extends javax.swing.JDialog {
 
@@ -119,7 +120,7 @@ public class ServiceTransactionFrame extends javax.swing.JDialog {
             isFiltering = false;
         } catch (SQLException ex) {
             isFiltering = false;
-            JOptionPane.showMessageDialog(this, "Error load combo: " + ex.getMessage());
+            UIHelper.error(this, "Error load combo: " + ex.getMessage());
         }
     }
 
@@ -227,7 +228,7 @@ public class ServiceTransactionFrame extends javax.swing.JDialog {
 
             hitungTotal();
         } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this, "Error load transaksi: " + ex.getMessage());
+            UIHelper.error(this, "Error load transaksi: " + ex.getMessage());
         }
     }
 
@@ -377,7 +378,7 @@ public class ServiceTransactionFrame extends javax.swing.JDialog {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnAddClientActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAddClientActionPerformed
-        JOptionPane.showMessageDialog(this, "Silakan tambahkan client baru lewat menu Data Client terlebih dahulu.");
+        UIHelper.info(this, "Silakan tambahkan client baru lewat menu Data Client terlebih dahulu.");
     }//GEN-LAST:event_btnAddClientActionPerformed
 
     private void btnTambahDetailActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnTambahDetailActionPerformed
@@ -387,7 +388,7 @@ public class ServiceTransactionFrame extends javax.swing.JDialog {
     private void btnHapusDetailActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnHapusDetailActionPerformed
         int row = tblDetail.getSelectedRow();
         if (row >= 0) { detailModel.removeRow(row); hitungTotal(); }
-        else JOptionPane.showMessageDialog(this, "Pilih baris detail yang akan dihapus.");
+        else UIHelper.warn(this, "Pilih baris detail yang akan dihapus.");
     }//GEN-LAST:event_btnHapusDetailActionPerformed
 
     private void btnSimpanTransActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSimpanTransActionPerformed
@@ -396,7 +397,7 @@ public class ServiceTransactionFrame extends javax.swing.JDialog {
 
     private void addDetailRow() {
         if (sparepartList == null || sparepartList.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Tidak ada data sparepart.");
+            UIHelper.warn(this, "Tidak ada data sparepart.");
             return;
         }
 
@@ -446,7 +447,7 @@ public class ServiceTransactionFrame extends javax.swing.JDialog {
             if (cbClient.getSelectedIndex() <= 0
              || cbVehicle.getSelectedIndex() <= 0
              || cbMekanik.getSelectedIndex() <= 0) {
-                JOptionPane.showMessageDialog(this, "Pilih Client, Vehicle, dan Mekanik.");
+                UIHelper.warn(this, "Pilih Client, Vehicle, dan Mekanik.");
                 return;
             }
 
@@ -500,11 +501,11 @@ public class ServiceTransactionFrame extends javax.swing.JDialog {
             if (editTransId > 0) {
                 t.setTransId(editTransId);
                 transDAO.updateWithDetails(t);
-                JOptionPane.showMessageDialog(this, "Transaksi berhasil diupdate!");
+                UIHelper.success(this, "Transaksi berhasil diupdate!");
             } else {
                 int newId = transDAO.insertWithDetails(t);
                 editTransId = newId;
-                JOptionPane.showMessageDialog(this, "Transaksi berhasil disimpan! ID: " + newId);
+                UIHelper.success(this, "Transaksi berhasil disimpan! ID: " + newId);
                 if (sourceRegistrationId != null) {
                     ServiceRegistration reg = regDAO.findById(sourceRegistrationId);
                     if (reg != null) {
@@ -517,15 +518,15 @@ public class ServiceTransactionFrame extends javax.swing.JDialog {
                 }
             }
         } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this, "Error simpan: " + ex.getMessage());
+            UIHelper.error(this, "Error simpan: " + ex.getMessage());
         } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Format angka tidak valid: " + ex.getMessage());
+            UIHelper.error(this, "Format angka tidak valid: " + ex.getMessage());
         }
     }
 
     private void prosesBayar() {
         if (editTransId <= 0) {
-            JOptionPane.showMessageDialog(this, "Simpan transaksi terlebih dahulu.");
+            UIHelper.warn(this, "Simpan transaksi terlebih dahulu.");
             return;
         }
         try {
@@ -535,7 +536,7 @@ public class ServiceTransactionFrame extends javax.swing.JDialog {
             double bayar = Double.parseDouble(txtBayar.getText().trim());
 
             if (bayar < grandTotal) {
-                JOptionPane.showMessageDialog(this, "Pembayaran kurang!");
+                UIHelper.warn(this, "Pembayaran kurang!");
                 return;
             }
 
@@ -553,21 +554,21 @@ public class ServiceTransactionFrame extends javax.swing.JDialog {
             }
 
             txtKembali.setText(String.valueOf(kembali));
-            JOptionPane.showMessageDialog(this, "Pembayaran berhasil! Kembali: " + kembali);
+            UIHelper.success(this, "Pembayaran berhasil! Kembali: " + kembali);
         } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this, "Error bayar: " + ex.getMessage());
+            UIHelper.error(this, "Error bayar: " + ex.getMessage());
         } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Format angka tidak valid.");
+            UIHelper.error(this, "Format angka tidak valid.");
         }
     }
 
     private void printTransaksi() {
         if (editTransId <= 0) {
-            JOptionPane.showMessageDialog(this, "Simpan transaksi terlebih dahulu sebelum export nota.");
+            UIHelper.warn(this, "Simpan transaksi terlebih dahulu sebelum export nota.");
             return;
         }
         Object[] options = {"PDF", "Excel", "Batal"};
-        int choice = JOptionPane.showOptionDialog(this, "Pilih format export nota transaksi:", "Export Nota", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
+        int choice = UIHelper.showOptions(this, "Pilih format export nota transaksi:", "Export Nota", new String[]{"PDF", "Excel", "Batal"});
         String title = "Nota_Transaksi_" + editTransId;
         if (choice == 0) {
             com.mycompany.garagemanagementsystem.util.ExportUtils.exportTableToPDF(tblDetail, title);

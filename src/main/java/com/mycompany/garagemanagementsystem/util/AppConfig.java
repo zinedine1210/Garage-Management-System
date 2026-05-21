@@ -1,7 +1,9 @@
 package com.mycompany.garagemanagementsystem.util;
 
 import java.io.*;
+import java.net.URL;
 import java.util.Properties;
+import javax.swing.ImageIcon;
 
 /**
  * Konfigurasi aplikasi yang dapat diubah tanpa compile ulang.
@@ -60,7 +62,86 @@ public class AppConfig {
         return props.getProperty("app.logo.path", DEFAULT_LOGO_PATH);
     }
 
+    public static String getLoginImagePath() {
+        return props.getProperty("app.login.image.path", "");
+    }
+
+    /**
+     * Load gambar login. Coba filesystem lalu classpath.
+     * Return null jika tidak ditemukan.
+     */
+    public static ImageIcon loadLoginImage(int width, int height) {
+        String path = getLoginImagePath();
+        if (path == null || path.trim().isEmpty()) return null;
+
+        File file = new File(path);
+        if (file.exists()) {
+            ImageIcon icon = new ImageIcon(file.getAbsolutePath());
+            if (icon.getIconWidth() > 0) return scaleIcon(icon, width, height);
+        }
+        String cp = path.startsWith("/") ? path : "/" + path;
+        URL url = AppConfig.class.getResource(cp);
+        if (url != null) {
+            ImageIcon icon = new ImageIcon(url);
+            if (icon.getIconWidth() > 0) return scaleIcon(icon, width, height);
+        }
+        url = AppConfig.class.getClassLoader().getResource(path.startsWith("/") ? path.substring(1) : path);
+        if (url != null) {
+            ImageIcon icon = new ImageIcon(url);
+            if (icon.getIconWidth() > 0) return scaleIcon(icon, width, height);
+        }
+        return null;
+    }
+
     public static String getCompanyPhoneFormatted() {
         return "Telp: " + getCompanyPhone();
+    }
+
+    /**
+     * Load logo sebagai ImageIcon. Coba dari:
+     * 1. Path absolut di filesystem
+     * 2. Path relatif di filesystem
+     * 3. Classpath resource (misal /logo.png atau logo.png)
+     * Return null jika tidak ditemukan.
+     */
+    public static ImageIcon loadLogo(int width, int height) {
+        String path = getLogoPath();
+        if (path == null || path.trim().isEmpty()) return null;
+
+        // 1. Coba filesystem (absolut atau relatif)
+        File file = new File(path);
+        if (file.exists()) {
+            ImageIcon icon = new ImageIcon(file.getAbsolutePath());
+            if (icon.getIconWidth() > 0) {
+                return scaleIcon(icon, width, height);
+            }
+        }
+
+        // 2. Coba classpath resource
+        String classpathPath = path.startsWith("/") ? path : "/" + path;
+        URL url = AppConfig.class.getResource(classpathPath);
+        if (url != null) {
+            ImageIcon icon = new ImageIcon(url);
+            if (icon.getIconWidth() > 0) {
+                return scaleIcon(icon, width, height);
+            }
+        }
+
+        // 3. Coba tanpa leading slash
+        String noSlash = path.startsWith("/") ? path.substring(1) : path;
+        url = AppConfig.class.getClassLoader().getResource(noSlash);
+        if (url != null) {
+            ImageIcon icon = new ImageIcon(url);
+            if (icon.getIconWidth() > 0) {
+                return scaleIcon(icon, width, height);
+            }
+        }
+
+        return null;
+    }
+
+    private static ImageIcon scaleIcon(ImageIcon icon, int width, int height) {
+        java.awt.Image img = icon.getImage().getScaledInstance(width, height, java.awt.Image.SCALE_SMOOTH);
+        return new ImageIcon(img);
     }
 }

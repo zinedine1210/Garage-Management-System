@@ -10,8 +10,6 @@ import com.mycompany.garagemanagementsystem.model.Mekanik;
 import com.mycompany.garagemanagementsystem.model.ServiceRegistration;
 import com.mycompany.garagemanagementsystem.model.ServiceTransaction;
 import com.mycompany.garagemanagementsystem.model.Vehicle;
-import com.mycompany.garagemanagementsystem.util.StyledTable;
-import com.mycompany.garagemanagementsystem.util.UIHelper;
 import java.awt.*;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
@@ -19,10 +17,16 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import javax.swing.*;
-import javax.swing.border.EmptyBorder;
+import javax.swing.table.DefaultTableModel;
 
 /**
- * Panel Pendaftaran Servis - revamped dengan StyledTable.
+ * Panel Pendaftaran Servis.
+ * 
+ * FLOW BENGKEL:
+ * 1. Customer datang -> Klik "Daftar Baru" -> Isi form popup -> Status: Registered
+ * 2. Mulai Servis -> Otomatis buat transaksi & tandai InProgress
+ * 3. Selama dikerjakan -> Klik "Edit Transaksi" -> Isi sparepart, jasa, dll
+ * 4. Selesai -> Klik "Selesaikan" -> Review transaksi -> Status: Completed
  */
 public class ServiceRegistrationPanel extends javax.swing.JPanel {
 
@@ -35,8 +39,9 @@ public class ServiceRegistrationPanel extends javax.swing.JPanel {
     private List<Client> clientList = new ArrayList<>();
     private List<Mekanik> mekanikList = new ArrayList<>();
 
-    private StyledTable styledTable;
     private JComboBox<String> cbStatusFilter;
+    private JTable table;
+    private DefaultTableModel tableModel;
     private JTextField txtSearch;
     private JLabel lblInfo;
     private int selectedRegId = -1;
@@ -47,150 +52,123 @@ public class ServiceRegistrationPanel extends javax.swing.JPanel {
     }
 
     private void buildUI() {
-        setLayout(new BorderLayout(0, 6));
-        setBorder(new EmptyBorder(12, 12, 12, 12));
-        setBackground(new Color(243, 245, 249));
+        setLayout(new BorderLayout(5, 5));
+        setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
 
-        // ===== TOP =====
-        JPanel topPanel = new JPanel(new BorderLayout(0, 6));
-        topPanel.setOpaque(false);
+        // ============ TOP: Flow info + Filter ============
+        JPanel topPanel = new JPanel(new BorderLayout(5, 5));
 
-        // Page header
-        topPanel.add(UIHelper.createPageHeader("Pendaftaran Servis",
-                "Kelola pendaftaran servis kendaraan pelanggan — dari registrasi hingga penyelesaian"), BorderLayout.NORTH);
-
-        // Flow info + filter
-        JPanel midPanel = new JPanel(new BorderLayout(0, 6));
-        midPanel.setOpaque(false);
-
+        // Flow info banner
         JPanel flowPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 4));
         flowPanel.setBackground(new Color(232, 245, 253));
         flowPanel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(100, 180, 246)),
-                new EmptyBorder(6, 10, 6, 10)));
+            BorderFactory.createLineBorder(new Color(100, 180, 246)),
+            BorderFactory.createEmptyBorder(6, 10, 6, 10)
+        ));
         JLabel lblFlow = new JLabel(
-                "<html><b>Flow:</b> Customer Datang → <b>Daftar Baru</b> → <b>Mulai Servis</b> → "
-                + "<b>Edit Transaksi</b> (isi detail) → <b>Selesaikan</b></html>");
+            "<html><b>Flow:</b> Customer Datang \u2192 <b>Daftar Baru</b> \u2192 <b>Mulai Servis</b> (tandai mulai) \u2192 " +
+            "<b>Edit Transaksi</b> (isi detail) \u2192 <b>Selesaikan</b> (review & selesai)</html>");
         lblFlow.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         flowPanel.add(lblFlow);
-        midPanel.add(flowPanel, BorderLayout.NORTH);
+        topPanel.add(flowPanel, BorderLayout.NORTH);
 
-        JPanel filterPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 6));
-        filterPanel.setBackground(Color.WHITE);
-        filterPanel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(220, 225, 235)),
-                new EmptyBorder(6, 12, 6, 12)));
-
-        filterPanel.add(new JLabel("🔍 Cari:"));
+        // Filter bar
+        JPanel filterPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+        filterPanel.add(new JLabel("Cari:"));
         txtSearch = new JTextField(15);
-        txtSearch.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         txtSearch.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-            public void insertUpdate(javax.swing.event.DocumentEvent e) { applyFilter(); }
-            public void removeUpdate(javax.swing.event.DocumentEvent e) { applyFilter(); }
-            public void changedUpdate(javax.swing.event.DocumentEvent e) { applyFilter(); }
+            public void insertUpdate(javax.swing.event.DocumentEvent e) { filterTable(); }
+            public void removeUpdate(javax.swing.event.DocumentEvent e) { filterTable(); }
+            public void changedUpdate(javax.swing.event.DocumentEvent e) { filterTable(); }
         });
         filterPanel.add(txtSearch);
-
         filterPanel.add(new JLabel("Status:"));
         cbStatusFilter = new JComboBox<>(new String[]{"Semua", "Registered", "InProgress", "Completed"});
-        cbStatusFilter.addActionListener(e -> applyFilter());
+        cbStatusFilter.addActionListener(e -> loadTable());
         filterPanel.add(cbStatusFilter);
-
-        lblInfo = new JLabel(" ");
-        lblInfo.setFont(new Font("Segoe UI", Font.ITALIC, 11));
-        lblInfo.setForeground(new Color(33, 100, 180));
-        filterPanel.add(Box.createHorizontalStrut(20));
-        filterPanel.add(lblInfo);
-
-        midPanel.add(filterPanel, BorderLayout.CENTER);
-        topPanel.add(midPanel, BorderLayout.CENTER);
+        topPanel.add(filterPanel, BorderLayout.CENTER);
 
         add(topPanel, BorderLayout.NORTH);
 
-        // ===== CENTER =====
-        styledTable = new StyledTable();
-        styledTable.addSelectionListener(e -> {
-            Object[] row = styledTable.getSelectedRowData();
-            if (row != null) {
-                selectedRegId = (int) row[0];
-                lblInfo.setText("Dipilih: #" + selectedRegId + " | Status: " + row[6]);
+        // ============ CENTER: Table ============
+        tableModel = new DefaultTableModel(
+            new Object[]{"ID", "Tanggal Daftar", "Client", "Kendaraan", "Mekanik", "Keluhan", "Status", "Catatan"}, 0) {
+            @Override public boolean isCellEditable(int r, int c) { return false; }
+        };
+        table = new JTable(tableModel);
+        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        table.setRowHeight(22);
+        table.getSelectionModel().addListSelectionListener(e -> {
+            int row = table.getSelectedRow();
+            if (row >= 0) {
+                selectedRegId = (int) table.getValueAt(row, 0);
+                String status = table.getValueAt(row, 6).toString();
+                lblInfo.setText("Dipilih: #" + selectedRegId + " | Status: " + status);
             }
         });
-        add(styledTable, BorderLayout.CENTER);
+        table.getColumnModel().getColumn(0).setMaxWidth(50);
+        table.getColumnModel().getColumn(6).setMaxWidth(100);
+        JScrollPane scrollTable = new JScrollPane(table);
+        add(scrollTable, BorderLayout.CENTER);
 
-        // ===== BOTTOM =====
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 8));
-        buttonPanel.setBackground(new Color(243, 245, 249));
+        // ============ BOTTOM: Action buttons ============
+        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 8));
 
-        JButton btnDaftar = UIHelper.createStyledButton("+ Daftar Baru", new Color(40, 167, 69));
+        JButton btnDaftar = new JButton("+ Daftar Baru");
+        btnDaftar.setFont(new Font("Segoe UI", Font.BOLD, 12));
         btnDaftar.addActionListener(e -> showFormDialog(null));
-        buttonPanel.add(btnDaftar);
+        bottomPanel.add(btnDaftar);
 
-        JButton btnEdit = UIHelper.createStyledButton("Edit", new Color(0, 123, 255));
+        JButton btnEdit = new JButton("Edit Pendaftaran");
+        btnEdit.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         btnEdit.addActionListener(e -> editRegistrasi());
-        buttonPanel.add(btnEdit);
+        bottomPanel.add(btnEdit);
 
-        JButton btnMulai = UIHelper.createStyledButton("▶ Mulai Servis", new Color(23, 162, 184));
-        btnMulai.addActionListener(e -> mulaiServis());
-        buttonPanel.add(btnMulai);
+        JButton btnMulaiServis = new JButton("\u25B6 Mulai Servis");
+        btnMulaiServis.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        btnMulaiServis.addActionListener(e -> mulaiServis());
+        bottomPanel.add(btnMulaiServis);
 
-        JButton btnEditTrans = UIHelper.createStyledButton("✎ Edit Transaksi", new Color(108, 117, 125));
+        JButton btnEditTrans = new JButton("\u270E Edit Transaksi");
+        btnEditTrans.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         btnEditTrans.addActionListener(e -> editTransaksi());
-        buttonPanel.add(btnEditTrans);
+        bottomPanel.add(btnEditTrans);
 
-        JButton btnSelesai = UIHelper.createStyledButton("✓ Selesaikan", new Color(139, 92, 246));
+        JButton btnSelesai = new JButton("\u2713 Selesaikan");
+        btnSelesai.setFont(new Font("Segoe UI", Font.BOLD, 12));
         btnSelesai.addActionListener(e -> selesaikan());
-        buttonPanel.add(btnSelesai);
+        bottomPanel.add(btnSelesai);
 
-        JButton btnHapus = UIHelper.createStyledButton("Hapus", new Color(220, 53, 69));
+        JButton btnHapus = new JButton("Hapus");
+        btnHapus.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         btnHapus.addActionListener(e -> hapusRegistrasi());
-        buttonPanel.add(btnHapus);
+        bottomPanel.add(btnHapus);
 
-        JButton btnRefresh = UIHelper.createStyledButton("Refresh", new Color(108, 117, 125));
+        JButton btnRefresh = new JButton("Refresh");
+        btnRefresh.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         btnRefresh.addActionListener(e -> { selectedRegId = -1; loadTable(); lblInfo.setText(" "); });
-        buttonPanel.add(btnRefresh);
+        bottomPanel.add(btnRefresh);
 
-        add(buttonPanel, BorderLayout.SOUTH);
-    }
+        bottomPanel.add(Box.createHorizontalStrut(20));
+        lblInfo = new JLabel(" ");
+        lblInfo.setFont(new Font("Segoe UI", Font.ITALIC, 11));
+        lblInfo.setForeground(new Color(33, 100, 180));
+        bottomPanel.add(lblInfo);
 
-    // ==================== FILTER ====================
-    private void applyFilter() {
-        String text = txtSearch.getText().trim().toLowerCase();
-        String status = cbStatusFilter.getSelectedItem().toString();
-
-        List<Object[]> result = new ArrayList<>();
-        for (Object[] row : styledTable.getAllData()) {
-            if (!"Semua".equals(status)) {
-                String rowStatus = row[6] != null ? row[6].toString() : "";
-                if (!rowStatus.equalsIgnoreCase(status)) continue;
-            }
-            if (!text.isEmpty()) {
-                boolean found = false;
-                for (Object cell : row) {
-                    if (cell != null && cell.toString().toLowerCase().contains(text)) { found = true; break; }
-                }
-                if (!found) continue;
-            }
-            result.add(row);
-        }
-        styledTable.setFilteredData(result);
+        add(bottomPanel, BorderLayout.SOUTH);
     }
 
     // ==================== POPUP FORM DIALOG ====================
     private void showFormDialog(ServiceRegistration existing) {
         Window win = SwingUtilities.getWindowAncestor(this);
-        String dlgTitle = existing == null ? "Pendaftaran Servis Baru" : "Edit Pendaftaran #" + existing.getRegistrationId();
-        String dlgSub = "Isi form di bawah untuk mendaftarkan servis kendaraan";
-        JDialog dialog = new JDialog(win instanceof Frame ? (Frame) win : null, dlgTitle, true);
+        JDialog dialog = new JDialog(win instanceof Frame ? (Frame) win : null,
+            existing == null ? "Daftar Pendaftaran Baru" : "Edit Pendaftaran #" + existing.getRegistrationId(), true);
         dialog.setLayout(new BorderLayout(10, 10));
-        dialog.setSize(500, 440);
+        dialog.setSize(500, 380);
         dialog.setLocationRelativeTo(this);
 
-        dialog.add(UIHelper.createDialogHeader(dlgTitle, dlgSub), BorderLayout.NORTH);
-
         JPanel form = new JPanel(new GridBagLayout());
-        form.setBorder(new EmptyBorder(10, 15, 10, 15));
-        form.setBackground(Color.WHITE);
+        form.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.anchor = GridBagConstraints.WEST;
@@ -204,10 +182,11 @@ public class ServiceRegistrationPanel extends javax.swing.JPanel {
         JTextArea txtCatatan = new JTextArea(2, 20);
         txtCatatan.setLineWrap(true);
 
+        // Load combos
         try {
             clientList = clientDAO.findAll();
             mekanikList = mekanikDAO.findAll();
-        } catch (SQLException ex) { /* ignore */ }
+        } catch (SQLException ex) { /* already loaded or empty */ }
 
         cbClient.addItem("-- Pilih Client --");
         for (Client c : clientList) cbClient.addItem(c.getClientId() + " - " + c.getNama());
@@ -227,10 +206,12 @@ public class ServiceRegistrationPanel extends javax.swing.JPanel {
         cbMekanik.addItem("-- Pilih Mekanik --");
         for (Mekanik m : mekanikList) cbMekanik.addItem(m.getMekanikId() + " - " + m.getNama());
 
+        // Prefill if editing
         if (existing != null) {
             for (int i = 0; i < cbClient.getItemCount(); i++) {
                 if (cbClient.getItemAt(i).startsWith(existing.getClientId() + " - ")) { cbClient.setSelectedIndex(i); break; }
             }
+            // Trigger vehicle load then select
             SwingUtilities.invokeLater(() -> {
                 for (int i = 0; i < cbVehicle.getItemCount(); i++) {
                     if (cbVehicle.getItemAt(i).startsWith(existing.getVehicleId() + " - ")) { cbVehicle.setSelectedIndex(i); break; }
@@ -261,20 +242,16 @@ public class ServiceRegistrationPanel extends javax.swing.JPanel {
 
         dialog.add(form, BorderLayout.CENTER);
 
-        JPanel btnPanel = UIHelper.createDialogButtonPanel();
-
-        JButton btnBatal = UIHelper.createStyledButton("Batal", new Color(108, 117, 125));
-        btnBatal.addActionListener(e -> dialog.dispose());
-        btnPanel.add(btnBatal);
-
-        JButton btnSimpan = UIHelper.createStyledButton("Simpan", new Color(40, 167, 69));
+        // Buttons
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JButton btnSimpan = new JButton("Simpan");
         btnSimpan.addActionListener(e -> {
             if (cbClient.getSelectedIndex() <= 0 || cbVehicle.getSelectedIndex() <= 0 || cbMekanik.getSelectedIndex() <= 0) {
-                UIHelper.warn(dialog, "Pilih Client, Kendaraan, dan Mekanik.");
+                JOptionPane.showMessageDialog(dialog, "Pilih Client, Kendaraan, dan Mekanik.");
                 return;
             }
             if (txtKeluhan.getText().trim().isEmpty()) {
-                UIHelper.warn(dialog, "Keluhan tidak boleh kosong.");
+                JOptionPane.showMessageDialog(dialog, "Keluhan tidak boleh kosong.");
                 return;
             }
             try {
@@ -292,7 +269,7 @@ public class ServiceRegistrationPanel extends javax.swing.JPanel {
                     reg.setStatus("Registered");
                     reg.setTanggalDaftar(new Date());
                     regDAO.insert(reg);
-                    UIHelper.success(dialog, "Pendaftaran berhasil disimpan.");
+                    JOptionPane.showMessageDialog(dialog, "Pendaftaran berhasil disimpan.");
                 } else {
                     existing.setClientId(clientId);
                     existing.setVehicleId(vehicleId);
@@ -300,44 +277,50 @@ public class ServiceRegistrationPanel extends javax.swing.JPanel {
                     existing.setKeluhan(txtKeluhan.getText().trim());
                     existing.setCatatan(txtCatatan.getText().trim());
                     regDAO.update(existing);
-                    UIHelper.success(dialog, "Pendaftaran berhasil diupdate.");
+                    JOptionPane.showMessageDialog(dialog, "Pendaftaran berhasil diupdate.");
                 }
                 dialog.dispose();
                 loadTable();
             } catch (SQLException ex) {
-                UIHelper.error(dialog, "Error: " + ex.getMessage());
+                JOptionPane.showMessageDialog(dialog, "Error: " + ex.getMessage());
             }
         });
+        JButton btnBatal = new JButton("Batal");
+        btnBatal.addActionListener(e -> dialog.dispose());
         btnPanel.add(btnSimpan);
+        btnPanel.add(btnBatal);
         dialog.add(btnPanel, BorderLayout.SOUTH);
+
         dialog.setVisible(true);
     }
 
     // ==================== ACTIONS ====================
     private void editRegistrasi() {
-        if (selectedRegId < 0) { UIHelper.warn(this, "Pilih pendaftaran dari tabel."); return; }
+        if (selectedRegId < 0) { JOptionPane.showMessageDialog(this, "Pilih pendaftaran dari tabel."); return; }
         try {
             ServiceRegistration reg = regDAO.findById(selectedRegId);
-            if (reg == null) { UIHelper.warn(this, "Data tidak ditemukan."); return; }
+            if (reg == null) { JOptionPane.showMessageDialog(this, "Data tidak ditemukan."); return; }
             showFormDialog(reg);
         } catch (SQLException ex) {
-            UIHelper.error(this, "Error: " + ex.getMessage());
+            JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
         }
     }
 
     private void mulaiServis() {
-        if (selectedRegId < 0) { UIHelper.warn(this, "Pilih pendaftaran dari tabel."); return; }
+        if (selectedRegId < 0) { JOptionPane.showMessageDialog(this, "Pilih pendaftaran dari tabel."); return; }
         try {
             ServiceRegistration reg = regDAO.findById(selectedRegId);
-            if (reg == null) { UIHelper.warn(this, "Data tidak ditemukan."); return; }
+            if (reg == null) { JOptionPane.showMessageDialog(this, "Data tidak ditemukan."); return; }
             if (!"Registered".equals(reg.getStatus())) {
-                UIHelper.warn(this, "Hanya status 'Registered' yang bisa dimulai servis.");
+                JOptionPane.showMessageDialog(this, "Hanya status 'Registered' yang bisa dimulai servis.");
                 return;
             }
-            if (!UIHelper.confirm(this,
-                    "Mulai servis untuk pendaftaran #" + selectedRegId + "?\nTransaksi akan otomatis dibuat.",
-                    "Konfirmasi Mulai Servis")) return;
+            int confirm = JOptionPane.showConfirmDialog(this,
+                "Mulai servis untuk pendaftaran #" + selectedRegId + "?\n" +
+                "Transaksi akan otomatis dibuat.", "Konfirmasi Mulai Servis", JOptionPane.YES_NO_OPTION);
+            if (confirm != JOptionPane.YES_OPTION) return;
 
+            // Auto-create transaction from registration data
             ServiceTransaction t = new ServiceTransaction();
             t.setTanggal(new Date());
             t.setClientId(reg.getClientId());
@@ -346,12 +329,17 @@ public class ServiceRegistrationPanel extends javax.swing.JPanel {
             t.setKeluhan(reg.getKeluhan());
             t.setRegistrationId(reg.getRegistrationId());
             t.setStatusServis("Dikerjakan");
-            t.setTotalJasa(0); t.setTotalSparepart(0); t.setGrandTotal(0);
-            t.setBayar(0); t.setKembali(0);
-            t.setMetodeBayar("Cash"); t.setUserKasir("admin");
-            t.setDetails(new ArrayList<>());
+            t.setTotalJasa(0);
+            t.setTotalSparepart(0);
+            t.setGrandTotal(0);
+            t.setBayar(0);
+            t.setKembali(0);
+            t.setMetodeBayar("Cash");
+            t.setUserKasir("admin");
+            t.setDetails(new java.util.ArrayList<>());
             int transId = transDAO.insertWithDetails(t);
 
+            // Update registration status
             reg.setStatus("InProgress");
             reg.setTanggalMulai(new Date());
             regDAO.update(reg);
@@ -360,53 +348,60 @@ public class ServiceRegistrationPanel extends javax.swing.JPanel {
             selectedRegId = -1;
             lblInfo.setText("Servis dimulai! Transaksi #" + transId + " telah dibuat.");
         } catch (SQLException ex) {
-            UIHelper.error(this, "Error: " + ex.getMessage());
+            JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
         }
     }
 
     private void editTransaksi() {
-        if (selectedRegId < 0) { UIHelper.warn(this, "Pilih pendaftaran dari tabel."); return; }
+        if (selectedRegId < 0) { JOptionPane.showMessageDialog(this, "Pilih pendaftaran dari tabel."); return; }
         try {
             ServiceRegistration reg = regDAO.findById(selectedRegId);
-            if (reg == null) { UIHelper.warn(this, "Data tidak ditemukan."); return; }
+            if (reg == null) { JOptionPane.showMessageDialog(this, "Data tidak ditemukan."); return; }
             if (!"InProgress".equals(reg.getStatus())) {
-                UIHelper.warn(this, "Hanya status 'InProgress' yang bisa diedit transaksinya.");
+                JOptionPane.showMessageDialog(this, "Hanya status 'InProgress' yang bisa diedit transaksinya.");
                 return;
             }
             ServiceTransaction trans = transDAO.findByRegistrationId(selectedRegId);
             if (trans == null) {
-                UIHelper.warn(this, "Transaksi belum dibuat. Klik 'Mulai Servis' terlebih dahulu.");
+                JOptionPane.showMessageDialog(this, "Transaksi belum dibuat. Klik 'Mulai Servis' terlebih dahulu.");
                 return;
             }
             Window win = SwingUtilities.getWindowAncestor(this);
             Frame owner = (win instanceof Frame) ? (Frame) win : null;
-            new ServiceTransactionFrame(owner, trans.getTransId()).setVisible(true);
+            ServiceTransactionFrame frame = new ServiceTransactionFrame(owner, trans.getTransId());
+            frame.setVisible(true);
             loadTable();
         } catch (SQLException ex) {
-            UIHelper.error(this, "Error: " + ex.getMessage());
+            JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
         }
     }
 
     private void selesaikan() {
-        if (selectedRegId < 0) { UIHelper.warn(this, "Pilih pendaftaran dari tabel."); return; }
+        if (selectedRegId < 0) { JOptionPane.showMessageDialog(this, "Pilih pendaftaran dari tabel."); return; }
         try {
             ServiceRegistration reg = regDAO.findById(selectedRegId);
-            if (reg == null) { UIHelper.warn(this, "Data tidak ditemukan."); return; }
-            if ("Completed".equals(reg.getStatus())) { UIHelper.info(this, "Sudah selesai."); return; }
+            if (reg == null) { JOptionPane.showMessageDialog(this, "Data tidak ditemukan."); return; }
+            if ("Completed".equals(reg.getStatus())) { JOptionPane.showMessageDialog(this, "Sudah selesai."); return; }
             if (!"InProgress".equals(reg.getStatus())) {
-                UIHelper.warn(this, "Hanya status 'InProgress' yang bisa diselesaikan.");
+                JOptionPane.showMessageDialog(this, "Hanya status 'InProgress' yang bisa diselesaikan.");
                 return;
             }
             ServiceTransaction trans = transDAO.findByRegistrationId(selectedRegId);
-            if (trans == null) { UIHelper.warn(this, "Transaksi belum dibuat."); return; }
-
+            if (trans == null) {
+                JOptionPane.showMessageDialog(this, "Transaksi belum dibuat.");
+                return;
+            }
+            // Open transaction for final review
             Window win = SwingUtilities.getWindowAncestor(this);
             Frame owner = (win instanceof Frame) ? (Frame) win : null;
-            new ServiceTransactionFrame(owner, trans.getTransId()).setVisible(true);
+            ServiceTransactionFrame frame = new ServiceTransactionFrame(owner, trans.getTransId());
+            frame.setVisible(true);
 
-            if (UIHelper.confirm(this,
-                    "Tandai pendaftaran #" + selectedRegId + " sebagai SELESAI?",
-                    "Konfirmasi Penyelesaian")) {
+            // After review, confirm completion
+            int confirm = JOptionPane.showConfirmDialog(this,
+                "Apakah semua detail transaksi sudah benar?\nTandai pendaftaran #" + selectedRegId + " sebagai SELESAI?",
+                "Konfirmasi Penyelesaian", JOptionPane.YES_NO_OPTION);
+            if (confirm == JOptionPane.YES_OPTION) {
                 reg.setStatus("Completed");
                 regDAO.update(reg);
                 transDAO.updateStatusServis(trans.getTransId(), "Selesai Lunas");
@@ -415,29 +410,34 @@ public class ServiceRegistrationPanel extends javax.swing.JPanel {
             selectedRegId = -1;
             lblInfo.setText(" ");
         } catch (SQLException ex) {
-            UIHelper.error(this, "Error: " + ex.getMessage());
+            JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
         }
     }
 
     private void hapusRegistrasi() {
-        if (selectedRegId < 0) { UIHelper.warn(this, "Pilih pendaftaran dari tabel."); return; }
-        if (!UIHelper.confirm(this, "Hapus pendaftaran #" + selectedRegId + "?", "Konfirmasi Hapus")) return;
+        if (selectedRegId < 0) { JOptionPane.showMessageDialog(this, "Pilih pendaftaran dari tabel."); return; }
+        int confirm = JOptionPane.showConfirmDialog(this, "Hapus pendaftaran #" + selectedRegId + "?", "Konfirmasi", JOptionPane.YES_NO_OPTION);
+        if (confirm != JOptionPane.YES_OPTION) return;
         try {
             regDAO.delete(selectedRegId);
             loadTable();
             selectedRegId = -1;
             lblInfo.setText(" ");
         } catch (SQLException ex) {
-            UIHelper.error(this, "Error: " + ex.getMessage());
+            JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
         }
     }
 
     // ==================== TABLE ====================
     private void loadTable() {
+        tableModel.setRowCount(0);
         try {
-            List<ServiceRegistration> list = regDAO.findAll();
+            String statusFilter = cbStatusFilter.getSelectedItem().toString();
+            List<ServiceRegistration> list;
+            if ("Semua".equals(statusFilter)) list = regDAO.findAll();
+            else list = regDAO.findByStatus(statusFilter);
+
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
-            List<Object[]> data = new ArrayList<>();
             for (ServiceRegistration r : list) {
                 String clientNama = "", vehicleNopol = "", mekanikNama = "";
                 try {
@@ -449,18 +449,26 @@ public class ServiceRegistrationPanel extends javax.swing.JPanel {
                     if (m != null) mekanikNama = m.getNama();
                 } catch (SQLException ex) { /* skip */ }
 
-                data.add(new Object[]{
-                        r.getRegistrationId(),
-                        r.getTanggalDaftar() != null ? sdf.format(r.getTanggalDaftar()) : "",
-                        clientNama, vehicleNopol, mekanikNama,
-                        r.getKeluhan(), r.getStatus(), r.getCatatan()
+                tableModel.addRow(new Object[]{
+                    r.getRegistrationId(),
+                    r.getTanggalDaftar() != null ? sdf.format(r.getTanggalDaftar()) : "",
+                    clientNama, vehicleNopol, mekanikNama,
+                    r.getKeluhan(), r.getStatus(), r.getCatatan()
                 });
             }
-            styledTable.setData(new String[]{"ID", "Tanggal Daftar", "Client", "Kendaraan", "Mekanik", "Keluhan", "Status", "Catatan"}, data);
-            // Apply current filter
-            applyFilter();
         } catch (SQLException ex) {
-            UIHelper.error(this, "Error load: " + ex.getMessage());
+            JOptionPane.showMessageDialog(this, "Error load: " + ex.getMessage());
         }
+    }
+
+    private void filterTable() {
+        String text = txtSearch.getText().trim();
+        if (table.getRowSorter() == null) {
+            table.setRowSorter(new javax.swing.table.TableRowSorter<>(tableModel));
+        }
+        javax.swing.table.TableRowSorter<DefaultTableModel> sorter =
+                (javax.swing.table.TableRowSorter<DefaultTableModel>) table.getRowSorter();
+        if (text.isEmpty()) sorter.setRowFilter(null);
+        else sorter.setRowFilter(javax.swing.RowFilter.regexFilter("(?i)" + text));
     }
 }

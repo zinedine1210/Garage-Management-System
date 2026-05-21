@@ -11,17 +11,19 @@ import java.util.List;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 
-public class LaporanTransaksiPanel extends javax.swing.JPanel {
+/**
+ * Laporan Sparepart Terlaris - menampilkan sparepart yang paling banyak terjual.
+ */
+public class LaporanSparepartTerlarisPanel extends javax.swing.JPanel {
 
     private final DashboardDAO dao = new DashboardDAO();
     private StyledTable styledTable;
     private JLabel lblDateFrom, lblDateTo, lblSummary;
     private JTextField txtSearch;
-    private JComboBox<String> cbStatus;
     private Date filterDateFrom, filterDateTo;
     private final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 
-    public LaporanTransaksiPanel() {
+    public LaporanSparepartTerlarisPanel() {
         buildUI();
         setDefaultDateRange();
         loadData();
@@ -32,12 +34,12 @@ public class LaporanTransaksiPanel extends javax.swing.JPanel {
         setBorder(new EmptyBorder(12, 12, 12, 12));
         setBackground(new Color(243, 245, 249));
 
-        // ===== TOP =====
+        // ===== TOP: Filter =====
         JPanel topPanel = new JPanel(new BorderLayout(0, 4));
         topPanel.setOpaque(false);
 
-        topPanel.add(UIHelper.createPageHeader("Laporan Transaksi Servis",
-                "Rekapitulasi seluruh transaksi servis kendaraan berdasarkan periode tertentu"), BorderLayout.NORTH);
+        topPanel.add(UIHelper.createPageHeader("Laporan Sparepart Terlaris",
+                "Ranking sparepart berdasarkan jumlah penjualan dalam periode tertentu"), BorderLayout.NORTH);
 
         JPanel filterPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 6));
         filterPanel.setBackground(Color.WHITE);
@@ -64,30 +66,22 @@ public class LaporanTransaksiPanel extends javax.swing.JPanel {
         filterPanel.add(btnReset);
 
         filterPanel.add(Box.createHorizontalStrut(10));
-        filterPanel.add(new JLabel("🔍 Cari:"));
+        filterPanel.add(new JLabel("\uD83D\uDD0D Cari:"));
         txtSearch = new JTextField(12);
         txtSearch.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-            public void insertUpdate(javax.swing.event.DocumentEvent e) { applyFilter(); }
-            public void removeUpdate(javax.swing.event.DocumentEvent e) { applyFilter(); }
-            public void changedUpdate(javax.swing.event.DocumentEvent e) { applyFilter(); }
+            public void insertUpdate(javax.swing.event.DocumentEvent e) { styledTable.filterData(txtSearch.getText()); updateSummary(); }
+            public void removeUpdate(javax.swing.event.DocumentEvent e) { styledTable.filterData(txtSearch.getText()); updateSummary(); }
+            public void changedUpdate(javax.swing.event.DocumentEvent e) { styledTable.filterData(txtSearch.getText()); updateSummary(); }
         });
         filterPanel.add(txtSearch);
 
-        filterPanel.add(new JLabel("Status:"));
-        cbStatus = new JComboBox<>(new String[]{"Semua", "Menunggu", "Dikerjakan", "Selesai Lunas", "Batal"});
-        cbStatus.addActionListener(e -> applyFilter());
-        filterPanel.add(cbStatus);
-
-        JPanel midWrap = new JPanel(new BorderLayout(0, 4));
-        midWrap.setOpaque(false);
-        midWrap.add(filterPanel, BorderLayout.CENTER);
+        topPanel.add(filterPanel, BorderLayout.CENTER);
 
         lblSummary = new JLabel(" ");
         lblSummary.setFont(new Font("Segoe UI", Font.BOLD, 12));
         lblSummary.setBorder(new EmptyBorder(4, 10, 4, 10));
-        midWrap.add(lblSummary, BorderLayout.SOUTH);
+        topPanel.add(lblSummary, BorderLayout.SOUTH);
 
-        topPanel.add(midWrap, BorderLayout.CENTER);
         add(topPanel, BorderLayout.NORTH);
 
         // ===== CENTER =====
@@ -98,16 +92,16 @@ public class LaporanTransaksiPanel extends javax.swing.JPanel {
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 8));
         buttonPanel.setBackground(new Color(243, 245, 249));
 
-        JButton btnRefresh = UIHelper.createStyledButton("Refresh", new Color(108, 117, 125));
+        JButton btnRefresh = createStyledButton("Refresh", new Color(108, 117, 125));
         btnRefresh.addActionListener(e -> loadData());
         buttonPanel.add(btnRefresh);
 
-        JButton btnExport = UIHelper.createStyledButton("Export", new Color(23, 162, 184));
+        JButton btnExport = createStyledButton("Export", new Color(23, 162, 184));
         btnExport.addActionListener(e -> {
             String[] options = {"PDF", "Excel", "Batal"};
-            int choice = UIHelper.showOptions(this, "Pilih format export:", "Export Laporan Transaksi", options);
-            if (choice == 0) ExportUtils.exportTableToPDF(styledTable.getTable(), "Laporan_Transaksi_Servis");
-            else if (choice == 1) ExportUtils.exportTableToExcel(styledTable.getTable(), "Laporan_Transaksi_Servis");
+            int choice = UIHelper.showOptions(this, "Pilih format export:", "Export Laporan Sparepart", options);
+            if (choice == 0) ExportUtils.exportTableToPDF(styledTable.getTable(), "Laporan_Sparepart_Terlaris");
+            else if (choice == 1) ExportUtils.exportTableToExcel(styledTable.getTable(), "Laporan_Sparepart_Terlaris");
         });
         buttonPanel.add(btnExport);
         add(buttonPanel, BorderLayout.SOUTH);
@@ -137,49 +131,32 @@ public class LaporanTransaksiPanel extends javax.swing.JPanel {
 
     private void loadData() {
         try {
-            List<Object[]> data = dao.getLaporanTransaksiServis(filterDateFrom, filterDateTo);
-            styledTable.setData(new String[]{"ID", "Tanggal", "Pelanggan", "No Polisi", "Mekanik",
-                    "Keluhan", "Status", "Total Jasa", "Total Sparepart", "Grand Total", "Metode Bayar"}, data);
-            applyFilter();
+            List<Object[]> data = dao.getLaporanSparepartTerlaris(filterDateFrom, filterDateTo);
+            styledTable.setData(new String[]{"Kode Sparepart", "Nama Sparepart", "Satuan",
+                    "Total Qty Terjual", "Total Nilai (Rp)", "Jml Transaksi"}, data);
+            updateSummary();
         } catch (Exception ex) {
             UIHelper.error(this, "Error load data: " + ex.getMessage());
         }
     }
 
-    private void applyFilter() {
-        String text = txtSearch.getText().trim().toLowerCase();
-        String status = cbStatus.getSelectedItem().toString();
-
-        List<Object[]> result = new ArrayList<>();
-        for (Object[] row : styledTable.getAllData()) {
-            if (!"Semua".equals(status)) {
-                String rowStatus = row[6] != null ? row[6].toString() : "";
-                if (!rowStatus.equalsIgnoreCase(status)) continue;
-            }
-            if (!text.isEmpty()) {
-                boolean found = false;
-                for (Object cell : row) {
-                    if (cell != null && cell.toString().toLowerCase().contains(text)) { found = true; break; }
-                }
-                if (!found) continue;
-            }
-            result.add(row);
-        }
-        styledTable.setFilteredData(result);
-        updateSummary();
-    }
-
     private void updateSummary() {
-        double sumJasa = 0, sumSparepart = 0, sumGrand = 0;
-        int count = styledTable.getFilteredRowCount();
+        int totalQty = 0, totalTrx = 0;
+        double totalNilai = 0;
+        int items = styledTable.getFilteredRowCount();
         for (Object[] row : styledTable.getFilteredData()) {
             try {
-                sumJasa += row[7] != null ? Double.parseDouble(row[7].toString()) : 0;
-                sumSparepart += row[8] != null ? Double.parseDouble(row[8].toString()) : 0;
-                sumGrand += row[9] != null ? Double.parseDouble(row[9].toString()) : 0;
+                totalQty += (int) row[3];
+                totalNilai += (double) row[4];
+                totalTrx += (int) row[5];
             } catch (Exception ignored) {}
         }
-        lblSummary.setText(String.format("Total %d transaksi  |  Jasa: Rp %,.0f  |  Sparepart: Rp %,.0f  |  Grand Total: Rp %,.0f",
-                count, sumJasa, sumSparepart, sumGrand));
+        lblSummary.setText(String.format(
+                "%d jenis sparepart  |  Total Qty: %,d  |  Total Nilai: Rp %,.0f  |  Dari %d transaksi",
+                items, totalQty, totalNilai, totalTrx));
+    }
+
+    private JButton createStyledButton(String text, Color bg) {
+        return UIHelper.createStyledButton(text, bg);
     }
 }

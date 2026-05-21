@@ -2,237 +2,197 @@ package com.mycompany.garagemanagementsystem.ui;
 
 import com.mycompany.garagemanagementsystem.dao.MekanikDAO;
 import com.mycompany.garagemanagementsystem.model.Mekanik;
+import com.mycompany.garagemanagementsystem.util.ExportUtils;
+import com.mycompany.garagemanagementsystem.util.StyledTable;
+import com.mycompany.garagemanagementsystem.util.UIHelper;
+import java.awt.*;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
-import javax.swing.JOptionPane;
-import javax.swing.table.DefaultTableModel;
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 
 public class MekanikPanel extends javax.swing.JPanel {
 
     private final MekanikDAO mekanikDAO = new MekanikDAO();
+    private StyledTable styledTable;
+    private JTextField txtSearch;
 
     public MekanikPanel() {
-        initComponents();
-        myInit();
-    }
-
-    private void myInit() {
-        setBorder(javax.swing.BorderFactory.createEmptyBorder(8, 8, 8, 8));
-        table.setRowHeight(22);
-        table.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
-        table.getSelectionModel().addListSelectionListener(e -> isiFormDariTabel());
-        txtSearch.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-            public void insertUpdate(javax.swing.event.DocumentEvent e) { filterTabel(); }
-            public void removeUpdate(javax.swing.event.DocumentEvent e) { filterTabel(); }
-            public void changedUpdate(javax.swing.event.DocumentEvent e) { filterTabel(); }
-            private void filterTabel() {
-                String teks = txtSearch.getText();
-                if (table.getRowSorter() == null) {
-                    table.setRowSorter(new javax.swing.table.TableRowSorter<>((DefaultTableModel) table.getModel()));
-                }
-                javax.swing.table.TableRowSorter<DefaultTableModel> sorter =
-                        (javax.swing.table.TableRowSorter<DefaultTableModel>) table.getRowSorter();
-                if (teks.trim().isEmpty()) sorter.setRowFilter(null);
-                else sorter.setRowFilter(javax.swing.RowFilter.regexFilter("(?i)" + teks));
-            }
-        });
+        buildUI();
         loadData();
     }
 
-    @SuppressWarnings("unchecked")
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
-    private void initComponents() {
+    private void buildUI() {
+        setLayout(new BorderLayout(0, 8));
+        setBorder(new EmptyBorder(12, 12, 12, 12));
+        setBackground(new Color(243, 245, 249));
 
-        topPanel = new javax.swing.JPanel();
-        formPanel = new javax.swing.JPanel();
-        lblId = new javax.swing.JLabel();
-        txtId = new javax.swing.JTextField();
-        lblNama = new javax.swing.JLabel();
-        txtNama = new javax.swing.JTextField();
-        lblTelepon = new javax.swing.JLabel();
-        txtTelepon = new javax.swing.JTextField();
-        lblSpesialis = new javax.swing.JLabel();
-        txtSpesialis = new javax.swing.JTextField();
-        filterPanel = new javax.swing.JPanel();
-        lblCari = new javax.swing.JLabel();
-        txtSearch = new javax.swing.JTextField();
-        jScrollPane1 = new javax.swing.JScrollPane();
-        table = new javax.swing.JTable();
-        buttonPanel = new javax.swing.JPanel();
-        btnBaru = new javax.swing.JButton();
-        btnSimpan = new javax.swing.JButton();
-        btnHapus = new javax.swing.JButton();
+        JPanel topWrap = new JPanel(new BorderLayout(0, 6));
+        topWrap.setOpaque(false);
+        topWrap.add(UIHelper.createPageHeader("Data Mekanik", "Kelola informasi mekanik bengkel beserta spesialisasinya"), BorderLayout.NORTH);
 
-        setLayout(new java.awt.BorderLayout());
-
-        topPanel.setLayout(new java.awt.BorderLayout());
-
-        formPanel.setLayout(new java.awt.GridLayout(4, 2));
-        lblId.setText("ID:"); formPanel.add(lblId);
-        txtId.setColumns(5); txtId.setEnabled(false); formPanel.add(txtId);
-        lblNama.setText("Nama:"); formPanel.add(lblNama);
-        txtNama.setColumns(20); formPanel.add(txtNama);
-        lblTelepon.setText("Telepon:"); formPanel.add(lblTelepon);
-        txtTelepon.setColumns(15); formPanel.add(txtTelepon);
-        lblSpesialis.setText("Spesialis:"); formPanel.add(lblSpesialis);
-        txtSpesialis.setColumns(15); formPanel.add(txtSpesialis);
-
-        topPanel.add(formPanel, java.awt.BorderLayout.CENTER);
-
-        filterPanel.setLayout(new java.awt.BorderLayout());
-        lblCari.setText(" Cari: ");
-        filterPanel.add(lblCari, java.awt.BorderLayout.WEST);
-        filterPanel.add(txtSearch, java.awt.BorderLayout.CENTER);
-        topPanel.add(filterPanel, java.awt.BorderLayout.SOUTH);
-
-        add(topPanel, java.awt.BorderLayout.NORTH);
-
-        table.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
-        jScrollPane1.setViewportView(table);
-        add(jScrollPane1, java.awt.BorderLayout.CENTER);
-
-        btnBaru.setText("Baru");
-        btnBaru.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) { btnBaruActionPerformed(evt); }
+        JPanel filterBar = new JPanel(new BorderLayout(10, 0));
+        filterBar.setBackground(Color.WHITE);
+        filterBar.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(220, 225, 235)),
+                new EmptyBorder(10, 16, 10, 16)));
+        JLabel lblSearch = new JLabel("\uD83D\uDD0D Cari:");
+        lblSearch.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        filterBar.add(lblSearch, BorderLayout.WEST);
+        txtSearch = new JTextField();
+        txtSearch.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        txtSearch.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(200, 205, 215)),
+                new EmptyBorder(6, 10, 6, 10)));
+        txtSearch.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            public void insertUpdate(javax.swing.event.DocumentEvent e) { styledTable.filterData(txtSearch.getText()); }
+            public void removeUpdate(javax.swing.event.DocumentEvent e) { styledTable.filterData(txtSearch.getText()); }
+            public void changedUpdate(javax.swing.event.DocumentEvent e) { styledTable.filterData(txtSearch.getText()); }
         });
-        buttonPanel.add(btnBaru);
+        filterBar.add(txtSearch, BorderLayout.CENTER);
+        topWrap.add(filterBar, BorderLayout.CENTER);
+        add(topWrap, BorderLayout.NORTH);
 
-        btnSimpan.setText("Simpan");
-        btnSimpan.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) { btnSimpanActionPerformed(evt); }
-        });
-        buttonPanel.add(btnSimpan);
+        styledTable = new StyledTable();
+        add(styledTable, BorderLayout.CENTER);
 
-        btnHapus.setText("Hapus");
-        btnHapus.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) { btnHapusActionPerformed(evt); }
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 8));
+        buttonPanel.setBackground(new Color(243, 245, 249));
+
+        JButton btnTambah = createStyledButton("+ Tambah", new Color(40, 167, 69));
+        btnTambah.addActionListener(e -> showFormDialog(null));
+        buttonPanel.add(btnTambah);
+
+        JButton btnEdit = createStyledButton("Edit", new Color(0, 123, 255));
+        btnEdit.addActionListener(e -> {
+            Object[] row = styledTable.getSelectedRowData();
+            if (row == null) { UIHelper.warn(this, "Pilih data yang akan diedit."); return; }
+            showFormDialog(row);
         });
+        buttonPanel.add(btnEdit);
+
+        JButton btnHapus = createStyledButton("Hapus", new Color(220, 53, 69));
+        btnHapus.addActionListener(e -> deleteData());
         buttonPanel.add(btnHapus);
 
-        javax.swing.JButton btnRefresh = new javax.swing.JButton();
-        btnRefresh.setText("Refresh");
-        btnRefresh.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) { loadData(); }
-        });
+        JButton btnRefresh = createStyledButton("Refresh", new Color(108, 117, 125));
+        btnRefresh.addActionListener(e -> loadData());
         buttonPanel.add(btnRefresh);
-        
-        javax.swing.JButton btnPrint = new javax.swing.JButton();
-        btnPrint.setText("Export");
-        btnPrint.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                Object[] options = {"PDF", "Excel", "Batal"};
-                int choice = javax.swing.JOptionPane.showOptionDialog(MekanikPanel.this, "Pilih format export:", "Export Data", javax.swing.JOptionPane.YES_NO_CANCEL_OPTION, javax.swing.JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
-                if (choice == 0) com.mycompany.garagemanagementsystem.util.ExportUtils.exportTableToPDF(table, "Data_Mekanik");
-                else if (choice == 1) com.mycompany.garagemanagementsystem.util.ExportUtils.exportTableToExcel(table, "Data_Mekanik");
+
+        JButton btnExport = createStyledButton("Export", new Color(23, 162, 184));
+        btnExport.addActionListener(e -> {
+            String[] options = {"PDF", "Excel", "Batal"};
+            int choice = UIHelper.showOptions(this, "Pilih format export:", "Export Data Mekanik", options);
+            if (choice == 0) ExportUtils.exportTableToPDF(styledTable.getTable(), "Data_Mekanik");
+            else if (choice == 1) ExportUtils.exportTableToExcel(styledTable.getTable(), "Data_Mekanik");
+        });
+        buttonPanel.add(btnExport);
+        add(buttonPanel, BorderLayout.SOUTH);
+    }
+
+    private void showFormDialog(Object[] existingData) {
+        String dlgTitle = existingData == null ? "Tambah Mekanik Baru" : "Edit Data Mekanik";
+        String dlgSub = "Lengkapi informasi mekanik bengkel";
+        JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), dlgTitle, true);
+        dialog.setLayout(new BorderLayout());
+
+        dialog.add(UIHelper.createDialogHeader(dlgTitle, dlgSub), BorderLayout.NORTH);
+
+        JPanel form = new JPanel(new GridBagLayout());
+        form.setBorder(new EmptyBorder(20, 24, 10, 24));
+        form.setBackground(Color.WHITE);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(6, 6, 6, 6);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.anchor = GridBagConstraints.WEST;
+
+        JTextField txtNama = new JTextField(25);
+        JTextField txtTelepon = new JTextField(25);
+        JTextField txtSpesialis = new JTextField(25);
+
+        addFormField(form, gbc, 0, "Nama:", txtNama);
+        addFormField(form, gbc, 1, "Telepon:", txtTelepon);
+        addFormField(form, gbc, 2, "Spesialis:", txtSpesialis);
+
+        if (existingData != null) {
+            txtNama.setText(str(existingData[1]));
+            txtTelepon.setText(str(existingData[2]));
+            txtSpesialis.setText(str(existingData[3]));
+        }
+
+        dialog.add(form, BorderLayout.CENTER);
+
+        JPanel btnPanel = UIHelper.createDialogButtonPanel();
+
+        JButton btnCancel = createStyledButton("Batal", new Color(108, 117, 125));
+        btnCancel.addActionListener(e -> dialog.dispose());
+        btnPanel.add(btnCancel);
+
+        JButton btnSave = createStyledButton("Simpan", new Color(40, 167, 69));
+        btnSave.addActionListener(e -> {
+            try {
+                Mekanik m = new Mekanik();
+                if (existingData != null) m.setMekanikId((int) existingData[0]);
+                m.setNama(txtNama.getText());
+                m.setTelepon(txtTelepon.getText());
+                m.setSpesialis(txtSpesialis.getText());
+                if (m.getMekanikId() == 0) mekanikDAO.insert(m);
+                else mekanikDAO.update(m);
+                dialog.dispose();
+                loadData();
+            } catch (Exception ex) {
+                UIHelper.error(dialog, "Error: " + ex.getMessage());
             }
         });
-        buttonPanel.add(btnPrint);
+        btnPanel.add(btnSave);
+        dialog.add(btnPanel, BorderLayout.SOUTH);
 
-        add(buttonPanel, java.awt.BorderLayout.SOUTH);
-    }// </editor-fold>//GEN-END:initComponents
+        dialog.pack();
+        dialog.setMinimumSize(new Dimension(420, 260));
+        dialog.setLocationRelativeTo(this);
+        dialog.setVisible(true);
+    }
 
-    private void btnBaruActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBaruActionPerformed
-        clearForm();
-    }//GEN-LAST:event_btnBaruActionPerformed
-
-    private void btnSimpanActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSimpanActionPerformed
-        saveMekanik();
-    }//GEN-LAST:event_btnSimpanActionPerformed
-
-    private void btnHapusActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnHapusActionPerformed
-        deleteMekanik();
-    }//GEN-LAST:event_btnHapusActionPerformed
+    private void deleteData() {
+        Object[] row = styledTable.getSelectedRowData();
+        if (row == null) { UIHelper.warn(this, "Pilih data yang akan dihapus."); return; }
+        if (UIHelper.confirm(this, "Hapus mekanik \"" + row[1] + "\"?", "Konfirmasi Hapus")) {
+            try {
+                mekanikDAO.delete((int) row[0]);
+                loadData();
+            } catch (SQLException ex) {
+                UIHelper.error(this, "Error: " + ex.getMessage());
+            }
+        }
+    }
 
     private void loadData() {
         try {
             List<Mekanik> list = mekanikDAO.findAll();
-            DefaultTableModel model = new DefaultTableModel(
-                    new Object[]{"ID", "Nama", "Telepon", "Spesialis"}, 0);
+            List<Object[]> data = new ArrayList<>();
             for (Mekanik m : list) {
-                model.addRow(new Object[]{m.getMekanikId(), m.getNama(), m.getTelepon(), m.getSpesialis()});
+                data.add(new Object[]{m.getMekanikId(), m.getNama(), m.getTelepon(), m.getSpesialis()});
             }
-            table.setModel(model);
-            table.setRowSorter(new javax.swing.table.TableRowSorter<>(model));
+            styledTable.setData(new String[]{"ID", "Nama", "Telepon", "Spesialis"}, data);
         } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this, "Error load data: " + ex.getMessage());
+            UIHelper.error(this, "Error load data: " + ex.getMessage());
         }
     }
 
-    private void clearForm() {
-        txtId.setText("");
-        txtNama.setText("");
-        txtTelepon.setText("");
-        txtSpesialis.setText("");
-        table.clearSelection();
-        txtNama.requestFocusInWindow();
+    private JButton createStyledButton(String text, Color bg) {
+        return UIHelper.createStyledButton(text, bg);
     }
 
-    private void saveMekanik() {
-        try {
-            Mekanik m = new Mekanik();
-            if (!txtId.getText().isEmpty()) {
-                m.setMekanikId(Integer.parseInt(txtId.getText()));
-            }
-            m.setNama(txtNama.getText());
-            m.setTelepon(txtTelepon.getText());
-            m.setSpesialis(txtSpesialis.getText());
-
-            if (m.getMekanikId() == 0) {
-                mekanikDAO.insert(m);
-            } else {
-                mekanikDAO.update(m);
-            }
-            loadData();
-            clearForm();
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Error simpan: " + ex.getMessage());
-        }
+    private void addFormField(JPanel form, GridBagConstraints gbc, int row, String label, JComponent field) {
+        gbc.gridx = 0; gbc.gridy = row; gbc.weightx = 0;
+        JLabel lbl = new JLabel(label);
+        lbl.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        form.add(lbl, gbc);
+        gbc.gridx = 1; gbc.weightx = 1.0;
+        field.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        form.add(field, gbc);
     }
 
-    private void deleteMekanik() {
-        if (txtId.getText().isEmpty()) return;
-        int confirm = JOptionPane.showConfirmDialog(this, "Hapus mekanik ini?",
-                "Konfirmasi", JOptionPane.YES_NO_OPTION);
-        if (confirm == JOptionPane.YES_OPTION) {
-            try {
-                mekanikDAO.delete(Integer.parseInt(txtId.getText()));
-                loadData();
-                clearForm();
-            } catch (SQLException ex) {
-                JOptionPane.showMessageDialog(this, "Error hapus: " + ex.getMessage());
-            }
-        }
-    }
-
-    private void isiFormDariTabel() {
-        int row = table.getSelectedRow();
-        if (row >= 0) {
-            txtId.setText(table.getValueAt(row, 0).toString());
-            txtNama.setText(table.getValueAt(row, 1).toString());
-            txtTelepon.setText(table.getValueAt(row, 2).toString());
-            txtSpesialis.setText(table.getValueAt(row, 3).toString());
-        }
-    }
-
-    // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton btnBaru;
-    private javax.swing.JButton btnHapus;
-    private javax.swing.JButton btnSimpan;
-    private javax.swing.JPanel buttonPanel;
-    private javax.swing.JPanel filterPanel;
-    private javax.swing.JPanel formPanel;
-    private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JLabel lblCari;
-    private javax.swing.JLabel lblId;
-    private javax.swing.JLabel lblNama;
-    private javax.swing.JLabel lblSpesialis;
-    private javax.swing.JLabel lblTelepon;
-    private javax.swing.JTable table;
-    private javax.swing.JPanel topPanel;
-    private javax.swing.JTextField txtId;
-    private javax.swing.JTextField txtNama;
-    private javax.swing.JTextField txtSearch;
-    private javax.swing.JTextField txtSpesialis;
-    private javax.swing.JTextField txtTelepon;
-    // End of variables declaration//GEN-END:variables
+    private String str(Object o) { return o != null ? o.toString() : ""; }
 }

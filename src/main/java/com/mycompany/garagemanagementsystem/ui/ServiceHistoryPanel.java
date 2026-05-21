@@ -2,102 +2,85 @@ package com.mycompany.garagemanagementsystem.ui;
 
 import com.mycompany.garagemanagementsystem.dao.ServiceTransactionDAO;
 import com.mycompany.garagemanagementsystem.model.ServiceHistoryItem;
+import com.mycompany.garagemanagementsystem.util.StyledTable;
+import com.mycompany.garagemanagementsystem.util.UIHelper;
+import java.awt.*;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
-import javax.swing.JOptionPane;
-import javax.swing.table.DefaultTableModel;
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 
 public class ServiceHistoryPanel extends javax.swing.JPanel {
 
     private final ServiceTransactionDAO transDAO = new ServiceTransactionDAO();
+    private StyledTable styledTable;
+    private JTextField txtNoPolisi;
 
     public ServiceHistoryPanel() {
-        initComponents();
-        setBorder(javax.swing.BorderFactory.createEmptyBorder(8, 8, 8, 8));
-        table.setRowHeight(22);
-        table.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
+        buildUI();
     }
 
-    @SuppressWarnings("unchecked")
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
-    private void initComponents() {
+    private void buildUI() {
+        setLayout(new BorderLayout(0, 6));
+        setBorder(new EmptyBorder(12, 12, 12, 12));
+        setBackground(new Color(243, 245, 249));
 
-        searchPanel = new javax.swing.JPanel();
-        lblNoPolisi = new javax.swing.JLabel();
-        txtNoPolisi = new javax.swing.JTextField();
-        btnCari = new javax.swing.JButton();
-        lblSpacer = new javax.swing.JLabel();
-        jScrollPane1 = new javax.swing.JScrollPane();
-        table = new javax.swing.JTable();
+        // ===== TOP =====
+        JPanel topPanel = new JPanel(new BorderLayout(0, 6));
+        topPanel.setOpaque(false);
 
-        setLayout(new java.awt.BorderLayout());
+        topPanel.add(UIHelper.createPageHeader("Riwayat Servis Kendaraan",
+                "Cari dan lihat riwayat servis kendaraan berdasarkan nomor polisi"), BorderLayout.NORTH);
 
-        searchPanel.setLayout(new java.awt.GridLayout(1, 4, 10, 10));
+        JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 6));
+        searchPanel.setBackground(Color.WHITE);
+        searchPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(220, 225, 235)),
+                new EmptyBorder(6, 12, 6, 12)));
 
-        lblNoPolisi.setText(" Pencarian berdasarkan No Polisi:");
-        lblNoPolisi.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
-        searchPanel.add(lblNoPolisi);
-
-        txtNoPolisi.setColumns(15);
+        searchPanel.add(new JLabel("🔍 No Polisi:"));
+        txtNoPolisi = new JTextField(18);
+        txtNoPolisi.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        txtNoPolisi.addActionListener(e -> cariRiwayat());
         searchPanel.add(txtNoPolisi);
 
-        btnCari.setText("Cari Riwayat");
-        btnCari.addActionListener(this::btnCariActionPerformed);
+        JButton btnCari = UIHelper.createStyledButton("Cari Riwayat", new Color(59, 130, 246));
+        btnCari.addActionListener(e -> cariRiwayat());
         searchPanel.add(btnCari);
-        searchPanel.add(lblSpacer);
 
-        table.setModel(new DefaultTableModel(
-            new Object[][]{},
-            new String[]{"Tanggal", "Mekanik", "Keluhan/Pekerjaan", "Sparepart Diganti", "Total Biaya"}
-        ));
-        jScrollPane1.setViewportView(table);
+        topPanel.add(searchPanel, BorderLayout.CENTER);
+        add(topPanel, BorderLayout.NORTH);
 
-        add(searchPanel, java.awt.BorderLayout.NORTH);
-        add(jScrollPane1, java.awt.BorderLayout.CENTER);
-    }// </editor-fold>//GEN-END:initComponents
-
-    private void btnCariActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCariActionPerformed
-        cariRiwayat();
-    }//GEN-LAST:event_btnCariActionPerformed
+        // ===== CENTER =====
+        styledTable = new StyledTable();
+        add(styledTable, BorderLayout.CENTER);
+    }
 
     private void cariRiwayat() {
         String nopol = txtNoPolisi.getText().trim();
         if (nopol.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Masukkan No Polisi terlebih dahulu.");
+            UIHelper.warn(this, "Masukkan No Polisi terlebih dahulu.");
             return;
         }
 
         try {
             List<ServiceHistoryItem> history = transDAO.findHistoryByNoPolisi(nopol);
-
             if (history.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Tidak ada riwayat servis untuk No Polisi tersebut.");
-                table.setModel(new DefaultTableModel());
+                UIHelper.info(this, "Tidak ada riwayat servis untuk No Polisi tersebut.");
+                styledTable.setData(new String[]{"Tanggal", "Mekanik", "Keluhan/Pekerjaan", "Sparepart Diganti", "Total Biaya"}, new ArrayList<>());
                 return;
             }
-
-            DefaultTableModel model = new DefaultTableModel(
-                    new Object[]{"Tanggal", "Mekanik", "Keluhan/Pekerjaan", "Sparepart Diganti", "Total Biaya"}, 0);
+            List<Object[]> data = new ArrayList<>();
             for (ServiceHistoryItem item : history) {
-                model.addRow(new Object[]{
-                    item.getTanggal(), item.getMekanik(), item.getKeluhan(),
-                    item.getSpareparts(), String.format("Rp %,.0f", item.getTotalBiaya())
+                data.add(new Object[]{
+                        item.getTanggal(), item.getMekanik(), item.getKeluhan(),
+                        item.getSpareparts(), String.format("Rp %,.0f", item.getTotalBiaya())
                 });
             }
-            table.setModel(model);
-            table.getColumnModel().getColumn(3).setPreferredWidth(250);
+            styledTable.setData(new String[]{"Tanggal", "Mekanik", "Keluhan/Pekerjaan", "Sparepart Diganti", "Total Biaya"}, data);
         } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this, "Error pencarian data: " + ex.getMessage());
+            UIHelper.error(this, "Error pencarian data: " + ex.getMessage());
         }
     }
-
-    // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton btnCari;
-    private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JLabel lblNoPolisi;
-    private javax.swing.JLabel lblSpacer;
-    private javax.swing.JPanel searchPanel;
-    private javax.swing.JTable table;
-    private javax.swing.JTextField txtNoPolisi;
-    // End of variables declaration//GEN-END:variables
 }

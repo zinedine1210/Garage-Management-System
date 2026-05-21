@@ -11,6 +11,7 @@ import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
+import com.mycompany.garagemanagementsystem.util.UIHelper;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
@@ -103,7 +104,7 @@ public class SparepartChooserDialog extends JDialog {
     private void pilih() {
         int row = table.getSelectedRow();
         if (row < 0) {
-            JOptionPane.showMessageDialog(this, "Pilih sparepart dari tabel.");
+            UIHelper.warn(this, "Pilih sparepart dari tabel.");
             return;
         }
 
@@ -115,7 +116,7 @@ public class SparepartChooserDialog extends JDialog {
             qty = Integer.parseInt(txtQty.getText().trim());
             if (qty <= 0) throw new NumberFormatException();
         } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Qty harus angka positif.");
+            UIHelper.warn(this, "Qty harus angka positif.");
             return;
         }
 

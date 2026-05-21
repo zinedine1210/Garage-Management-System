@@ -2,19 +2,19 @@ package com.mycompany.garagemanagementsystem.ui;
 
 import com.mycompany.garagemanagementsystem.dao.DashboardDAO;
 import com.mycompany.garagemanagementsystem.util.ExportUtils;
+import com.mycompany.garagemanagementsystem.util.StyledTable;
+import com.mycompany.garagemanagementsystem.util.UIHelper;
 import java.awt.*;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
+import java.util.*;
 import java.util.List;
 import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableRowSorter;
+import javax.swing.border.EmptyBorder;
 
 public class LaporanPembelianPanel extends javax.swing.JPanel {
 
     private final DashboardDAO dao = new DashboardDAO();
-    private JTable table;
+    private StyledTable styledTable;
     private JLabel lblDateFrom, lblDateTo, lblSummary;
     private JTextField txtSearch;
     private Date filterDateFrom, filterDateTo;
@@ -27,13 +27,23 @@ public class LaporanPembelianPanel extends javax.swing.JPanel {
     }
 
     private void buildUI() {
-        setLayout(new BorderLayout(5, 5));
-        setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+        setLayout(new BorderLayout(0, 6));
+        setBorder(new EmptyBorder(12, 12, 12, 12));
+        setBackground(new Color(243, 245, 249));
 
-        // ===== TOP: Filter =====
-        JPanel topPanel = new JPanel(new BorderLayout(5, 5));
+        // ===== TOP =====
+        JPanel topPanel = new JPanel(new BorderLayout(0, 4));
+        topPanel.setOpaque(false);
 
-        JPanel filterPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+        topPanel.add(UIHelper.createPageHeader("Laporan Pembelian Sparepart",
+                "Rekap pembelian sparepart dari supplier berdasarkan periode tertentu"), BorderLayout.NORTH);
+
+        JPanel filterPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 6));
+        filterPanel.setBackground(Color.WHITE);
+        filterPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(220, 225, 235)),
+                new EmptyBorder(6, 12, 6, 12)));
+
         filterPanel.add(new JLabel("Dari:"));
         lblDateFrom = new JLabel("---");
         filterPanel.add(lblDateFrom);
@@ -53,62 +63,57 @@ public class LaporanPembelianPanel extends javax.swing.JPanel {
         filterPanel.add(btnReset);
 
         filterPanel.add(Box.createHorizontalStrut(10));
-        filterPanel.add(new JLabel("Cari:"));
+        filterPanel.add(new JLabel("🔍 Cari:"));
         txtSearch = new JTextField(15);
         txtSearch.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-            public void insertUpdate(javax.swing.event.DocumentEvent e) { applyFilter(); }
-            public void removeUpdate(javax.swing.event.DocumentEvent e) { applyFilter(); }
-            public void changedUpdate(javax.swing.event.DocumentEvent e) { applyFilter(); }
+            public void insertUpdate(javax.swing.event.DocumentEvent e) { styledTable.filterData(txtSearch.getText()); updateSummary(); }
+            public void removeUpdate(javax.swing.event.DocumentEvent e) { styledTable.filterData(txtSearch.getText()); updateSummary(); }
+            public void changedUpdate(javax.swing.event.DocumentEvent e) { styledTable.filterData(txtSearch.getText()); updateSummary(); }
         });
         filterPanel.add(txtSearch);
 
-        topPanel.add(filterPanel, BorderLayout.CENTER);
+        JPanel midWrap = new JPanel(new BorderLayout(0, 4));
+        midWrap.setOpaque(false);
+        midWrap.add(filterPanel, BorderLayout.CENTER);
 
         lblSummary = new JLabel(" ");
         lblSummary.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        lblSummary.setBorder(BorderFactory.createEmptyBorder(4, 10, 4, 10));
-        topPanel.add(lblSummary, BorderLayout.SOUTH);
+        lblSummary.setBorder(new EmptyBorder(4, 10, 4, 10));
+        midWrap.add(lblSummary, BorderLayout.SOUTH);
 
+        topPanel.add(midWrap, BorderLayout.CENTER);
         add(topPanel, BorderLayout.NORTH);
 
-        // ===== CENTER: Table =====
-        table = new JTable();
-        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        table.setRowHeight(22);
-        add(new JScrollPane(table), BorderLayout.CENTER);
+        // ===== CENTER =====
+        styledTable = new StyledTable();
+        add(styledTable, BorderLayout.CENTER);
 
-        // ===== BOTTOM: Buttons =====
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 8));
+        // ===== BOTTOM =====
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 8));
+        buttonPanel.setBackground(new Color(243, 245, 249));
 
-        JButton btnRefresh = new JButton("Refresh");
+        JButton btnRefresh = UIHelper.createStyledButton("Refresh", new Color(108, 117, 125));
         btnRefresh.addActionListener(e -> loadData());
         buttonPanel.add(btnRefresh);
 
-        JButton btnExport = new JButton("Export");
+        JButton btnExport = UIHelper.createStyledButton("Export", new Color(23, 162, 184));
         btnExport.addActionListener(e -> {
-            Object[] options = {"PDF", "Excel", "Batal"};
-            int choice = JOptionPane.showOptionDialog(this, "Pilih format export:", "Export Laporan",
-                    JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
-            if (choice == 0) ExportUtils.exportTableToPDF(table, "Laporan_Pembelian_Sparepart");
-            else if (choice == 1) ExportUtils.exportTableToExcel(table, "Laporan_Pembelian_Sparepart");
+            String[] options = {"PDF", "Excel", "Batal"};
+            int choice = UIHelper.showOptions(this, "Pilih format export:", "Export Laporan Pembelian", options);
+            if (choice == 0) ExportUtils.exportTableToPDF(styledTable.getTable(), "Laporan_Pembelian_Sparepart");
+            else if (choice == 1) ExportUtils.exportTableToExcel(styledTable.getTable(), "Laporan_Pembelian_Sparepart");
         });
         buttonPanel.add(btnExport);
-
         add(buttonPanel, BorderLayout.SOUTH);
     }
 
     private void setDefaultDateRange() {
         Calendar cal = Calendar.getInstance();
         cal.set(Calendar.DAY_OF_MONTH, 1);
-        cal.set(Calendar.HOUR_OF_DAY, 0);
-        cal.set(Calendar.MINUTE, 0);
-        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.HOUR_OF_DAY, 0); cal.set(Calendar.MINUTE, 0); cal.set(Calendar.SECOND, 0);
         filterDateFrom = cal.getTime();
-
-        cal.add(Calendar.MONTH, 1);
-        cal.add(Calendar.DAY_OF_MONTH, -1);
+        cal.add(Calendar.MONTH, 1); cal.add(Calendar.DAY_OF_MONTH, -1);
         filterDateTo = cal.getTime();
-
         lblDateFrom.setText(sdf.format(filterDateFrom));
         lblDateTo.setText(sdf.format(filterDateTo));
     }
@@ -118,13 +123,8 @@ public class LaporanPembelianPanel extends javax.swing.JPanel {
         JCalendarDialog dialog = new JCalendarDialog(owner, isFrom ? filterDateFrom : filterDateTo);
         dialog.setVisible(true);
         if (dialog.isConfirmed()) {
-            if (isFrom) {
-                filterDateFrom = dialog.getSelectedDate();
-                lblDateFrom.setText(sdf.format(filterDateFrom));
-            } else {
-                filterDateTo = dialog.getSelectedDate();
-                lblDateTo.setText(sdf.format(filterDateTo));
-            }
+            if (isFrom) { filterDateFrom = dialog.getSelectedDate(); lblDateFrom.setText(sdf.format(filterDateFrom)); }
+            else { filterDateTo = dialog.getSelectedDate(); lblDateTo.setText(sdf.format(filterDateTo)); }
             loadData();
         }
     }
@@ -132,44 +132,25 @@ public class LaporanPembelianPanel extends javax.swing.JPanel {
     private void loadData() {
         try {
             List<Object[]> data = dao.getLaporanPembelian(filterDateFrom, filterDateTo);
-            DefaultTableModel model = new DefaultTableModel(
-                    new Object[]{"ID", "Tanggal", "Supplier", "Kode Sparepart",
-                        "Nama Sparepart", "Qty", "Harga Beli", "Total Harga", "Keterangan"}, 0) {
-                @Override public boolean isCellEditable(int r, int c) { return false; }
-            };
-            for (Object[] row : data) {
-                model.addRow(row);
-            }
-            table.setModel(model);
-            table.setRowSorter(new TableRowSorter<>(model));
+            styledTable.setData(new String[]{"ID", "Tanggal", "Supplier", "Kode Sparepart",
+                    "Nama Sparepart", "Qty", "Harga Beli", "Total Harga", "Keterangan"}, data);
             updateSummary();
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Error load data: " + ex.getMessage());
+            UIHelper.error(this, "Error load data: " + ex.getMessage());
         }
-    }
-
-    private void applyFilter() {
-        if (table.getRowSorter() == null) return;
-        TableRowSorter<DefaultTableModel> sorter =
-                (TableRowSorter<DefaultTableModel>) table.getRowSorter();
-        String text = txtSearch.getText().trim();
-        if (text.isEmpty()) sorter.setRowFilter(null);
-        else sorter.setRowFilter(RowFilter.regexFilter("(?i)" + text));
-        updateSummary();
     }
 
     private void updateSummary() {
         double sumTotal = 0;
         int sumQty = 0;
-        int count = table.getRowCount();
-        for (int i = 0; i < count; i++) {
+        int count = styledTable.getFilteredRowCount();
+        for (Object[] row : styledTable.getFilteredData()) {
             try {
-                sumQty += Integer.parseInt(table.getValueAt(i, 5).toString());
-                sumTotal += Double.parseDouble(table.getValueAt(i, 7).toString());
+                sumQty += Integer.parseInt(row[5].toString());
+                sumTotal += Double.parseDouble(row[7].toString());
             } catch (Exception ignored) {}
         }
-        lblSummary.setText(String.format(
-                "Total %d pembelian  |  Total Qty: %,d  |  Total Nilai: Rp %,.0f",
+        lblSummary.setText(String.format("Total %d pembelian  |  Total Qty: %,d  |  Total Nilai: Rp %,.0f",
                 count, sumQty, sumTotal));
     }
 }
