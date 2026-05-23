@@ -5,7 +5,6 @@ import com.mycompany.garagemanagementsystem.util.ExportUtils;
 import com.mycompany.garagemanagementsystem.util.StyledTable;
 import com.mycompany.garagemanagementsystem.util.UIHelper;
 import java.awt.*;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
 import javax.swing.*;
@@ -18,14 +17,15 @@ public class LaporanKinerjaMekanikPanel extends javax.swing.JPanel {
 
     private final DashboardDAO dao = new DashboardDAO();
     private StyledTable styledTable;
-    private JLabel lblDateFrom, lblDateTo, lblSummary;
+    private JLabel lblSummary;
     private JTextField txtSearch;
     private Date filterDateFrom, filterDateTo;
-    private final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+    private DateRangePickerPanel dateRangePicker;
 
     public LaporanKinerjaMekanikPanel() {
         buildUI();
-        setDefaultDateRange();
+        filterDateFrom = dateRangePicker.getFromDate();
+        filterDateTo = dateRangePicker.getToDate();
         loadData();
     }
 
@@ -34,67 +34,63 @@ public class LaporanKinerjaMekanikPanel extends javax.swing.JPanel {
         setBorder(new EmptyBorder(12, 12, 12, 12));
         setBackground(new Color(243, 245, 249));
 
-        // ===== TOP: Filter =====
         JPanel topPanel = new JPanel(new BorderLayout(0, 4));
         topPanel.setOpaque(false);
 
         topPanel.add(UIHelper.createPageHeader("Laporan Kinerja Mekanik",
                 "Evaluasi performa setiap mekanik berdasarkan jumlah servis dan pendapatan"), BorderLayout.NORTH);
 
-        JPanel filterPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 6));
-        filterPanel.setBackground(Color.WHITE);
-        filterPanel.setBorder(BorderFactory.createCompoundBorder(
+        dateRangePicker = new DateRangePickerPanel((from, to) -> {
+            filterDateFrom = from;
+            filterDateTo = to;
+            loadData();
+        });
+
+        JPanel filterRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 6));
+        filterRow.setBackground(Color.WHITE);
+        filterRow.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(new Color(220, 225, 235)),
                 new EmptyBorder(6, 12, 6, 12)));
 
-        filterPanel.add(new JLabel("Dari:"));
-        lblDateFrom = new JLabel("---");
-        filterPanel.add(lblDateFrom);
-        JButton btnPickFrom = new JButton("Pilih");
-        btnPickFrom.addActionListener(e -> pickDate(true));
-        filterPanel.add(btnPickFrom);
-
-        filterPanel.add(new JLabel("Sampai:"));
-        lblDateTo = new JLabel("---");
-        filterPanel.add(lblDateTo);
-        JButton btnPickTo = new JButton("Pilih");
-        btnPickTo.addActionListener(e -> pickDate(false));
-        filterPanel.add(btnPickTo);
-
-        JButton btnReset = new JButton("Reset");
-        btnReset.addActionListener(e -> { setDefaultDateRange(); loadData(); });
-        filterPanel.add(btnReset);
-
-        filterPanel.add(Box.createHorizontalStrut(10));
-        filterPanel.add(new JLabel("\uD83D\uDD0D Cari:"));
+        filterRow.add(new JLabel("\uD83D\uDD0D Cari:"));
         txtSearch = new JTextField(12);
         txtSearch.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
             public void insertUpdate(javax.swing.event.DocumentEvent e) { styledTable.filterData(txtSearch.getText()); updateSummary(); }
             public void removeUpdate(javax.swing.event.DocumentEvent e) { styledTable.filterData(txtSearch.getText()); updateSummary(); }
             public void changedUpdate(javax.swing.event.DocumentEvent e) { styledTable.filterData(txtSearch.getText()); updateSummary(); }
         });
-        filterPanel.add(txtSearch);
+        filterRow.add(txtSearch);
 
-        topPanel.add(filterPanel, BorderLayout.CENTER);
+        JPanel filterWrap = new JPanel(new GridLayout(2, 1, 0, 4));
+        filterWrap.setOpaque(false);
+        filterWrap.add(dateRangePicker);
+        filterWrap.add(filterRow);
+
+        JPanel midWrap = new JPanel(new BorderLayout(0, 4));
+        midWrap.setOpaque(false);
+        midWrap.add(filterWrap, BorderLayout.CENTER);
 
         lblSummary = new JLabel(" ");
         lblSummary.setFont(new Font("Segoe UI", Font.BOLD, 12));
         lblSummary.setBorder(new EmptyBorder(4, 10, 4, 10));
-        topPanel.add(lblSummary, BorderLayout.SOUTH);
+        midWrap.add(lblSummary, BorderLayout.SOUTH);
 
+        topPanel.add(midWrap, BorderLayout.CENTER);
         add(topPanel, BorderLayout.NORTH);
 
-        // ===== CENTER =====
         styledTable = new StyledTable();
         add(styledTable, BorderLayout.CENTER);
 
-        // ===== BOTTOM =====
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 8));
+        JPanel buttonPanel = new JPanel(new BorderLayout());
         buttonPanel.setBackground(new Color(243, 245, 249));
+        buttonPanel.setBorder(new EmptyBorder(6, 0, 6, 0));
+
+        JPanel rightButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        rightButtons.setOpaque(false);
 
         JButton btnRefresh = createStyledButton("Refresh", new Color(108, 117, 125));
         btnRefresh.addActionListener(e -> loadData());
-        buttonPanel.add(btnRefresh);
+        rightButtons.add(btnRefresh);
 
         JButton btnExport = createStyledButton("Export", new Color(23, 162, 184));
         btnExport.addActionListener(e -> {
@@ -104,30 +100,10 @@ public class LaporanKinerjaMekanikPanel extends javax.swing.JPanel {
             if (choice == 0) ExportUtils.exportTableToPDFWithTotals(styledTable.getTable(), "Laporan_Kinerja_Mekanik", totCols);
             else if (choice == 1) ExportUtils.exportTableToExcelWithTotals(styledTable.getTable(), "Laporan_Kinerja_Mekanik", totCols);
         });
-        buttonPanel.add(btnExport);
+        rightButtons.add(btnExport);
+
+        buttonPanel.add(rightButtons, BorderLayout.EAST);
         add(buttonPanel, BorderLayout.SOUTH);
-    }
-
-    private void setDefaultDateRange() {
-        Calendar cal = Calendar.getInstance();
-        cal.set(Calendar.DAY_OF_MONTH, 1);
-        cal.set(Calendar.HOUR_OF_DAY, 0); cal.set(Calendar.MINUTE, 0); cal.set(Calendar.SECOND, 0);
-        filterDateFrom = cal.getTime();
-        cal.add(Calendar.MONTH, 1); cal.add(Calendar.DAY_OF_MONTH, -1);
-        filterDateTo = cal.getTime();
-        lblDateFrom.setText(sdf.format(filterDateFrom));
-        lblDateTo.setText(sdf.format(filterDateTo));
-    }
-
-    private void pickDate(boolean isFrom) {
-        Frame owner = (Frame) SwingUtilities.getWindowAncestor(this);
-        JCalendarDialog dialog = new JCalendarDialog(owner, isFrom ? filterDateFrom : filterDateTo);
-        dialog.setVisible(true);
-        if (dialog.isConfirmed()) {
-            if (isFrom) { filterDateFrom = dialog.getSelectedDate(); lblDateFrom.setText(sdf.format(filterDateFrom)); }
-            else { filterDateTo = dialog.getSelectedDate(); lblDateTo.setText(sdf.format(filterDateTo)); }
-            loadData();
-        }
     }
 
     private void loadData() {

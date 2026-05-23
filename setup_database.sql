@@ -81,7 +81,7 @@ CREATE TABLE IF NOT EXISTS transaksi_pendaftaran (
     vehicle_id INT NOT NULL,
     client_id INT NOT NULL,
     keluhan TEXT,
-    mekanik_id INT NOT NULL,
+    mekanik_id INT NULL,
     status VARCHAR(50) DEFAULT 'Registered',
     tanggal_daftar DATETIME NOT NULL,
     tanggal_mulai DATETIME,
@@ -114,7 +114,7 @@ CREATE TABLE IF NOT EXISTS transaksi_servis (
     FOREIGN KEY (registration_id) REFERENCES transaksi_pendaftaran(registration_id) ON DELETE SET NULL
 );
 
--- Tabel Transaksi Servis Detail
+-- Tabel Transaksi Servis Detail (sparepart)
 CREATE TABLE IF NOT EXISTS transaksi_servis_detail (
     detail_id INT AUTO_INCREMENT PRIMARY KEY,
     trans_id INT NOT NULL,
@@ -124,6 +124,17 @@ CREATE TABLE IF NOT EXISTS transaksi_servis_detail (
     subtotal DOUBLE DEFAULT 0,
     FOREIGN KEY (trans_id) REFERENCES transaksi_servis(trans_id) ON DELETE CASCADE,
     FOREIGN KEY (sparepart_id) REFERENCES sparepart(sparepart_id) ON DELETE SET NULL
+);
+
+-- Tabel Transaksi Servis Jasa (layanan/jasa per transaksi)
+CREATE TABLE IF NOT EXISTS transaksi_servis_jasa (
+    detail_id INT AUTO_INCREMENT PRIMARY KEY,
+    trans_id INT NOT NULL,
+    nama_jasa VARCHAR(100),
+    harga DOUBLE NOT NULL DEFAULT 0,
+    qty INT NOT NULL DEFAULT 1,
+    subtotal DOUBLE NOT NULL DEFAULT 0,
+    FOREIGN KEY (trans_id) REFERENCES transaksi_servis(trans_id) ON DELETE CASCADE
 );
 
 -- Tabel Transaksi Pembelian Sparepart
@@ -138,32 +149,6 @@ CREATE TABLE IF NOT EXISTS transaksi_pembelian (
     keterangan TEXT,
     FOREIGN KEY (supplier_id) REFERENCES supplier(supplier_id),
     FOREIGN KEY (sparepart_id) REFERENCES sparepart(sparepart_id)
-);
-
--- Tabel Penjualan Langsung (header) - penjualan sparepart tanpa servis
-CREATE TABLE IF NOT EXISTS penjualan_langsung (
-    penjualan_id INT AUTO_INCREMENT PRIMARY KEY,
-    tanggal DATETIME,
-    nama_pembeli VARCHAR(100) DEFAULT 'Umum',
-    telepon_pembeli VARCHAR(20),
-    grand_total DOUBLE DEFAULT 0,
-    bayar DOUBLE DEFAULT 0,
-    kembali DOUBLE DEFAULT 0,
-    metode_bayar VARCHAR(50) DEFAULT 'Cash',
-    user_kasir VARCHAR(50),
-    catatan TEXT
-);
-
--- Tabel Penjualan Langsung Detail
-CREATE TABLE IF NOT EXISTS penjualan_langsung_detail (
-    detail_id INT AUTO_INCREMENT PRIMARY KEY,
-    penjualan_id INT NOT NULL,
-    sparepart_id INT,
-    qty INT DEFAULT 1,
-    harga DOUBLE DEFAULT 0,
-    subtotal DOUBLE DEFAULT 0,
-    FOREIGN KEY (penjualan_id) REFERENCES penjualan_langsung(penjualan_id) ON DELETE CASCADE,
-    FOREIGN KEY (sparepart_id) REFERENCES sparepart(sparepart_id) ON DELETE SET NULL
 );
 
 -- ==========================================
@@ -383,29 +368,3 @@ INSERT INTO transaksi_pembelian (tanggal, supplier_id, sparepart_id, qty, harga_
 (NOW() - INTERVAL 1 DAY, 3, 22, 10, 85000, 850000, 'Restock roller Dr. Pulley'),
 (NOW(), 7, 24, 30, 45000, 1350000, 'Restock bohlam LED motor'),
 (NOW() - INTERVAL 12 DAY, 3, 25, 8, 75000, 600000, 'Restock gasket set Beat');
-
--- Dummy Penjualan Langsung (8)
-INSERT INTO penjualan_langsung (tanggal, nama_pembeli, telepon_pembeli, grand_total, bayar, kembali, metode_bayar, user_kasir, catatan) VALUES
-(NOW(), 'Pak Joko', '081234001122', 52000, 60000, 8000, 'Cash', 'kasir1', 'Beli oli mesin'),
-(NOW() - INTERVAL 1 DAY, 'Umum', NULL, 50000, 50000, 0, 'Cash', 'kasir2', 'Beli busi 2 pcs'),
-(NOW() - INTERVAL 2 DAY, 'Bu Sari', '081299887766', 210000, 250000, 40000, 'Cash', 'kasir1', 'Beli ban IRC tubeless'),
-(NOW() - INTERVAL 3 DAY, 'Mas Doni', '082311223344', 130000, 150000, 20000, 'Transfer', 'kasir3', 'Beli oli + busi'),
-(NOW() - INTERVAL 4 DAY, 'Umum', NULL, 65000, 70000, 5000, 'Cash', 'kasir2', 'Beli bohlam LED'),
-(NOW() - INTERVAL 5 DAY, 'Pak Hendra', '081400112233', 155000, 200000, 45000, 'Cash', 'kasir1', 'Beli oli Castrol + busi Iridium'),
-(NOW() - INTERVAL 7 DAY, 'Umum', NULL, 240000, 250000, 10000, 'QRIS', 'kasir3', 'Beli ban Dunlop'),
-(NOW() - INTERVAL 10 DAY, 'Mbak Rina', '081302223344', 100000, 100000, 0, 'Transfer', 'kasir2', 'Beli gasket set');
-
--- Dummy Penjualan Langsung Detail
-INSERT INTO penjualan_langsung_detail (penjualan_id, sparepart_id, qty, harga, subtotal) VALUES
-(1, 1, 1, 52000, 52000),
-(2, 3, 2, 25000, 50000),
-(3, 6, 1, 210000, 210000),
-(4, 1, 1, 52000, 52000),
-(4, 3, 1, 25000, 25000),
-(4, 14, 1, 50000, 50000),
-(4, 3, 1, 3000, 3000),
-(5, 24, 1, 65000, 65000),
-(6, 11, 1, 85000, 85000),
-(6, 12, 1, 70000, 70000),
-(7, 17, 1, 240000, 240000),
-(8, 25, 1, 100000, 100000);

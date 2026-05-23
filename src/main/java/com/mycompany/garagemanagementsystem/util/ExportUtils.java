@@ -18,6 +18,7 @@ import java.util.Date;
 
 import com.mycompany.garagemanagementsystem.model.ServiceTransaction;
 import com.mycompany.garagemanagementsystem.model.TransactionDetail;
+import com.mycompany.garagemanagementsystem.model.TransactionJasaDetail;
 import com.mycompany.garagemanagementsystem.util.AppConfig;
 
 public class ExportUtils {
@@ -477,6 +478,43 @@ public class ExportUtils {
             Paragraph dash3 = new Paragraph("================================", f6);
             dash3.setAlignment(Element.ALIGN_CENTER);
             doc.add(dash3);
+
+            // ===== JASA TABLE =====
+            java.util.List<TransactionJasaDetail> jasaDetails = t.getJasaDetails();
+            if (jasaDetails != null && !jasaDetails.isEmpty()) {
+                Paragraph jTitle = new Paragraph("JASA / LAYANAN", f6b);
+                doc.add(jTitle);
+
+                PdfPTable jTable = new PdfPTable(4);
+                jTable.setWidthPercentage(100);
+                jTable.setWidths(new float[]{6, 44, 20, 30});
+
+                String[] jHeaders = {"#", "Nama Jasa", "Qty", "Subtotal"};
+                for (String h : jHeaders) {
+                    PdfPCell hc = new PdfPCell(new Phrase(h, f6w));
+                    hc.setBackgroundColor(HEADER_BG);
+                    hc.setPadding(2);
+                    hc.setHorizontalAlignment(Element.ALIGN_CENTER);
+                    jTable.addCell(hc);
+                }
+
+                int jNo = 1;
+                for (TransactionJasaDetail jd : jasaDetails) {
+                    PdfPCell cNo = new PdfPCell(new Phrase(String.valueOf(jNo++), f6));
+                    cNo.setPadding(1); cNo.setHorizontalAlignment(Element.ALIGN_CENTER);
+                    cNo.setBorderWidth(0.5f);
+                    PdfPCell cNama = new PdfPCell(new Phrase(jd.getNamaJasa() != null ? jd.getNamaJasa() : "-", f6));
+                    cNama.setPadding(1); cNama.setBorderWidth(0.5f);
+                    PdfPCell cQty = new PdfPCell(new Phrase(String.valueOf(jd.getQty()), f6));
+                    cQty.setPadding(1); cQty.setHorizontalAlignment(Element.ALIGN_CENTER);
+                    cQty.setBorderWidth(0.5f);
+                    PdfPCell cSub = new PdfPCell(new Phrase(String.format("Rp %,.0f", jd.getSubtotal()), f6));
+                    cSub.setPadding(1); cSub.setHorizontalAlignment(Element.ALIGN_RIGHT);
+                    cSub.setBorderWidth(0.5f);
+                    jTable.addCell(cNo); jTable.addCell(cNama); jTable.addCell(cQty); jTable.addCell(cSub);
+                }
+                doc.add(jTable);
+            }
 
             // ===== SPAREPART TABLE =====
             java.util.List<TransactionDetail> details = t.getDetails();

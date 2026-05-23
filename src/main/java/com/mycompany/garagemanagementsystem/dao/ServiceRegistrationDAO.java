@@ -19,7 +19,7 @@ public class ServiceRegistrationDAO {
             ps.setInt(1, sr.getVehicleId());
             ps.setInt(2, sr.getClientId());
             ps.setString(3, sr.getKeluhan());
-            ps.setInt(4, sr.getMekanikId());
+            if (sr.getMekanikId() > 0) { ps.setInt(4, sr.getMekanikId()); } else { ps.setNull(4, java.sql.Types.INTEGER); }
             ps.setString(5, sr.getStatus());
             ps.setTimestamp(6, new java.sql.Timestamp(sr.getTanggalDaftar().getTime()));
             ps.setTimestamp(7, sr.getTanggalMulai() != null ? new java.sql.Timestamp(sr.getTanggalMulai().getTime()) : null);
@@ -34,7 +34,7 @@ public class ServiceRegistrationDAO {
             ps.setInt(1, sr.getVehicleId());
             ps.setInt(2, sr.getClientId());
             ps.setString(3, sr.getKeluhan());
-            ps.setInt(4, sr.getMekanikId());
+            if (sr.getMekanikId() > 0) { ps.setInt(4, sr.getMekanikId()); } else { ps.setNull(4, java.sql.Types.INTEGER); }
             ps.setString(5, sr.getStatus());
             ps.setTimestamp(6, sr.getTanggalMulai() != null ? new java.sql.Timestamp(sr.getTanggalMulai().getTime()) : null);
             ps.setString(7, sr.getCatatan());
@@ -131,7 +131,7 @@ public class ServiceRegistrationDAO {
                    + "v.no_polisi, m.nama AS mekanik_nama "
                    + "FROM transaksi_pendaftaran r "
                    + "JOIN vehicle v ON r.vehicle_id = v.vehicle_id "
-                   + "JOIN mekanik m ON r.mekanik_id = m.mekanik_id "
+                   + "LEFT JOIN mekanik m ON r.mekanik_id = m.mekanik_id "
                    + "WHERE r.status = 'Registered' "
                    + "ORDER BY r.tanggal_daftar ASC";
         try (Connection conn = DBConnection.getConnection();

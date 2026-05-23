@@ -354,6 +354,14 @@ public class DashboardDAO {
      * groupBy: "DAY", "WEEK", "MONTH"
      */
     public java.util.List<Object[]> getLaporanOmzet(java.util.Date dateFrom, java.util.Date dateTo, String groupBy) throws SQLException {
+        return getLaporanOmzet(dateFrom, dateTo, groupBy, null, null);
+    }
+
+    /**
+     * Laporan Omzet with optional status and metode bayar filter.
+     */
+    public java.util.List<Object[]> getLaporanOmzet(java.util.Date dateFrom, java.util.Date dateTo, String groupBy,
+                                                     String statusFilter, String metodeBayarFilter) throws SQLException {
         java.util.List<Object[]> list = new java.util.ArrayList<>();
         String groupExpr;
         String labelExpr;
@@ -371,15 +379,33 @@ public class DashboardDAO {
                 labelExpr = groupExpr;
                 break;
         }
+        StringBuilder where = new StringBuilder("DATE(t.tanggal) BETWEEN ? AND ?");
+        java.util.List<Object> params = new java.util.ArrayList<>();
+        params.add(new java.sql.Date(dateFrom.getTime()));
+        params.add(new java.sql.Date(dateTo.getTime()));
+
+        if (statusFilter != null && !statusFilter.isEmpty()) {
+            where.append(" AND t.status_servis = ?");
+            params.add(statusFilter);
+        }
+        if (metodeBayarFilter != null && !metodeBayarFilter.isEmpty()) {
+            where.append(" AND t.metode_bayar = ?");
+            params.add(metodeBayarFilter);
+        }
+
         String sql = "SELECT " + labelExpr + " as periode, COUNT(t.trans_id) as jml, "
                    + "SUM(t.total_jasa) as sum_jasa, SUM(t.total_sparepart) as sum_sp, "
-                   + "SUM(t.grand_total) as sum_total "
+                   + "SUM(t.grand_total) as sum_total, "
+                   + "SUM(t.bayar) as sum_bayar "
                    + "FROM transaksi_servis t "
-                   + "WHERE DATE(t.tanggal) BETWEEN ? AND ? "
-                   + "GROUP BY " + groupExpr + " ORDER BY MIN(t.tanggal) ASC";
+                   + "WHERE " + where
+                   + " GROUP BY " + groupExpr + " ORDER BY MIN(t.tanggal) ASC";
         try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setDate(1, new java.sql.Date(dateFrom.getTime()));
-            ps.setDate(2, new java.sql.Date(dateTo.getTime()));
+            for (int i = 0; i < params.size(); i++) {
+                Object p = params.get(i);
+                if (p instanceof java.sql.Date) ps.setDate(i + 1, (java.sql.Date) p);
+                else ps.setString(i + 1, (String) p);
+            }
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     list.add(new Object[]{
@@ -387,7 +413,8 @@ public class DashboardDAO {
                         rs.getInt("jml"),
                         rs.getDouble("sum_jasa"),
                         rs.getDouble("sum_sp"),
-                        rs.getDouble("sum_total")
+                        rs.getDouble("sum_total"),
+                        rs.getDouble("sum_bayar")
                     });
                 }
             }

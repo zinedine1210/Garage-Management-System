@@ -12,7 +12,9 @@ import com.mycompany.garagemanagementsystem.model.ServiceRegistration;
 import com.mycompany.garagemanagementsystem.model.ServiceTransaction;
 import com.mycompany.garagemanagementsystem.model.Sparepart;
 import com.mycompany.garagemanagementsystem.model.TransactionDetail;
+import com.mycompany.garagemanagementsystem.model.TransactionJasaDetail;
 import com.mycompany.garagemanagementsystem.model.Vehicle;
+import java.awt.Color;
 import java.awt.Frame;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -32,6 +34,10 @@ public class ServiceTransactionFrame extends javax.swing.JDialog {
     private final ServiceRegistrationDAO regDAO = new ServiceRegistrationDAO();
 
     private DefaultTableModel detailModel;
+    private DefaultTableModel jasaDetailModel;
+    private javax.swing.JTable tblJasaDetail;
+
+    private boolean viewOnly = false;
 
     private int editTransId = -1;
     private Integer sourceRegistrationId = null;
@@ -65,9 +71,61 @@ public class ServiceTransactionFrame extends javax.swing.JDialog {
     }
 
     private void myInit() {
+        // Hide legacy button
+        btnAddClient.setVisible(false);
+        lblSpacer1.setVisible(false);
+        lblSpacer2.setVisible(false);
+        lblSpacer3.setVisible(false);
+
+        // Rebuild header to cleaner 4-row x 2-col layout
+        headerPanel.removeAll();
+        headerPanel.setLayout(new java.awt.GridBagLayout());
+        headerPanel.setBorder(javax.swing.BorderFactory.createCompoundBorder(
+            javax.swing.BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(220, 225, 235)),
+            new javax.swing.border.EmptyBorder(10, 15, 10, 15)));
+        headerPanel.setBackground(Color.WHITE);
+        java.awt.GridBagConstraints hg = new java.awt.GridBagConstraints();
+        hg.insets = new java.awt.Insets(4, 6, 4, 6);
+        hg.anchor = java.awt.GridBagConstraints.WEST;
+        hg.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        hg.gridx = 0; hg.gridy = 0; headerPanel.add(lblClient, hg);
+        hg.gridx = 1; hg.weightx = 1; headerPanel.add(cbClient, hg); hg.weightx = 0;
+        hg.gridx = 0; hg.gridy = 1; headerPanel.add(lblVehicle, hg);
+        hg.gridx = 1; hg.weightx = 1; headerPanel.add(cbVehicle, hg); hg.weightx = 0;
+        hg.gridx = 0; hg.gridy = 2; headerPanel.add(lblMekanik, hg);
+        hg.gridx = 1; hg.weightx = 1; headerPanel.add(cbMekanik, hg); hg.weightx = 0;
+        hg.gridx = 0; hg.gridy = 3; headerPanel.add(lblKeluhan, hg);
+        hg.gridx = 1; hg.weightx = 1; hg.fill = java.awt.GridBagConstraints.BOTH; hg.weighty = 1;
+        headerPanel.add(jScrollPane2, hg);
+        headerPanel.revalidate();
+
         detailModel = new DefaultTableModel(
                 new Object[]{"Sparepart ID", "Nama Sparepart", "Qty", "Harga", "Subtotal"}, 0);
         tblDetail.setModel(detailModel);
+
+        // Jasa detail table
+        jasaDetailModel = new DefaultTableModel(
+                new Object[]{"Nama Jasa", "Harga", "Qty", "Subtotal"}, 0) {
+            @Override
+            public boolean isCellEditable(int r, int c) { return false; }
+        };
+        tblJasaDetail = new javax.swing.JTable(jasaDetailModel);
+
+        // Restructure center: split pane with jasa table (top) + sparepart table (bottom)
+        getContentPane().remove(jScrollPane1);
+        javax.swing.JPanel jasaPanel = new javax.swing.JPanel(new java.awt.BorderLayout());
+        jasaPanel.add(new javax.swing.JLabel("  Jasa / Layanan:"), java.awt.BorderLayout.NORTH);
+        jasaPanel.add(new javax.swing.JScrollPane(tblJasaDetail), java.awt.BorderLayout.CENTER);
+        javax.swing.JPanel spPanel = new javax.swing.JPanel(new java.awt.BorderLayout());
+        spPanel.add(new javax.swing.JLabel("  Sparepart:"), java.awt.BorderLayout.NORTH);
+        spPanel.add(jScrollPane1, java.awt.BorderLayout.CENTER);
+        javax.swing.JSplitPane splitPane = new javax.swing.JSplitPane(javax.swing.JSplitPane.VERTICAL_SPLIT, jasaPanel, spPanel);
+        splitPane.setDividerLocation(180);
+        splitPane.setResizeWeight(0.4);
+        getContentPane().add(splitPane, java.awt.BorderLayout.CENTER);
+
+        // Make txtTotalJasa read-only (calculated from jasa table)
+        txtTotalJasa.setEditable(false);
 
         loadComboBoxData();
 
@@ -78,16 +136,39 @@ public class ServiceTransactionFrame extends javax.swing.JDialog {
             if (!isFiltering) autofillClientByVehicle();
         });
 
-        txtTotalJasa.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-            public void insertUpdate(javax.swing.event.DocumentEvent e) { hitungTotal(); }
-            public void removeUpdate(javax.swing.event.DocumentEvent e) { hitungTotal(); }
-            public void changedUpdate(javax.swing.event.DocumentEvent e) { hitungTotal(); }
-        });
         txtBayar.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
             public void insertUpdate(javax.swing.event.DocumentEvent e) { hitungTotal(); }
             public void removeUpdate(javax.swing.event.DocumentEvent e) { hitungTotal(); }
             public void changedUpdate(javax.swing.event.DocumentEvent e) { hitungTotal(); }
         });
+    }
+
+    private void applyViewOnly() {
+        viewOnly = true;
+        setTitle("Detail Transaksi Servis (View Only)");
+        cbClient.setEnabled(false);
+        cbVehicle.setEnabled(false);
+        cbMekanik.setEnabled(false);
+        txtKeluhan.setEditable(false);
+        txtKeluhan.setBackground(new Color(245, 245, 250));
+        txtBayar.setEditable(false);
+        if (cbMetodeBayar != null) cbMetodeBayar.setEnabled(false);
+
+        // Hide all edit buttons, keep only Print and Close
+        for (java.awt.Component c : buttonPanel.getComponents()) {
+            if (c instanceof javax.swing.JButton) {
+                javax.swing.JButton b = (javax.swing.JButton) c;
+                String txt = b.getText();
+                if (txt != null && !txt.contains("Print") && !txt.contains("Tutup")) {
+                    b.setVisible(false);
+                }
+            }
+        }
+        // Add close button if not present
+        javax.swing.JButton btnTutup = new javax.swing.JButton("Tutup");
+        btnTutup.addActionListener(ev -> dispose());
+        buttonPanel.add(btnTutup);
+        buttonPanel.revalidate();
     }
 
     private void loadComboBoxData() {
@@ -165,7 +246,7 @@ public class ServiceTransactionFrame extends javax.swing.JDialog {
 
     private void loadTransactionInfo(int transId) {
         try {
-            ServiceTransaction t = transDAO.findById(transId);
+            ServiceTransaction t = transDAO.findByIdFull(transId);
             if (t == null) return;
 
             sourceRegistrationId = t.getRegistrationId();
@@ -203,7 +284,6 @@ public class ServiceTransactionFrame extends javax.swing.JDialog {
             isFiltering = false;
 
             txtKeluhan.setText(t.getKeluhan());
-            txtTotalJasa.setText(String.valueOf(t.getTotalJasa()));
             txtBayar.setText(String.valueOf(t.getBayar()));
 
             if (t.getMetodeBayar() != null) {
@@ -215,18 +295,33 @@ public class ServiceTransactionFrame extends javax.swing.JDialog {
                 }
             }
 
+            // Load sparepart details
             detailModel.setRowCount(0);
             if (t.getDetails() != null) {
                 for (TransactionDetail d : t.getDetails()) {
-                    Sparepart sp = sparepartDAO.findById(d.getSparepartId());
-                    String nama = (sp != null) ? sp.getNamaSparepart() : "?";
+                    String nama = d.getSparepartNama() != null ? d.getSparepartNama() : "Sparepart #" + d.getSparepartId();
                     detailModel.addRow(new Object[]{
                         d.getSparepartId(), nama, d.getQty(), d.getHarga(), d.getSubtotal()
                     });
                 }
             }
 
+            // Load jasa details
+            jasaDetailModel.setRowCount(0);
+            if (t.getJasaDetails() != null) {
+                for (TransactionJasaDetail jd : t.getJasaDetails()) {
+                    jasaDetailModel.addRow(new Object[]{
+                        jd.getNamaJasa(), jd.getHarga(), jd.getQty(), jd.getSubtotal()
+                    });
+                }
+            }
+
             hitungTotal();
+
+            // If transaction is completed, set view-only mode
+            if ("Selesai Lunas".equalsIgnoreCase(t.getStatusServis())) {
+                applyViewOnly();
+            }
         } catch (SQLException ex) {
             UIHelper.error(this, "Error load transaksi: " + ex.getMessage());
         }
@@ -350,6 +445,16 @@ public class ServiceTransactionFrame extends javax.swing.JDialog {
         getContentPane().add(totalPanel, java.awt.BorderLayout.EAST);
 
         buttonPanel.setLayout(new java.awt.FlowLayout());
+        javax.swing.JButton btnTambahJasa = new javax.swing.JButton("Tambah Jasa");
+        btnTambahJasa.addActionListener(evt -> addJasaRow());
+        buttonPanel.add(btnTambahJasa);
+        javax.swing.JButton btnHapusJasa = new javax.swing.JButton("Hapus Jasa");
+        btnHapusJasa.addActionListener(evt -> {
+            int row = tblJasaDetail.getSelectedRow();
+            if (row >= 0) { jasaDetailModel.removeRow(row); hitungTotal(); }
+            else UIHelper.warn(this, "Pilih baris jasa yang akan dihapus.");
+        });
+        buttonPanel.add(btnHapusJasa);
         btnTambahDetail.setText("Tambah Sparepart");
         btnTambahDetail.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) { btnTambahDetailActionPerformed(evt); }
@@ -395,6 +500,30 @@ public class ServiceTransactionFrame extends javax.swing.JDialog {
         simpanTransaksi();
     }//GEN-LAST:event_btnSimpanTransActionPerformed
 
+    private void addJasaRow() {
+        javax.swing.JTextField fNama = new javax.swing.JTextField(15);
+        javax.swing.JTextField fHarga = new javax.swing.JTextField(10);
+        javax.swing.JTextField fQty = new javax.swing.JTextField("1", 5);
+        javax.swing.JPanel p = new javax.swing.JPanel(new java.awt.GridLayout(3, 2, 5, 5));
+        p.add(new javax.swing.JLabel("Nama Jasa:")); p.add(fNama);
+        p.add(new javax.swing.JLabel("Harga:")); p.add(fHarga);
+        p.add(new javax.swing.JLabel("Qty:")); p.add(fQty);
+        int result = javax.swing.JOptionPane.showConfirmDialog(this, p, "Tambah Jasa", javax.swing.JOptionPane.OK_CANCEL_OPTION);
+        if (result == javax.swing.JOptionPane.OK_OPTION) {
+            String nama = fNama.getText().trim();
+            if (nama.isEmpty()) { UIHelper.warn(this, "Nama jasa tidak boleh kosong."); return; }
+            try {
+                double harga = Double.parseDouble(fHarga.getText().trim());
+                int qty = Integer.parseInt(fQty.getText().trim());
+                if (qty <= 0) { UIHelper.warn(this, "Qty harus > 0."); return; }
+                jasaDetailModel.addRow(new Object[]{nama, harga, qty, harga * qty});
+                hitungTotal();
+            } catch (NumberFormatException ex) {
+                UIHelper.warn(this, "Harga dan Qty harus berupa angka.");
+            }
+        }
+    }
+
     private void addDetailRow() {
         if (sparepartList == null || sparepartList.isEmpty()) {
             UIHelper.warn(this, "Tidak ada data sparepart.");
@@ -424,12 +553,12 @@ public class ServiceTransactionFrame extends javax.swing.JDialog {
         }
 
         double totalJasa = 0;
-        try {
-            totalJasa = Double.parseDouble(txtTotalJasa.getText().trim());
-        } catch (NumberFormatException ignored) {
+        for (int i = 0; i < jasaDetailModel.getRowCount(); i++) {
+            totalJasa += Double.parseDouble(jasaDetailModel.getValueAt(i, 3).toString());
         }
 
         double grandTotal = totalJasa + totalSparepart;
+        txtTotalJasa.setText(String.valueOf(totalJasa));
         txtTotalSparepart.setText(String.valueOf(totalSparepart));
         txtGrandTotal.setText(String.valueOf(grandTotal));
 
@@ -443,6 +572,7 @@ public class ServiceTransactionFrame extends javax.swing.JDialog {
     }
 
     private void simpanTransaksi() {
+        if (viewOnly) { UIHelper.warn(this, "Transaksi sudah selesai, tidak bisa diedit."); return; }
         try {
             if (cbClient.getSelectedIndex() <= 0
              || cbVehicle.getSelectedIndex() <= 0
@@ -497,6 +627,18 @@ public class ServiceTransactionFrame extends javax.swing.JDialog {
                 details.add(d);
             }
             t.setDetails(details);
+
+            // Build jasa details
+            List<TransactionJasaDetail> jasaDetails = new ArrayList<>();
+            for (int i = 0; i < jasaDetailModel.getRowCount(); i++) {
+                TransactionJasaDetail jd = new TransactionJasaDetail();
+                jd.setNamaJasa(jasaDetailModel.getValueAt(i, 0).toString());
+                jd.setHarga(Double.parseDouble(jasaDetailModel.getValueAt(i, 1).toString()));
+                jd.setQty(Integer.parseInt(jasaDetailModel.getValueAt(i, 2).toString()));
+                jd.setSubtotal(Double.parseDouble(jasaDetailModel.getValueAt(i, 3).toString()));
+                jasaDetails.add(jd);
+            }
+            t.setJasaDetails(jasaDetails);
 
             if (editTransId > 0) {
                 t.setTransId(editTransId);
@@ -564,16 +706,18 @@ public class ServiceTransactionFrame extends javax.swing.JDialog {
 
     private void printTransaksi() {
         if (editTransId <= 0) {
-            UIHelper.warn(this, "Simpan transaksi terlebih dahulu sebelum export nota.");
+            UIHelper.warn(this, "Simpan transaksi terlebih dahulu sebelum print nota.");
             return;
         }
-        Object[] options = {"PDF", "Excel", "Batal"};
-        int choice = UIHelper.showOptions(this, "Pilih format export nota transaksi:", "Export Nota", new String[]{"PDF", "Excel", "Batal"});
-        String title = "Nota_Transaksi_" + editTransId;
-        if (choice == 0) {
-            com.mycompany.garagemanagementsystem.util.ExportUtils.exportTableToPDF(tblDetail, title);
-        } else if (choice == 1) {
-            com.mycompany.garagemanagementsystem.util.ExportUtils.exportTableToExcel(tblDetail, title);
+        try {
+            ServiceTransaction t = transDAO.findByIdFull(editTransId);
+            if (t != null) {
+                com.mycompany.garagemanagementsystem.util.ExportUtils.printServiceReceipt(t);
+            } else {
+                UIHelper.error(this, "Transaksi tidak ditemukan.");
+            }
+        } catch (java.sql.SQLException ex) {
+            UIHelper.error(this, "Error: " + ex.getMessage());
         }
     }
 

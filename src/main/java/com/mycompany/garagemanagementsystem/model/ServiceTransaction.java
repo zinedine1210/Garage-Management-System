@@ -21,6 +21,7 @@ public class ServiceTransaction {
     private String metodeBayar;
     private String userKasir;
     private List<TransactionDetail> details;
+    private List<TransactionJasaDetail> jasaDetails;
 
     public int getTransId() {
         return transId;
@@ -148,6 +149,14 @@ public class ServiceTransaction {
 
     public void setDetails(List<TransactionDetail> details) {
         this.details = details;
+    }
+
+    public List<TransactionJasaDetail> getJasaDetails() {
+        return jasaDetails;
+    }
+
+    public void setJasaDetails(List<TransactionJasaDetail> jasaDetails) {
+        this.jasaDetails = jasaDetails;
     }
 
     private String clientNama;

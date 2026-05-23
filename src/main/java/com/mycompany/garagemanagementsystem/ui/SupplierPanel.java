@@ -57,12 +57,16 @@ public class SupplierPanel extends javax.swing.JPanel {
         styledTable = new StyledTable();
         add(styledTable, BorderLayout.CENTER);
 
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 8));
+        JPanel buttonPanel = new JPanel(new BorderLayout());
         buttonPanel.setBackground(new Color(243, 245, 249));
+        buttonPanel.setBorder(new EmptyBorder(6, 0, 6, 0));
+
+        JPanel leftButtons = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        leftButtons.setOpaque(false);
 
         JButton btnTambah = createStyledButton("+ Tambah", new Color(40, 167, 69));
         btnTambah.addActionListener(e -> showFormDialog(null));
-        buttonPanel.add(btnTambah);
+        leftButtons.add(btnTambah);
 
         JButton btnEdit = createStyledButton("Edit", new Color(0, 123, 255));
         btnEdit.addActionListener(e -> {
@@ -70,15 +74,20 @@ public class SupplierPanel extends javax.swing.JPanel {
             if (row == null) { UIHelper.warn(this, "Pilih data yang akan diedit."); return; }
             showFormDialog(row);
         });
-        buttonPanel.add(btnEdit);
+        leftButtons.add(btnEdit);
 
         JButton btnHapus = createStyledButton("Hapus", new Color(220, 53, 69));
         btnHapus.addActionListener(e -> deleteData());
-        buttonPanel.add(btnHapus);
+        leftButtons.add(btnHapus);
+
+        buttonPanel.add(leftButtons, BorderLayout.WEST);
+
+        JPanel rightButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        rightButtons.setOpaque(false);
 
         JButton btnRefresh = createStyledButton("Refresh", new Color(108, 117, 125));
         btnRefresh.addActionListener(e -> loadData());
-        buttonPanel.add(btnRefresh);
+        rightButtons.add(btnRefresh);
 
         JButton btnExport = createStyledButton("Export", new Color(23, 162, 184));
         btnExport.addActionListener(e -> {
@@ -87,7 +96,9 @@ public class SupplierPanel extends javax.swing.JPanel {
             if (choice == 0) ExportUtils.exportTableToPDF(styledTable.getTable(), "Data_Supplier");
             else if (choice == 1) ExportUtils.exportTableToExcel(styledTable.getTable(), "Data_Supplier");
         });
-        buttonPanel.add(btnExport);
+        rightButtons.add(btnExport);
+
+        buttonPanel.add(rightButtons, BorderLayout.EAST);
         add(buttonPanel, BorderLayout.SOUTH);
     }
 

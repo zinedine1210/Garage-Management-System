@@ -67,20 +67,29 @@ public class SparepartPurchasePanel extends javax.swing.JPanel {
         add(styledTable, BorderLayout.CENTER);
 
         // Buttons
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 8));
+        JPanel buttonPanel = new JPanel(new BorderLayout());
         buttonPanel.setBackground(new Color(243, 245, 249));
+        buttonPanel.setBorder(new EmptyBorder(6, 0, 6, 0));
+
+        JPanel leftButtons = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        leftButtons.setOpaque(false);
 
         JButton btnTambah = createStyledButton("+ Pembelian Baru", new Color(40, 167, 69));
         btnTambah.addActionListener(e -> showPurchaseDialog());
-        buttonPanel.add(btnTambah);
+        leftButtons.add(btnTambah);
 
         JButton btnHapus = createStyledButton("Hapus", new Color(220, 53, 69));
         btnHapus.addActionListener(e -> deletePurchase());
-        buttonPanel.add(btnHapus);
+        leftButtons.add(btnHapus);
+
+        buttonPanel.add(leftButtons, BorderLayout.WEST);
+
+        JPanel rightButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        rightButtons.setOpaque(false);
 
         JButton btnRefresh = createStyledButton("Refresh", new Color(108, 117, 125));
         btnRefresh.addActionListener(e -> loadData());
-        buttonPanel.add(btnRefresh);
+        rightButtons.add(btnRefresh);
 
         JButton btnExport = createStyledButton("Export", new Color(23, 162, 184));
         btnExport.addActionListener(e -> {
@@ -89,7 +98,9 @@ public class SparepartPurchasePanel extends javax.swing.JPanel {
             if (choice == 0) ExportUtils.exportTableToPDF(styledTable.getTable(), "Data_Pembelian_Sparepart");
             else if (choice == 1) ExportUtils.exportTableToExcel(styledTable.getTable(), "Data_Pembelian_Sparepart");
         });
-        buttonPanel.add(btnExport);
+        rightButtons.add(btnExport);
+
+        buttonPanel.add(rightButtons, BorderLayout.EAST);
         add(buttonPanel, BorderLayout.SOUTH);
     }
 

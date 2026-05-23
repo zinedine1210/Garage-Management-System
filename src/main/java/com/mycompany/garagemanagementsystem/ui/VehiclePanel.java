@@ -61,12 +61,16 @@ public class VehiclePanel extends javax.swing.JPanel {
         styledTable = new StyledTable();
         add(styledTable, BorderLayout.CENTER);
 
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 8));
+        JPanel buttonPanel = new JPanel(new BorderLayout());
         buttonPanel.setBackground(new Color(243, 245, 249));
+        buttonPanel.setBorder(new EmptyBorder(6, 0, 6, 0));
+
+        JPanel leftButtons = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        leftButtons.setOpaque(false);
 
         JButton btnTambah = createStyledButton("+ Tambah", new Color(40, 167, 69));
         btnTambah.addActionListener(e -> showFormDialog(null));
-        buttonPanel.add(btnTambah);
+        leftButtons.add(btnTambah);
 
         JButton btnEdit = createStyledButton("Edit", new Color(0, 123, 255));
         btnEdit.addActionListener(e -> {
@@ -74,15 +78,20 @@ public class VehiclePanel extends javax.swing.JPanel {
             if (row == null) { UIHelper.warn(this, "Pilih data yang akan diedit."); return; }
             showFormDialog(row);
         });
-        buttonPanel.add(btnEdit);
+        leftButtons.add(btnEdit);
 
         JButton btnHapus = createStyledButton("Hapus", new Color(220, 53, 69));
         btnHapus.addActionListener(e -> deleteData());
-        buttonPanel.add(btnHapus);
+        leftButtons.add(btnHapus);
+
+        buttonPanel.add(leftButtons, BorderLayout.WEST);
+
+        JPanel rightButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        rightButtons.setOpaque(false);
 
         JButton btnRefresh = createStyledButton("Refresh", new Color(108, 117, 125));
         btnRefresh.addActionListener(e -> loadData());
-        buttonPanel.add(btnRefresh);
+        rightButtons.add(btnRefresh);
 
         JButton btnExport = createStyledButton("Export", new Color(23, 162, 184));
         btnExport.addActionListener(e -> {
@@ -91,8 +100,116 @@ public class VehiclePanel extends javax.swing.JPanel {
             if (choice == 0) ExportUtils.exportTableToPDF(styledTable.getTable(), "Data_Kendaraan");
             else if (choice == 1) ExportUtils.exportTableToExcel(styledTable.getTable(), "Data_Kendaraan");
         });
-        buttonPanel.add(btnExport);
+        rightButtons.add(btnExport);
+
+        buttonPanel.add(rightButtons, BorderLayout.EAST);
         add(buttonPanel, BorderLayout.SOUTH);
+    }
+
+    /**
+     * Static method to show Add Vehicle dialog from anywhere.
+     * Returns the newly created Vehicle, or null if cancelled.
+     * @param preselectedClientId if > 0, pre-selects that client in the dropdown.
+     */
+    public static Vehicle showAddVehicleDialog(Component parent, int preselectedClientId) {
+        VehicleDAO vDAO = new VehicleDAO();
+        ClientDAO cDAO = new ClientDAO();
+        List<Client> clients;
+        try { clients = cDAO.findAll(); } catch (SQLException ex) { clients = new ArrayList<>(); }
+
+        String dlgTitle = "Tambah Kendaraan Baru";
+        String dlgSub = "Lengkapi informasi kendaraan pelanggan";
+        Window win = SwingUtilities.getWindowAncestor(parent);
+        Frame frame = (win instanceof Frame) ? (Frame) win : null;
+        JDialog dialog = new JDialog(frame, dlgTitle, true);
+        dialog.setLayout(new BorderLayout());
+
+        dialog.add(UIHelper.createDialogHeader(dlgTitle, dlgSub), BorderLayout.NORTH);
+
+        JPanel form = new JPanel(new GridBagLayout());
+        form.setBorder(new EmptyBorder(20, 24, 10, 24));
+        form.setBackground(Color.WHITE);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 6, 5, 6);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.anchor = GridBagConstraints.WEST;
+
+        JComboBox<Object> cbClient = new JComboBox<>();
+        for (Client c : clients) cbClient.addItem(c);
+        JTextField txtNoPolisi = new JTextField(20);
+        JTextField txtMerk = new JTextField(20);
+        JTextField txtTipe = new JTextField(20);
+        JTextField txtCc = new JTextField(20);
+        JComboBox<String> cbJenis = new JComboBox<>(new String[]{"Roda 2", "Lebih dari Roda 2"});
+        JTextField txtTahun = new JTextField("2024", 20);
+        JTextField txtNoRangka = new JTextField(20);
+        JTextField txtNoMesin = new JTextField(20);
+
+        int r = 0;
+        String[] labels = {"Client:", "No Polisi:", "Merk:", "Tipe:", "CC:", "Jenis:", "Tahun:", "No Rangka (Opsional):", "No Mesin (Opsional):"};
+        JComponent[] fields = {cbClient, txtNoPolisi, txtMerk, txtTipe, txtCc, cbJenis, txtTahun, txtNoRangka, txtNoMesin};
+        for (int i = 0; i < labels.length; i++) {
+            gbc.gridx = 0; gbc.gridy = r; gbc.weightx = 0;
+            JLabel lbl = new JLabel(labels[i]);
+            lbl.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+            form.add(lbl, gbc);
+            gbc.gridx = 1; gbc.weightx = 1.0;
+            fields[i].setFont(new Font("Segoe UI", Font.PLAIN, 13));
+            form.add(fields[i], gbc);
+            r++;
+        }
+
+        // Pre-select client
+        if (preselectedClientId > 0) {
+            for (int i = 0; i < cbClient.getItemCount(); i++) {
+                if (((Client) cbClient.getItemAt(i)).getClientId() == preselectedClientId) {
+                    cbClient.setSelectedIndex(i);
+                    break;
+                }
+            }
+        }
+
+        dialog.add(form, BorderLayout.CENTER);
+
+        final Vehicle[] result = {null};
+        JPanel btnPanel = UIHelper.createDialogButtonPanel();
+        JButton btnCancel = UIHelper.createStyledButton("Batal", new Color(108, 117, 125));
+        btnCancel.addActionListener(e -> dialog.dispose());
+        btnPanel.add(btnCancel);
+
+        JButton btnSave = UIHelper.createStyledButton("Simpan", new Color(40, 167, 69));
+        btnSave.addActionListener(e -> {
+            try {
+                Vehicle v = new Vehicle();
+                Client sel = (Client) cbClient.getSelectedItem();
+                if (sel == null) { UIHelper.warn(dialog, "Pilih client terlebih dahulu."); return; }
+                v.setClientId(sel.getClientId());
+                v.setNoPolisi(txtNoPolisi.getText().trim());
+                if (v.getNoPolisi().isEmpty()) { UIHelper.warn(dialog, "No Polisi wajib diisi."); return; }
+                v.setMerk(txtMerk.getText().trim());
+                v.setTipe(txtTipe.getText().trim());
+                try { v.setCc(Integer.parseInt(txtCc.getText().trim())); } catch (NumberFormatException ex2) { v.setCc(0); }
+                v.setTipeKendaraan(cbJenis.getSelectedItem().toString());
+                v.setTahun(Integer.parseInt(txtTahun.getText().trim()));
+                v.setNoRangka(txtNoRangka.getText().trim());
+                v.setNoMesin(txtNoMesin.getText().trim());
+                vDAO.insert(v);
+                // Fetch newly inserted vehicle
+                List<Vehicle> vList = vDAO.findByClientId(sel.getClientId());
+                result[0] = vList.stream().max((a, b) -> Integer.compare(a.getVehicleId(), b.getVehicleId())).orElse(null);
+                dialog.dispose();
+            } catch (Exception ex) {
+                UIHelper.error(dialog, "Error: " + ex.getMessage());
+            }
+        });
+        btnPanel.add(btnSave);
+        dialog.add(btnPanel, BorderLayout.SOUTH);
+
+        dialog.pack();
+        dialog.setMinimumSize(new Dimension(480, 440));
+        dialog.setLocationRelativeTo(parent);
+        dialog.setVisible(true);
+        return result[0];
     }
 
     @SuppressWarnings("unchecked")
@@ -143,14 +260,14 @@ public class VehiclePanel extends javax.swing.JPanel {
                     break;
                 }
             }
-            txtNoPolisi.setText(str(existingData[2]));
-            txtMerk.setText(str(existingData[3]));
-            txtTipe.setText(str(existingData[4]));
-            txtCc.setText(str(existingData[5]));
-            if (existingData[6] != null) cbJenis.setSelectedItem(existingData[6].toString());
-            txtTahun.setText(str(existingData[7]));
-            txtNoRangka.setText(str(existingData[8]));
-            txtNoMesin.setText(str(existingData[9]));
+            txtNoPolisi.setText(str(existingData[3]));
+            txtMerk.setText(str(existingData[4]));
+            txtTipe.setText(str(existingData[5]));
+            txtCc.setText(str(existingData[6]));
+            if (existingData[7] != null) cbJenis.setSelectedItem(existingData[7].toString());
+            txtTahun.setText(str(existingData[8]));
+            txtNoRangka.setText(str(existingData[9]));
+            txtNoMesin.setText(str(existingData[10]));
         }
 
         dialog.add(form, BorderLayout.CENTER);
@@ -213,13 +330,18 @@ public class VehiclePanel extends javax.swing.JPanel {
 
     private void loadData() {
         try {
+            loadClients();
             List<Vehicle> list = vehicleDAO.findAll();
             List<Object[]> data = new ArrayList<>();
             for (Vehicle v : list) {
-                data.add(new Object[]{v.getVehicleId(), v.getClientId(), v.getNoPolisi(), v.getMerk(),
+                String clientNama = "";
+                for (Client c : clientList) {
+                    if (c.getClientId() == v.getClientId()) { clientNama = c.getNama(); break; }
+                }
+                data.add(new Object[]{v.getVehicleId(), v.getClientId(), clientNama, v.getNoPolisi(), v.getMerk(),
                         v.getTipe(), v.getCc(), v.getTipeKendaraan(), v.getTahun(), v.getNoRangka(), v.getNoMesin()});
             }
-            styledTable.setData(new String[]{"ID", "Client ID", "No Polisi", "Merk", "Tipe", "CC",
+            styledTable.setData(new String[]{"ID", "Client ID", "Nama Client", "No Polisi", "Merk", "Tipe", "CC",
                     "Jenis", "Tahun", "No Rangka", "No Mesin"}, data);
         } catch (SQLException ex) {
             UIHelper.error(this, "Error load data: " + ex.getMessage());

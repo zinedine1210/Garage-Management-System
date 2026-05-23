@@ -68,17 +68,18 @@ public class ServiceHistoryPanel extends javax.swing.JPanel {
             List<ServiceHistoryItem> history = transDAO.findHistoryByNoPolisi(nopol);
             if (history.isEmpty()) {
                 UIHelper.info(this, "Tidak ada riwayat servis untuk No Polisi tersebut.");
-                styledTable.setData(new String[]{"Tanggal", "Mekanik", "Keluhan/Pekerjaan", "Sparepart Diganti", "Total Biaya"}, new ArrayList<>());
+                styledTable.setData(new String[]{"Tanggal", "Mekanik", "Keluhan/Pekerjaan", "Jasa/Layanan", "Sparepart Diganti", "Total Biaya"}, new ArrayList<>());
                 return;
             }
             List<Object[]> data = new ArrayList<>();
             for (ServiceHistoryItem item : history) {
                 data.add(new Object[]{
                         item.getTanggal(), item.getMekanik(), item.getKeluhan(),
-                        item.getSpareparts(), String.format("Rp %,.0f", item.getTotalBiaya())
+                        item.getJasaList(), item.getSpareparts(),
+                        String.format("Rp %,.0f", item.getTotalBiaya())
                 });
             }
-            styledTable.setData(new String[]{"Tanggal", "Mekanik", "Keluhan/Pekerjaan", "Sparepart Diganti", "Total Biaya"}, data);
+            styledTable.setData(new String[]{"Tanggal", "Mekanik", "Keluhan/Pekerjaan", "Jasa/Layanan", "Sparepart Diganti", "Total Biaya"}, data);
         } catch (SQLException ex) {
             UIHelper.error(this, "Error pencarian data: " + ex.getMessage());
         }

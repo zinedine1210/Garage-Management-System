@@ -2,6 +2,7 @@ package com.mycompany.garagemanagementsystem.dao;
 
 import com.mycompany.garagemanagementsystem.model.ServiceTransaction;
 import com.mycompany.garagemanagementsystem.model.TransactionDetail;
+import com.mycompany.garagemanagementsystem.model.TransactionJasaDetail;
 import com.mycompany.garagemanagementsystem.util.DBConnection;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -36,7 +37,7 @@ public class ServiceTransactionDAO {
             psHeader.setTimestamp(1, new Timestamp(t.getTanggal().getTime()));
             psHeader.setInt(2, t.getClientId());
             psHeader.setInt(3, t.getVehicleId());
-            psHeader.setInt(4, t.getMekanikId());
+            if (t.getMekanikId() > 0) { psHeader.setInt(4, t.getMekanikId()); } else { psHeader.setNull(4, java.sql.Types.INTEGER); }
             if (t.getRegistrationId() != null) {
                 psHeader.setInt(5, t.getRegistrationId());
             } else {
@@ -81,6 +82,23 @@ public class ServiceTransactionDAO {
                 }
                 psDetail.executeBatch();
                 psStok.executeBatch();
+            }
+
+            // Insert jasa details
+            String sqlJasa = "INSERT INTO transaksi_servis_jasa (trans_id, nama_jasa, harga, qty, subtotal) VALUES (?,?,?,?,?)";
+            List<TransactionJasaDetail> jasaDetails = t.getJasaDetails();
+            if (jasaDetails != null && !jasaDetails.isEmpty()) {
+                try (PreparedStatement psJasa = conn.prepareStatement(sqlJasa)) {
+                    for (TransactionJasaDetail jd : jasaDetails) {
+                        psJasa.setInt(1, transId);
+                        psJasa.setString(2, jd.getNamaJasa());
+                        psJasa.setDouble(3, jd.getHarga());
+                        psJasa.setInt(4, jd.getQty());
+                        psJasa.setDouble(5, jd.getSubtotal());
+                        psJasa.addBatch();
+                    }
+                    psJasa.executeBatch();
+                }
             }
 
             conn.commit();
@@ -183,12 +201,14 @@ public class ServiceTransactionDAO {
     public List<com.mycompany.garagemanagementsystem.model.ServiceHistoryItem> findHistoryByNoPolisi(String noPolisi) throws SQLException {
         List<com.mycompany.garagemanagementsystem.model.ServiceHistoryItem> list = new java.util.ArrayList<>();
         String sql = "SELECT t.tanggal, t.keluhan, t.grand_total, m.nama as nama_mekanik, "
-                   + "GROUP_CONCAT(CONCAT(s.nama_sparepart, ' (', td.qty, ')') SEPARATOR ', ') as spareparts "
+                   + "GROUP_CONCAT(DISTINCT CONCAT(s.nama_sparepart, ' (', td.qty, ')') SEPARATOR ', ') as spareparts, "
+                   + "GROUP_CONCAT(DISTINCT CONCAT(tj.nama_jasa, ' (', tj.qty, ')') SEPARATOR ', ') as jasa_list "
                    + "FROM transaksi_servis t "
                    + "JOIN vehicle v ON t.vehicle_id = v.vehicle_id "
-                   + "JOIN mekanik m ON t.mekanik_id = m.mekanik_id "
+                   + "LEFT JOIN mekanik m ON t.mekanik_id = m.mekanik_id "
                    + "LEFT JOIN transaksi_servis_detail td ON t.trans_id = td.trans_id "
                    + "LEFT JOIN sparepart s ON td.sparepart_id = s.sparepart_id "
+                   + "LEFT JOIN transaksi_servis_jasa tj ON t.trans_id = tj.trans_id "
                    + "WHERE v.no_polisi LIKE ? "
                    + "GROUP BY t.trans_id "
                    + "ORDER BY t.tanggal DESC";
@@ -203,6 +223,7 @@ public class ServiceTransactionDAO {
                     item.setKeluhan(rs.getString("keluhan"));
                     item.setMekanik(rs.getString("nama_mekanik"));
                     item.setSpareparts(rs.getString("spareparts") != null ? rs.getString("spareparts") : "-");
+                    item.setJasaList(rs.getString("jasa_list") != null ? rs.getString("jasa_list") : "-");
                     item.setTotalBiaya(rs.getDouble("grand_total"));
                     list.add(item);
                 }
@@ -218,7 +239,7 @@ public class ServiceTransactionDAO {
                    + "FROM transaksi_servis t "
                    + "JOIN vehicle v ON t.vehicle_id = v.vehicle_id "
                    + "JOIN client c ON t.client_id = c.client_id "
-                   + "JOIN mekanik m ON t.mekanik_id = m.mekanik_id "
+                   + "LEFT JOIN mekanik m ON t.mekanik_id = m.mekanik_id "
                    + "WHERE DATE(t.tanggal) = CURDATE() AND t.status_servis IN ('Menunggu', 'Dikerjakan') "
                    + "ORDER BY t.tanggal ASC";
         
@@ -359,7 +380,7 @@ public class ServiceTransactionDAO {
             try (PreparedStatement psHeader = conn.prepareStatement(sqlUpdateHeader)) {
                 psHeader.setInt(1, t.getClientId());
                 psHeader.setInt(2, t.getVehicleId());
-                psHeader.setInt(3, t.getMekanikId());
+                if (t.getMekanikId() > 0) { psHeader.setInt(3, t.getMekanikId()); } else { psHeader.setNull(3, java.sql.Types.INTEGER); }
                 if (t.getRegistrationId() != null) {
                     psHeader.setInt(4, t.getRegistrationId());
                 } else {
@@ -396,6 +417,27 @@ public class ServiceTransactionDAO {
                     }
                     psDetail.executeBatch();
                     psReduce.executeBatch();
+                }
+            }
+
+            // Delete old jasa details and re-insert
+            try (PreparedStatement psDelJasa = conn.prepareStatement("DELETE FROM transaksi_servis_jasa WHERE trans_id=?")) {
+                psDelJasa.setInt(1, t.getTransId());
+                psDelJasa.executeUpdate();
+            }
+            String sqlInsertJasa = "INSERT INTO transaksi_servis_jasa (trans_id, nama_jasa, harga, qty, subtotal) VALUES (?,?,?,?,?)";
+            List<TransactionJasaDetail> jasaDetails = t.getJasaDetails();
+            if (jasaDetails != null && !jasaDetails.isEmpty()) {
+                try (PreparedStatement psJasa = conn.prepareStatement(sqlInsertJasa)) {
+                    for (TransactionJasaDetail jd : jasaDetails) {
+                        psJasa.setInt(1, t.getTransId());
+                        psJasa.setString(2, jd.getNamaJasa());
+                        psJasa.setDouble(3, jd.getHarga());
+                        psJasa.setInt(4, jd.getQty());
+                        psJasa.setDouble(5, jd.getSubtotal());
+                        psJasa.addBatch();
+                    }
+                    psJasa.executeBatch();
                 }
             }
 
@@ -472,6 +514,26 @@ public class ServiceTransactionDAO {
                         details.add(d);
                     }
                     t.setDetails(details);
+                }
+            }
+            // Load jasa details
+            String sqlJasa = "SELECT * FROM transaksi_servis_jasa WHERE trans_id = ?";
+            try (Connection conn2 = DBConnection.getConnection();
+                 PreparedStatement ps2 = conn2.prepareStatement(sqlJasa)) {
+                ps2.setInt(1, transId);
+                try (ResultSet rs2 = ps2.executeQuery()) {
+                    List<TransactionJasaDetail> jasaDetails = new java.util.ArrayList<>();
+                    while (rs2.next()) {
+                        TransactionJasaDetail jd = new TransactionJasaDetail();
+                        jd.setDetailId(rs2.getInt("detail_id"));
+                        jd.setTransId(rs2.getInt("trans_id"));
+                        jd.setNamaJasa(rs2.getString("nama_jasa"));
+                        jd.setHarga(rs2.getDouble("harga"));
+                        jd.setQty(rs2.getInt("qty"));
+                        jd.setSubtotal(rs2.getDouble("subtotal"));
+                        jasaDetails.add(jd);
+                    }
+                    t.setJasaDetails(jasaDetails);
                 }
             }
         }
